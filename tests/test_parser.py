@@ -40,6 +40,14 @@ class TestRDDLlex(unittest.TestCase):
             elif tok.value in self.lexer.reserved:
                 self.assertEqual(tok.type, self.lexer.reserved[tok.value])
 
+    def test_floating_point_numbers(self):
+        self.lexer.input(self.reservoir_data)
+        for tok in self.lexer():
+            if tok.type == 'DOUBLE':
+                self.assertIsInstance(tok.value, float)
+            elif isinstance(tok.value, float):
+                self.assertEqual(tok.type, 'DOUBLE')
+
     def test_integer_numbers(self):
         self.lexer.input(self.reservoir_data)
         for tok in self.lexer():
