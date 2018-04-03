@@ -37,7 +37,7 @@ class TestRDDLlex(unittest.TestCase):
         for tok in self.lexer():
             if tok.type == 'ID':
                 self.assertNotIn(tok.value, self.lexer.reserved)
-            elif tok.value in self.lexer.reserved:
+            if tok.value in self.lexer.reserved:
                 self.assertEqual(tok.type, self.lexer.reserved[tok.value])
 
     def test_floating_point_numbers(self):
@@ -45,7 +45,7 @@ class TestRDDLlex(unittest.TestCase):
         for tok in self.lexer():
             if tok.type == 'DOUBLE':
                 self.assertIsInstance(tok.value, float)
-            elif isinstance(tok.value, float):
+            if isinstance(tok.value, float):
                 self.assertEqual(tok.type, 'DOUBLE')
 
     def test_integer_numbers(self):
@@ -53,7 +53,7 @@ class TestRDDLlex(unittest.TestCase):
         for tok in self.lexer():
             if tok.type == 'INTEGER':
                 self.assertIsInstance(tok.value, int)
-            elif isinstance(tok.value, int):
+            if isinstance(tok.value, int):
                 self.assertEqual(tok.type, 'INTEGER')
 
     def test_operators(self):
@@ -111,7 +111,7 @@ class TestRDDLlex(unittest.TestCase):
         for tok in self.lexer():
             if tok.value in op2tok:
                 self.assertEqual(tok.type, op2tok[tok.value])
-            elif tok.type in tok2op:
+            if tok.type in tok2op:
                 self.assertEqual(tok.value, tok2op[tok.type])
 
     def test_delimiters(self):
@@ -139,7 +139,7 @@ class TestRDDLlex(unittest.TestCase):
         for tok in self.lexer():
             if tok.value in delim2tok:
                 self.assertEqual(tok.type, delim2tok[tok.value])
-            elif tok.type in tok2delim:
+            if tok.type in tok2delim:
                 self.assertEqual(tok.value, tok2delim[tok.type])
 
     def test_variables(self):
