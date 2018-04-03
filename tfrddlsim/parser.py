@@ -71,11 +71,72 @@ class RDDLlex(object):
         self.tokens = [
             'ID',
             'INTEGER',
-            'DOUBLE'
+            'DOUBLE',
+            'AND',
+            'OR',
+            'NOT',
+            'PLUS',
+            'TIMES',
+            'LPAREN',
+            'RPAREN',
+            'LCURLY',
+            'RCURLY',
+            'DOT',
+            'COMMA',
+            'UNDERSCORE',
+            'LBRACK',
+            'RBRACK',
+            'IMPLY',
+            'EQUIV',
+            'NEQ',
+            'LESSEQ',
+            'LESS',
+            'GREATEREQ',
+            'GREATER',
+            'ASSIGN_EQUAL',
+            'COMP_EQUAL',
+            'DIV',
+            'MINUS',
+            'COLON',
+            'SEMI',
+            'DOLLAR_SIGN',
+            'QUESTION',
+            'AMPERSAND'
         ]
         self.tokens += list(self.reserved.values())
 
     t_ignore = ' \t'
+
+    t_AND = r'\^'
+    t_OR = r'\|'
+    t_NOT = r'~'
+    t_PLUS = r'\+'
+    t_TIMES = r'\*'
+    t_LPAREN = r'\('
+    t_RPAREN = r'\)'
+    t_LCURLY = r'\{'
+    t_RCURLY = r'\}'
+    t_DOT = r'\.'
+    t_COMMA = r'\,'
+    t_UNDERSCORE = r'\_'
+    t_LBRACK = r'\['
+    t_RBRACK = r'\]'
+    t_IMPLY = r'=>'
+    t_EQUIV = r'<=>'
+    t_NEQ = r'~='
+    t_LESSEQ = r'<='
+    t_LESS = r'<'
+    t_GREATEREQ = r'>='
+    t_GREATER = r'>'
+    t_ASSIGN_EQUAL = r'='
+    t_COMP_EQUAL = r'=='
+    t_DIV = r'/'
+    t_MINUS = r'-'
+    t_COLON = r':'
+    t_SEMI = r';'
+    t_DOLLAR_SIGN = r'\$'
+    t_QUESTION = r'\?'
+    t_AMPERSAND = r'\&'
 
     def t_newline(self, t):
         r'\n+'

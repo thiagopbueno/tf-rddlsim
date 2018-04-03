@@ -55,3 +55,89 @@ class TestRDDLlex(unittest.TestCase):
                 self.assertIsInstance(tok.value, int)
             elif isinstance(tok.value, int):
                 self.assertEqual(tok.type, 'INTEGER')
+
+    def test_operators(self):
+        op2tok = {
+            '^': 'AND',
+            '|': 'OR',
+            '~': 'NOT',
+            '+': 'PLUS',
+            '*': 'TIMES',
+            '.': 'DOT',
+            '=>': 'IMPLY',
+            '<=>': 'EQUIV',
+            '~=': 'NEQ',
+            '<=': 'LESSEQ',
+            '<': 'LESS',
+            '>=': 'GREATEREQ',
+            '>': 'GREATER',
+            '=': 'ASSIGN_EQUAL',
+            '==': 'COMP_EQUAL',
+            '/': 'DIV',
+            '-': 'MINUS',
+            ':': 'COLON',
+            ';': 'SEMI',
+            '$': 'DOLLAR_SIGN',
+            '?': 'QUESTION',
+            '&': 'AMPERSAND'
+        }
+
+        tok2op = {
+            'AND': '^',
+            'OR': '|',
+            'NOT': '~',
+            'PLUS': '+',
+            'TIMES': '*',
+            'DOT': '.',
+            'IMPLY': '=>',
+            'EQUIV': '<=>',
+            'NEQ': '~=',
+            'LESSEQ': '<=',
+            'LESS': '<',
+            'GREATEREQ': '>=',
+            'GREATER': '>',
+            'ASSIGN_EQUAL': '=',
+            'COMP_EQUAL': '==',
+            'DIV': '/',
+            'MINUS': '-',
+            'COLON': ':',
+            'SEMI': ';',
+            'DOLLAR_SIGN': '$',
+            'QUESTION': '?',
+            'AMPERSAND': '&'
+        }
+
+        self.lexer.input(self.reservoir_data)
+        for tok in self.lexer():
+            if tok.value in op2tok:
+                self.assertEqual(tok.type, op2tok[tok.value])
+            elif tok.type in tok2op:
+                self.assertEqual(tok.value, tok2op[tok.type])
+
+    def test_delimiters(self):
+        delim2tok = {
+            '(': 'LPAREN',
+            ')': 'RPAREN',
+            '{': 'LCURLY',
+            '}': 'RCURLY',
+            ',': 'COMMA',
+            '[': 'LBRACK',
+            ']': 'RBRACK'
+        }
+
+        tok2delim = {
+            'LPAREN': '(',
+            'RPAREN': ')',
+            'LCURLY': '{',
+            'RCURLY': '}',
+            'COMMA': ',',
+            'LBRACK': '[',
+            'RBRACK': ']'
+        }
+
+        self.lexer.input(self.reservoir_data)
+        for tok in self.lexer():
+            if tok.value in delim2tok:
+                self.assertEqual(tok.type, delim2tok[tok.value])
+            elif tok.type in tok2delim:
+                self.assertEqual(tok.value, tok2delim[tok.type])
