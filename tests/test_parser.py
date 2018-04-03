@@ -25,7 +25,6 @@ class TestRDDLlex(unittest.TestCase):
         self.lexer.input(self.reservoir_data)
         for tok in self.lexer():
             if tok.type == 'ID':
-                print(tok)
                 self.assertIsInstance(tok.value, str)
                 self.assertIn(tok.value[0], "abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVXWYZ")
                 if len(tok.value) > 1:
@@ -40,3 +39,11 @@ class TestRDDLlex(unittest.TestCase):
                 self.assertNotIn(tok.value, self.lexer.reserved)
             elif tok.value in self.lexer.reserved:
                 self.assertEqual(tok.type, self.lexer.reserved[tok.value])
+
+    def test_integer_numbers(self):
+        self.lexer.input(self.reservoir_data)
+        for tok in self.lexer():
+            if tok.type == 'INTEGER':
+                self.assertIsInstance(tok.value, int)
+            elif isinstance(tok.value, int):
+                self.assertEqual(tok.type, 'INTEGER')

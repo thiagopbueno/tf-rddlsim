@@ -4,7 +4,7 @@ from ply import lex
 alpha = r'[A-Za-z]'
 digit = r'[0-9]'
 idenfifier = r'(' + alpha + r')((' + alpha + r'|' + digit + r'|\-|\_)*(' + alpha + r'|' + digit + r'))?(\')?'
-
+integer = digit + r'+'
 
 class RDDLlex(object):
 
@@ -67,7 +67,11 @@ class RDDLlex(object):
             'Dirichlet': 'DIRICHLET'
         }
 
-        self.tokens = ['ID'] + list(self.reserved.values())
+        self.tokens = [
+            'ID',
+            'INTEGER'
+        ]
+        self.tokens += list(self.reserved.values())
 
     t_ignore = ' \t'
 
@@ -82,6 +86,11 @@ class RDDLlex(object):
     @lex.TOKEN(idenfifier)
     def t_ID(self, t):
         t.type = self.reserved.get(t.value, 'ID')
+        return t
+
+    @lex.TOKEN(integer)
+    def t_INTEGER(self, t):
+        t.value = int(t.value)
         return t
 
     def t_error(self, t):
