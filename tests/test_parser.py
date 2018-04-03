@@ -161,3 +161,16 @@ class TestRDDLlex(unittest.TestCase):
 
             if tok.value[0] == '?':
                 self.assertEqual(tok.type, 'VAR')
+
+    def test_ignore_whitespaces(self):
+        self.lexer.input(self.reservoir_data)
+        for tok in self.lexer():
+            if isinstance(tok.value, str):
+                self.assertNotIn(' ', tok.value)
+                self.assertNotIn('\t', tok.value)
+
+    def test_ignore_comments(self):
+        self.lexer.input(self.reservoir_data)
+        for tok in self.lexer():
+            if isinstance(tok.value, str):
+                self.assertFalse(tok.value.startswith("//"))
