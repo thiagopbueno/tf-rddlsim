@@ -141,3 +141,23 @@ class TestRDDLlex(unittest.TestCase):
                 self.assertEqual(tok.type, delim2tok[tok.value])
             elif tok.type in tok2delim:
                 self.assertEqual(tok.value, tok2delim[tok.type])
+
+    def test_variables(self):
+        self.lexer.input(self.reservoir_data)
+        for tok in self.lexer():
+            if not isinstance(tok.value, str):
+                continue
+
+            if tok.type == 'VAR':
+                self.assertIsInstance(tok.value, str)
+                self.assertGreaterEqual(len(tok.value), 2)
+                self.assertEqual(tok.value[0], '?')
+                if len(tok.value) == 2:
+                    self.assertIn(tok.value[1], "abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVXWYZ0123456789")
+                else:
+                    for c in tok.value[1:-1]:
+                        self.assertIn(c, "abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVXWYZ0123456789-_")
+                    self.assertIn(tok.value[-1], "abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVXWYZ0123456789")
+
+            if tok.value[0] == '?':
+                self.assertEqual(tok.type, 'VAR')

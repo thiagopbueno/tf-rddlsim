@@ -6,6 +6,8 @@ digit = r'[0-9]'
 idenfifier = r'(' + alpha + r')((' + alpha + r'|' + digit + r'|\-|\_)*(' + alpha + r'|' + digit + r'))?(\')?'
 integer = digit + r'+'
 double = digit + r'*\.' + digit + r'+'
+variable = r'\?(' + alpha + r'|' + digit + r'|\-|\_)*(' + alpha + r'|' + digit + r')'
+
 
 class RDDLlex(object):
 
@@ -70,6 +72,7 @@ class RDDLlex(object):
 
         self.tokens = [
             'ID',
+            'VAR',
             'INTEGER',
             'DOUBLE',
             'AND',
@@ -149,6 +152,10 @@ class RDDLlex(object):
     @lex.TOKEN(idenfifier)
     def t_ID(self, t):
         t.type = self.reserved.get(t.value, 'ID')
+        return t
+
+    @lex.TOKEN(variable)
+    def t_VAR(self, t):
         return t
 
     @lex.TOKEN(double)
