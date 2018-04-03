@@ -20,3 +20,15 @@ class TestRDDLlex(unittest.TestCase):
         self.lexer.input(self.reservoir_data)
         for _ in self.lexer(): pass
         self.assertEqual(self.lexer._lexer.lineno, 145)
+
+    def test_identifiers(self):
+        self.lexer.input(self.reservoir_data)
+        for tok in self.lexer():
+            if tok.type == 'ID':
+                print(tok)
+                self.assertIsInstance(tok.value, str)
+                self.assertIn(tok.value[0], "abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVXWYZ")
+                if len(tok.value) > 1:
+                    for c in tok.value[1:-1]:
+                        self.assertIn(c, "abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVXWYZ0123456789-_")
+                    self.assertIn(tok.value[-1], "abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVXWYZ0123456789'")
