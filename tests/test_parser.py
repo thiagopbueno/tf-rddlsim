@@ -32,3 +32,11 @@ class TestRDDLlex(unittest.TestCase):
                     for c in tok.value[1:-1]:
                         self.assertIn(c, "abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVXWYZ0123456789-_")
                     self.assertIn(tok.value[-1], "abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVXWYZ0123456789'")
+
+    def test_reserved_words(self):
+        self.lexer.input(self.reservoir_data)
+        for tok in self.lexer():
+            if tok.type == 'ID':
+                self.assertNotIn(tok.value, self.lexer.reserved)
+            elif tok.value in self.lexer.reserved:
+                self.assertEqual(tok.type, self.lexer.reserved[tok.value])
