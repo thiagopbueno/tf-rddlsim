@@ -215,15 +215,15 @@ class RDDLParser(object):
 
     def p_domain_block(self, p):
         '''domain_block : DOMAIN IDENT LCURLY RCURLY'''
-        p[0] = Domain()
+        p[0] = Domain(p[2])
 
     def p_instance_block(self, p):
         '''instance_block : INSTANCE IDENT LCURLY RCURLY'''
-        p[0] = Instance()
+        p[0] = Instance(p[2])
 
     def p_nonfluent_block(self, p):
         '''nonfluent_block : NON_FLUENTS IDENT LCURLY RCURLY'''
-        p[0] = NonFluents()
+        p[0] = NonFluents(p[2])
 
     def p_empty(self, p):
         'empty :'

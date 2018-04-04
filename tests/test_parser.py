@@ -180,19 +180,32 @@ class TestRDDLlex(unittest.TestCase):
 class TestRDDLyacc(unittest.TestCase):
 
     def setUp(self):
-        self.parser = parser.RDDLParser()
-        self.parser.build()
-
-    def test_rddl(self):
-        data = '''
+        rddl = '''
         domain reservoir { }
-
         non-fluents res8 { }
-
         instance inst_reservoir_res8 { }
         '''
-        rddl = self.parser.parse(data)
-        self.assertIsInstance(rddl, RDDL)
-        self.assertIsInstance(rddl.domain, Domain)
-        self.assertIsInstance(rddl.instance, Instance)
-        self.assertIsInstance(rddl.non_fluents, NonFluents)
+        self.parser = parser.RDDLParser()
+        self.parser.build()
+        self.rddl = self.parser.parse(rddl)
+
+    def test_rddl(self):
+        self.assertIsInstance(self.rddl, RDDL)
+        self.assertIsInstance(self.rddl.domain, Domain)
+        self.assertIsInstance(self.rddl.instance, Instance)
+        self.assertIsInstance(self.rddl.non_fluents, NonFluents)
+
+    def test_domain_block(self):
+        domain = self.rddl.domain
+        self.assertIsInstance(domain, Domain)
+        self.assertEqual(domain.name, 'reservoir')
+
+    def test_instance_block(self):
+        instance = self.rddl.instance
+        self.assertIsInstance(instance, Instance)
+        self.assertEqual(instance.name, 'inst_reservoir_res8')
+
+    def test_nonfluents_block(self):
+        non_fluents = self.rddl.non_fluents
+        self.assertIsInstance(non_fluents, NonFluents)
+        self.assertEqual(non_fluents.name, 'res8')

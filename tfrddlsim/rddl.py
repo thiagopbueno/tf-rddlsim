@@ -18,12 +18,18 @@ class RDDL(object):
 
 
 class Domain(object):
-    pass
+
+    def __init__(self, name):
+        self.name = name
 
 
 class Instance(object):
-    pass
+
+    def __init__(self, name):
+        self.name = name
 
 
 class NonFluents(object):
-    pass
+
+    def __init__(self, name):
+        self.name = name
