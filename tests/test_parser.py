@@ -2,27 +2,27 @@ from tfrddlsim import parser
 
 import unittest
 
+
+with open('rddl/Reservoir.rddl', mode='r') as file:
+    RESERVOIR = file.read()
+
+with open('rddl/Mars_Rover.rddl', mode='r') as file:
+    MARS_ROVER = file.read()
+
+
 class TestRDDLlex(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        with open('rddl/Reservoir.rddl', mode='r') as file:
-            cls.reservoir_data = file.read()
-
-        with open('rddl/Mars_Rover.rddl', mode='r') as file:
-            cls.mars_rover_data = file.read()
 
     def setUp(self):
         self.lexer = parser.RDDLlex()
         self.lexer.build()
 
     def test_newlines(self):
-        self.lexer.input(self.reservoir_data)
+        self.lexer.input(RESERVOIR)
         for _ in self.lexer(): pass
         self.assertEqual(self.lexer._lexer.lineno, 145)
 
     def test_identifiers(self):
-        self.lexer.input(self.reservoir_data)
+        self.lexer.input(RESERVOIR)
         for tok in self.lexer():
             if tok.type == 'ID':
                 self.assertIsInstance(tok.value, str)
@@ -33,7 +33,7 @@ class TestRDDLlex(unittest.TestCase):
                     self.assertIn(tok.value[-1], "abcdefghijklmnopqrstuvxwyzABCDEFGHIJKLMNOPQRSTUVXWYZ0123456789'")
 
     def test_reserved_words(self):
-        self.lexer.input(self.reservoir_data)
+        self.lexer.input(RESERVOIR)
         for tok in self.lexer():
             if tok.type == 'ID':
                 self.assertNotIn(tok.value, self.lexer.reserved)
@@ -41,7 +41,7 @@ class TestRDDLlex(unittest.TestCase):
                 self.assertEqual(tok.type, self.lexer.reserved[tok.value])
 
     def test_floating_point_numbers(self):
-        self.lexer.input(self.reservoir_data)
+        self.lexer.input(RESERVOIR)
         for tok in self.lexer():
             if tok.type == 'DOUBLE':
                 self.assertIsInstance(tok.value, float)
@@ -49,7 +49,7 @@ class TestRDDLlex(unittest.TestCase):
                 self.assertEqual(tok.type, 'DOUBLE')
 
     def test_integer_numbers(self):
-        self.lexer.input(self.reservoir_data)
+        self.lexer.input(RESERVOIR)
         for tok in self.lexer():
             if tok.type == 'INTEGER':
                 self.assertIsInstance(tok.value, int)
@@ -107,7 +107,7 @@ class TestRDDLlex(unittest.TestCase):
             'AMPERSAND': '&'
         }
 
-        self.lexer.input(self.reservoir_data)
+        self.lexer.input(RESERVOIR)
         for tok in self.lexer():
             if tok.value in op2tok:
                 self.assertEqual(tok.type, op2tok[tok.value])
@@ -135,7 +135,7 @@ class TestRDDLlex(unittest.TestCase):
             'RBRACK': ']'
         }
 
-        self.lexer.input(self.reservoir_data)
+        self.lexer.input(RESERVOIR)
         for tok in self.lexer():
             if tok.value in delim2tok:
                 self.assertEqual(tok.type, delim2tok[tok.value])
@@ -143,7 +143,7 @@ class TestRDDLlex(unittest.TestCase):
                 self.assertEqual(tok.value, tok2delim[tok.type])
 
     def test_variables(self):
-        self.lexer.input(self.reservoir_data)
+        self.lexer.input(RESERVOIR)
         for tok in self.lexer():
             if not isinstance(tok.value, str):
                 continue
@@ -163,14 +163,14 @@ class TestRDDLlex(unittest.TestCase):
                 self.assertEqual(tok.type, 'VAR')
 
     def test_ignore_whitespaces(self):
-        self.lexer.input(self.reservoir_data)
+        self.lexer.input(RESERVOIR)
         for tok in self.lexer():
             if isinstance(tok.value, str):
                 self.assertNotIn(' ', tok.value)
                 self.assertNotIn('\t', tok.value)
 
     def test_ignore_comments(self):
-        self.lexer.input(self.reservoir_data)
+        self.lexer.input(RESERVOIR)
         for tok in self.lexer():
             if isinstance(tok.value, str):
                 self.assertFalse(tok.value.startswith("//"))
