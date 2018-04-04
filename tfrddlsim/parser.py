@@ -71,7 +71,7 @@ class RDDLlex(object):
         }
 
         self.tokens = [
-            'ID',
+            'IDENT',
             'VAR',
             'INTEGER',
             'DOUBLE',
@@ -150,8 +150,8 @@ class RDDLlex(object):
         pass
 
     @lex.TOKEN(idenfifier)
-    def t_ID(self, t):
-        t.type = self.reserved.get(t.value, 'ID')
+    def t_IDENT(self, t):
+        t.type = self.reserved.get(t.value, 'IDENT')
         return t
 
     @lex.TOKEN(variable)
