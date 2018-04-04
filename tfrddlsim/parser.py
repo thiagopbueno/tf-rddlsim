@@ -1,4 +1,6 @@
-from ply import lex
+from ply import lex, yacc
+
+from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
 
 
 alpha = r'[A-Za-z]'
@@ -189,3 +191,49 @@ class RDDLlex(object):
             if not tok:
                 break
             yield tok
+
+
+class RDDLParser(object):
+
+    def __init__(self, lexer=None):
+        if lexer is None:
+            self.lexer = RDDLlex()
+            self.lexer.build()
+
+        self.tokens = self.lexer.tokens
+
+    def p_rddl_block(self, p):
+        '''rddl_block : domain_block rddl_block
+                      | instance_block rddl_block
+                      | nonfluent_block rddl_block
+                      | empty'''
+        if p[1] is None:
+            p[0] = RDDL()
+        else:
+            p[2].add_block(p[1])
+            p[0] = p[2]
+
+    def p_domain_block(self, p):
+        '''domain_block : DOMAIN IDENT LCURLY RCURLY'''
+        p[0] = Domain()
+
+    def p_instance_block(self, p):
+        '''instance_block : INSTANCE IDENT LCURLY RCURLY'''
+        p[0] = Instance()
+
+    def p_nonfluent_block(self, p):
+        '''nonfluent_block : NON_FLUENTS IDENT LCURLY RCURLY'''
+        p[0] = NonFluents()
+
+    def p_empty(self, p):
+        'empty :'
+        pass
+
+    def p_error(self, p):
+        print('Syntax error in input!')
+
+    def build(self, **kwargs):
+        self._parser = yacc.yacc(module=self, **kwargs)
+
+    def parse(self, input):
+        return self._parser.parse(input=input, lexer=self.lexer)

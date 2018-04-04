@@ -1,4 +1,5 @@
 from tfrddlsim import parser
+from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
 
 import unittest
 
@@ -174,3 +175,24 @@ class TestRDDLlex(unittest.TestCase):
         for tok in self.lexer():
             if isinstance(tok.value, str):
                 self.assertFalse(tok.value.startswith("//"))
+
+
+class TestRDDLyacc(unittest.TestCase):
+
+    def setUp(self):
+        self.parser = parser.RDDLParser()
+        self.parser.build()
+
+    def test_rddl(self):
+        data = '''
+        domain reservoir { }
+
+        non-fluents res8 { }
+
+        instance inst_reservoir_res8 { }
+        '''
+        rddl = self.parser.parse(data)
+        self.assertIsInstance(rddl, RDDL)
+        self.assertIsInstance(rddl.domain, Domain)
+        self.assertIsInstance(rddl.instance, Instance)
+        self.assertIsInstance(rddl.non_fluents, NonFluents)
