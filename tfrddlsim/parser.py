@@ -180,9 +180,12 @@ class RDDLlex(object):
             self.build()
         self._lexer.input(data)
 
+    def token(self):
+        return self._lexer.token()
+
     def __call__(self):
         while True:
-            tok = self._lexer.token()
+            tok = self.token()
             if not tok:
                 break
             yield tok
