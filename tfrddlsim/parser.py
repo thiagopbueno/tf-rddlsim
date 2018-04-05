@@ -9,6 +9,7 @@ idenfifier = r'(' + alpha + r')((' + alpha + r'|' + digit + r'|\-|\_)*(' + alpha
 integer = digit + r'+'
 double = digit + r'*\.' + digit + r'+'
 variable = r'\?(' + alpha + r'|' + digit + r'|\-|\_)*(' + alpha + r'|' + digit + r')'
+enum_value = r'\@(' + alpha + r'|' + digit + r'|\-|\_)*(' + alpha + r'|' + digit + r')'
 
 
 class RDDLlex(object):
@@ -75,6 +76,7 @@ class RDDLlex(object):
         self.tokens = [
             'IDENT',
             'VAR',
+            'ENUM_VAL',
             'INTEGER',
             'DOUBLE',
             'AND',
@@ -160,6 +162,10 @@ class RDDLlex(object):
     def t_VAR(self, t):
         return t
 
+    @lex.TOKEN(enum_value)
+    def t_ENUM_VAL(self, t):
+        return t
+
     @lex.TOKEN(double)
     def t_DOUBLE(self, t):
         t.value = float(t.value)
@@ -214,8 +220,8 @@ class RDDLParser(object):
             p[0] = p[2]
 
     def p_domain_block(self, p):
-        '''domain_block : DOMAIN IDENT LCURLY req_section RCURLY'''
-        p[0] = Domain(name=p[2], requirements=p[4])
+        '''domain_block : DOMAIN IDENT LCURLY req_section domain_list RCURLY'''
+        p[0] = Domain(name=p[2], requirements=p[4], domain_list=p[5])
 
     def p_req_section(self, p):
         '''req_section : REQUIREMENTS ASSIGN_EQUAL LCURLY string_list RCURLY SEMI
@@ -225,6 +231,49 @@ class RDDLParser(object):
             p[0] = p[4]
         elif len(p) == 6:
             p[0] = p[3]
+
+    def p_domain_list(self, p):
+        '''domain_list : type_section domain_list
+                       | empty'''
+        if p[1] is None:
+            p[0] = dict()
+        else:
+            name, section = p[1]
+            p[2][name] = section
+            p[0] = p[2]
+
+    def p_type_section(self, p):
+        '''type_section : TYPES LCURLY type_list RCURLY SEMI'''
+        p[0] = ('types', p[3])
+
+    def p_type_list(self, p):
+        '''type_list : type_def type_list
+                     | empty'''
+        if p[1] is None:
+            p[0] = []
+        else:
+            p[2].append(p[1])
+            p[0] = p[2]
+
+    def p_type_def(self, p):
+        '''type_def : IDENT COLON OBJECT SEMI
+                    | IDENT COLON LCURLY enum_list RCURLY SEMI'''
+        if len(p) == 5:
+            p[0] = (p[1], p[3])
+        elif len(p) == 7:
+            p[0] = (p[1], p[4])
+
+    def p_enum_list(self, p):
+        '''enum_list : enum_list COMMA ENUM_VAL
+                     | ENUM_VAL
+                     | empty'''
+        if p[1] is None:
+            p[0] = []
+        elif len(p) == 4:
+            p[1].append(p[3])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
 
     def p_instance_block(self, p):
         '''instance_block : INSTANCE IDENT LCURLY RCURLY'''
@@ -245,8 +294,6 @@ class RDDLParser(object):
             p[0] = p[3]
         elif len(p) == 2:
             p[0] = [p[1]]
-
-
 
     def p_empty(self, p):
         'empty :'

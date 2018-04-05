@@ -202,6 +202,15 @@ class TestRDDLyacc(unittest.TestCase):
                 intermediate-nodes,   // this domain uses intermediate pvariable nodes
                 constrained-state     // this domain uses state constraints
             };
+
+            types {
+                res: object;
+                picture-point : object;
+                x_pos : object;
+                y_pos : object;
+                crowdlevel : {@low, @med, @high};
+                enum_level : {@low, @high}; // An enumerated type
+            };
         }
 
         non-fluents res8 { }
@@ -226,6 +235,19 @@ class TestRDDLyacc(unittest.TestCase):
     def test_requirements_section(self):
         requirements = self.rddl.domain.requirements
         self.assertListEqual(sorted(requirements), sorted(['concurrent', 'reward-deterministic', 'intermediate-nodes', 'constrained-state']))
+
+    def test_types_section(self):
+        types = self.rddl.domain.types
+        expected = [
+            ('res', 'object'),
+            ('picture-point', 'object'),
+            ('x_pos', 'object'),
+            ('y_pos', 'object'),
+            ('crowdlevel', ['@low', '@med', '@high']),
+            ('enum_level', ['@low', '@high'])
+        ]
+        for t in expected:
+            self.assertIn(t, types)
 
     def test_instance_block(self):
         instance = self.rddl.instance

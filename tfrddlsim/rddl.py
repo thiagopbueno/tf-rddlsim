@@ -19,9 +19,14 @@ class RDDL(object):
 
 class Domain(object):
 
-    def __init__(self, name, requirements):
+    def __init__(self, name, requirements, domain_list):
         self.name = name
         self.requirements = requirements
+        self.domain_list = domain_list
+
+    @property
+    def types(self):
+        return self.domain_list.get('types')
 
 
 class Instance(object):
