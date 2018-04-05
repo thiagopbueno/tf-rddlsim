@@ -181,8 +181,31 @@ class TestRDDLyacc(unittest.TestCase):
 
     def setUp(self):
         rddl = '''
-        domain reservoir { }
+        ////////////////////////////////////////////////////////////////////
+        // The problem models the active maintenance of water levels in
+        // a Reservoir system with uncertain rainfall and nonlinear
+        // evaporation rates as a function of water level.  The objective
+        // is to maintain all reservoir levels within a desired safe range.
+        //
+        // The state of each reservoir is the water level (rlevel).  The
+        // actions are to set the outflows of each reservoir.  Rewards
+        // are summed per reservoir and optimal when the water level is
+        // within predefined upper and lower bounds.
+        //
+        // Author: Ga Wu, Buser Say inspired by Aswin Raghavan's RDDL model
+        ////////////////////////////////////////////////////////////////////
+
+        domain reservoir {
+            requirements = {
+                concurrent,           // x and y directions move independently and simultaneously
+                reward-deterministic, // this domain does not use a stochastic reward
+                intermediate-nodes,   // this domain uses intermediate pvariable nodes
+                constrained-state     // this domain uses state constraints
+            };
+        }
+
         non-fluents res8 { }
+
         instance inst_reservoir_res8 { }
         '''
         self.parser = parser.RDDLParser()
@@ -199,6 +222,10 @@ class TestRDDLyacc(unittest.TestCase):
         domain = self.rddl.domain
         self.assertIsInstance(domain, Domain)
         self.assertEqual(domain.name, 'reservoir')
+
+    def test_requirements_section(self):
+        requirements = self.rddl.domain.requirements
+        self.assertListEqual(sorted(requirements), sorted(['concurrent', 'reward-deterministic', 'intermediate-nodes', 'constrained-state']))
 
     def test_instance_block(self):
         instance = self.rddl.instance

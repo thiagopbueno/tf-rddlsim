@@ -214,8 +214,17 @@ class RDDLParser(object):
             p[0] = p[2]
 
     def p_domain_block(self, p):
-        '''domain_block : DOMAIN IDENT LCURLY RCURLY'''
-        p[0] = Domain(p[2])
+        '''domain_block : DOMAIN IDENT LCURLY req_section RCURLY'''
+        p[0] = Domain(name=p[2], requirements=p[4])
+
+    def p_req_section(self, p):
+        '''req_section : REQUIREMENTS ASSIGN_EQUAL LCURLY string_list RCURLY SEMI
+                       | REQUIREMENTS LCURLY string_list RCURLY SEMI
+                       | empty'''
+        if len(p) == 7:
+            p[0] = p[4]
+        elif len(p) == 6:
+            p[0] = p[3]
 
     def p_instance_block(self, p):
         '''instance_block : INSTANCE IDENT LCURLY RCURLY'''
@@ -224,6 +233,20 @@ class RDDLParser(object):
     def p_nonfluent_block(self, p):
         '''nonfluent_block : NON_FLUENTS IDENT LCURLY RCURLY'''
         p[0] = NonFluents(p[2])
+
+    def p_string_list(self, p):
+        '''string_list : IDENT COMMA string_list
+                       | IDENT
+                       | empty'''
+        if p[1] is None:
+            p[0] = []
+        elif len(p) == 4:
+            p[3].append(p[1])
+            p[0] = p[3]
+        elif len(p) == 2:
+            p[0] = [p[1]]
+
+
 
     def p_empty(self, p):
         'empty :'

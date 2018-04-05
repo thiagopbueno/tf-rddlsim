@@ -19,8 +19,9 @@ class RDDL(object):
 
 class Domain(object):
 
-    def __init__(self, name):
+    def __init__(self, name, requirements):
         self.name = name
+        self.requirements = requirements
 
 
 class Instance(object):
