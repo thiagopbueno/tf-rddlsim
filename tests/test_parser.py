@@ -1,6 +1,6 @@
 from tfrddlsim import parser
 from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
-from tfrddlsim.pvariable import NonFluent
+from tfrddlsim.pvariable import NonFluent, StateFluent
 
 import unittest
 
@@ -226,11 +226,15 @@ class TestRDDLyacc(unittest.TestCase):
                 MAX_WATER_EVAP_FRAC_PER_TIME_UNIT: { non-fluent, real, default = 0.05 }; // Maximum fraction of evaporation
                 LOW_PENALTY(res) : { non-fluent, real, default =  -5.0 }; // Penalty per unit of level < LOWER_BOUND
                 HIGH_PENALTY(res): { non-fluent, real, default = -10.0 }; // Penalty per unit of level > UPPER_BOUND
-
-                // Each picture occurs in a different place and awards a different value
                 PICT_XPOS(picture-point)   : { non-fluent, real, default = 0.0 };
                 PICT_YPOS(picture-point)   : { non-fluent, real, default = 0.0 };
 
+                // State fluents
+                rlevel(res): {state-fluent, real, default = 50.0 }; // Reservoir level for res
+                xPos : { state-fluent, real, default = 0.0 };
+                yPos : { state-fluent, real, default = 0.0 };
+                time : { state-fluent, real, default = 0.0 };
+                picTaken(picture-point) : { state-fluent, bool, default = false };
             };
 
         }
@@ -286,21 +290,15 @@ class TestRDDLyacc(unittest.TestCase):
             'LOW_PENALTY' : { 'params': ['res'], 'type': 'non-fluent', 'range': 'real', 'default' :  -5.0 },
             'HIGH_PENALTY': { 'params': ['res'], 'type': 'non-fluent', 'range': 'real', 'default' : -10.0 },
             'PICT_XPOS'   : { 'params': ['picture-point'], 'type': 'non-fluent', 'range': 'real', 'default': 0.0 },
-            'PICT_YPOS'   : { 'params': ['picture-point'], 'type': 'non-fluent', 'range': 'real', 'default': 0.0 }
+            'PICT_YPOS'   : { 'params': ['picture-point'], 'type': 'non-fluent', 'range': 'real', 'default': 0.0 },
+            'rlevel': { 'params': ['res'], 'type': 'state-fluent', 'range': 'real', 'default': 50.0 },
+            'xPos' : { 'params': [], 'type': 'state-fluent', 'range': 'real', 'default': 0.0 },
+            'yPos' : { 'params': [], 'type': 'state-fluent', 'range': 'real', 'default': 0.0 },
+            'time' : { 'params': [], 'type': 'state-fluent', 'range': 'real', 'default': 0.0 },
+            'picTaken' : { 'params': ['picture-point'], 'type': 'state-fluent', 'range': 'bool', 'default': False }
         }
 
         for pvar in pvariables:
-            if pvar.param_types is None:
-                self.assertEqual(pvar.arity(), 0)
-            else:
-                self.assertEqual(pvar.arity(), len(pvar.param_types))
-            if pvar.range == 'bool':
-                self.assertIsInstance(pvar.def_value, bool)
-            elif pvar.range == 'real':
-                self.assertIsInstance(pvar.def_value, float)
-            elif pvar.range == 'int':
-                self.assertIsInstance(pvar.def_value, int)
-
             pvar_params = expected[pvar.name]['params']
             pvar_type = expected[pvar.name]['type']
             pvar_range = expected[pvar.name]['range']
@@ -312,8 +310,16 @@ class TestRDDLyacc(unittest.TestCase):
                 self.assertListEqual(pvar.param_types, pvar_params)
             if pvar_type == 'non-fluent':
                 self.assertIsInstance(pvar, NonFluent)
+            elif pvar_type == 'state-fluent':
+                self.assertIsInstance(pvar, StateFluent)
             self.assertEqual(pvar.range, pvar_range)
             self.assertAlmostEqual(pvar.def_value, pvar_def_value)
+            if pvar.range == 'bool':
+                self.assertIsInstance(pvar.def_value, bool)
+            elif pvar.range == 'real':
+                self.assertIsInstance(pvar.def_value, float)
+            elif pvar.range == 'int':
+                self.assertIsInstance(pvar.def_value, int)
 
     def test_instance_block(self):
         instance = self.rddl.instance
