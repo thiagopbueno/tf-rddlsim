@@ -1,5 +1,6 @@
 from tfrddlsim import parser
 from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
+from tfrddlsim.pvariable import NonFluent
 
 import unittest
 
@@ -211,6 +212,27 @@ class TestRDDLyacc(unittest.TestCase):
                 crowdlevel : {@low, @med, @high};
                 enum_level : {@low, @high}; // An enumerated type
             };
+
+            pvariables {
+
+                // Constants
+                MAX_RES_CAP(res): { non-fluent, real, default = 100.0 }; // Beyond this amount, water spills over
+                UPPER_BOUND(res): { non-fluent, real, default = 80.0 };  // The upper bound for a safe reservoir level
+                LOWER_BOUND(res): { non-fluent, real, default = 20.0 };  // The lower bound for a safe reservoir level
+                RAIN_SHAPE(res):  { non-fluent, real, default = 25.0 };  // Gamma shape parameter for rainfall
+                RAIN_SCALE(res):  { non-fluent, real, default = 25.0 };  // Gamma scale paramater for rainfall
+                DOWNSTREAM(res,res): { non-fluent, bool, default = false }; // Indicates 2nd res is downstream of 1st res
+                SINK_RES(res):    { non-fluent, bool, default = false }; // This is a "sink" water source (sea, ocean) 
+                MAX_WATER_EVAP_FRAC_PER_TIME_UNIT: { non-fluent, real, default = 0.05 }; // Maximum fraction of evaporation
+                LOW_PENALTY(res) : { non-fluent, real, default =  -5.0 }; // Penalty per unit of level < LOWER_BOUND
+                HIGH_PENALTY(res): { non-fluent, real, default = -10.0 }; // Penalty per unit of level > UPPER_BOUND
+
+                // Each picture occurs in a different place and awards a different value
+                PICT_XPOS(picture-point)   : { non-fluent, real, default = 0.0 };
+                PICT_YPOS(picture-point)   : { non-fluent, real, default = 0.0 };
+
+            };
+
         }
 
         non-fluents res8 { }
@@ -248,6 +270,50 @@ class TestRDDLyacc(unittest.TestCase):
         ]
         for t in expected:
             self.assertIn(t, types)
+
+    def test_pvariables_section(self):
+        pvariables = self.rddl.domain.pvariables
+
+        expected = {
+            'MAX_RES_CAP': { 'params': ['res'], 'type': 'non-fluent', 'range': 'real', 'default' : 100.0 },
+            'UPPER_BOUND': { 'params': ['res'], 'type': 'non-fluent', 'range': 'real', 'default' : 80.0 },
+            'LOWER_BOUND': { 'params': ['res'], 'type': 'non-fluent', 'range': 'real', 'default' : 20.0 },
+            'RAIN_SHAPE':  { 'params': ['res'], 'type': 'non-fluent', 'range': 'real', 'default' : 25.0 },
+            'RAIN_SCALE':  { 'params': ['res'], 'type': 'non-fluent', 'range': 'real', 'default' : 25.0 },
+            'DOWNSTREAM':  { 'params': ['res', 'res'], 'type': 'non-fluent', 'range': 'bool', 'default' : False },
+            'SINK_RES':    { 'params': ['res'], 'type': 'non-fluent', 'range': 'bool', 'default' : False },
+            'MAX_WATER_EVAP_FRAC_PER_TIME_UNIT': { 'params': [], 'type': 'non-fluent', 'range': 'real', 'default' : 0.05 },
+            'LOW_PENALTY' : { 'params': ['res'], 'type': 'non-fluent', 'range': 'real', 'default' :  -5.0 },
+            'HIGH_PENALTY': { 'params': ['res'], 'type': 'non-fluent', 'range': 'real', 'default' : -10.0 },
+            'PICT_XPOS'   : { 'params': ['picture-point'], 'type': 'non-fluent', 'range': 'real', 'default': 0.0 },
+            'PICT_YPOS'   : { 'params': ['picture-point'], 'type': 'non-fluent', 'range': 'real', 'default': 0.0 }
+        }
+
+        for pvar in pvariables:
+            if pvar.param_types is None:
+                self.assertEqual(pvar.arity(), 0)
+            else:
+                self.assertEqual(pvar.arity(), len(pvar.param_types))
+            if pvar.range == 'bool':
+                self.assertIsInstance(pvar.def_value, bool)
+            elif pvar.range == 'real':
+                self.assertIsInstance(pvar.def_value, float)
+            elif pvar.range == 'int':
+                self.assertIsInstance(pvar.def_value, int)
+
+            pvar_params = expected[pvar.name]['params']
+            pvar_type = expected[pvar.name]['type']
+            pvar_range = expected[pvar.name]['range']
+            pvar_def_value = expected[pvar.name]['default']
+            self.assertIn(pvar.name, expected)
+            if len(pvar_params) == 0:
+                self.assertIsNone(pvar.param_types)
+            else:
+                self.assertListEqual(pvar.param_types, pvar_params)
+            if pvar_type == 'non-fluent':
+                self.assertIsInstance(pvar, NonFluent)
+            self.assertEqual(pvar.range, pvar_range)
+            self.assertAlmostEqual(pvar.def_value, pvar_def_value)
 
     def test_instance_block(self):
         instance = self.rddl.instance

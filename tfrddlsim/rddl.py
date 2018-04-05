@@ -27,6 +27,10 @@ class Domain(object):
     def types(self):
         return self.domain_list.get('types')
 
+    @property
+    def pvariables(self):
+        return self.domain_list.get('pvariables')
+
 
 class Instance(object):
 

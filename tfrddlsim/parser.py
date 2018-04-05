@@ -1,6 +1,7 @@
 from ply import lex, yacc
 
 from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
+from tfrddlsim.pvariable import NonFluent
 
 
 alpha = r'[A-Za-z]'
@@ -240,6 +241,7 @@ class RDDLParser(object):
 
     def p_domain_list(self, p):
         '''domain_list : domain_list type_section
+                       | domain_list pvar_section
                        | empty'''
         if p[1] is None:
             p[0] = dict()
@@ -280,6 +282,66 @@ class RDDLParser(object):
             p[0] = p[1]
         elif len(p) == 2:
             p[0] = [p[1]]
+
+    def p_pvar_section(self, p):
+        '''pvar_section : PVARIABLES LCURLY pvar_list RCURLY SEMI'''
+        p[0] = ('pvariables', p[3])
+
+    def p_pvar_list(self, p):
+        '''pvar_list : pvar_list pvar_def
+                     | empty'''
+        if p[1] is None:
+            p[0] = []
+        else:
+            p[1].append(p[2])
+            p[0] = p[1]
+
+    def p_pvar_def(self, p):
+        '''pvar_def : nonfluent_def'''
+        p[0] = p[1]
+
+    def p_nonfluent_def(self, p):
+        '''nonfluent_def : IDENT LPAREN param_list RPAREN COLON LCURLY NON_FLUENT COMMA type_spec COMMA DEFAULT ASSIGN_EQUAL range_const RCURLY SEMI
+                         | IDENT COLON LCURLY NON_FLUENT COMMA type_spec COMMA DEFAULT ASSIGN_EQUAL range_const RCURLY SEMI'''
+        if len(p) == 16:
+            p[0] = NonFluent(name=p[1], range_type=p[9], param_types=p[3], def_value=p[13])
+        else:
+            p[0] = NonFluent(name=p[1], range_type=p[6], def_value=p[10])
+
+    def p_param_list(self, p):
+        '''param_list : string_list'''
+        p[0] = p[1]
+
+    def p_type_spec(self, p):
+        '''type_spec : IDENT
+                     | INT
+                     | REAL
+                     | BOOL'''
+        p[0] = p[1]
+
+    def p_range_const(self, p):
+        '''range_const : bool_type
+                       | double_type
+                       | int_type
+                       | IDENT'''
+        p[0] = p[1]
+
+    def p_bool_type(self, p):
+        '''bool_type : TRUE
+                     | FALSE'''
+        p[0] = True if p[1] == 'TRUE' else False
+
+    def p_double_type(self, p):
+        '''double_type : DOUBLE
+                       | MINUS DOUBLE
+                       | POS_INF
+                       | NEG_INF'''
+        p[0] = p[1] if len(p) == 2 else -p[2]
+
+    def p_int_type(self, p):
+        '''int_type : INTEGER
+                    | MINUS INTEGER'''
+        p[0] = p[1] if len(p) == 2 else -p[2]
 
     def p_instance_block(self, p):
         '''instance_block : INSTANCE IDENT LCURLY RCURLY'''
