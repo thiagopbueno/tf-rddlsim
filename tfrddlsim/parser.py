@@ -208,20 +208,26 @@ class RDDLParser(object):
 
         self.tokens = self.lexer.tokens
 
+    def p_rddl(self, p):
+        '''rddl : rddl_block'''
+        p[0] = RDDL(p[1])
+
     def p_rddl_block(self, p):
-        '''rddl_block : domain_block rddl_block
-                      | instance_block rddl_block
-                      | nonfluent_block rddl_block
+        '''rddl_block : rddl_block domain_block
+                      | rddl_block instance_block
+                      | rddl_block nonfluent_block
                       | empty'''
         if p[1] is None:
-            p[0] = RDDL()
+            p[0] = dict()
         else:
-            p[2].add_block(p[1])
-            p[0] = p[2]
+            name, block = p[2]
+            p[1][name] = block
+            p[0] = p[1]
 
     def p_domain_block(self, p):
         '''domain_block : DOMAIN IDENT LCURLY req_section domain_list RCURLY'''
-        p[0] = Domain(name=p[2], requirements=p[4], domain_list=p[5])
+        d = Domain(name=p[2], requirements=p[4], domain_list=p[5])
+        p[0] = ('domain', d)
 
     def p_req_section(self, p):
         '''req_section : REQUIREMENTS ASSIGN_EQUAL LCURLY string_list RCURLY SEMI
@@ -277,11 +283,13 @@ class RDDLParser(object):
 
     def p_instance_block(self, p):
         '''instance_block : INSTANCE IDENT LCURLY RCURLY'''
-        p[0] = Instance(p[2])
+        i = Instance(p[2])
+        p[0] = ('instance', i)
 
     def p_nonfluent_block(self, p):
         '''nonfluent_block : NON_FLUENTS IDENT LCURLY RCURLY'''
-        p[0] = NonFluents(p[2])
+        nf = NonFluents(p[2])
+        p[0] = ('non_fluents', nf)
 
     def p_string_list(self, p):
         '''string_list : string_list COMMA IDENT
