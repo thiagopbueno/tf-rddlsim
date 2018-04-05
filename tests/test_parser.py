@@ -234,7 +234,7 @@ class TestRDDLyacc(unittest.TestCase):
 
     def test_requirements_section(self):
         requirements = self.rddl.domain.requirements
-        self.assertListEqual(sorted(requirements), sorted(['concurrent', 'reward-deterministic', 'intermediate-nodes', 'constrained-state']))
+        self.assertListEqual(requirements, ['concurrent', 'reward-deterministic', 'intermediate-nodes', 'constrained-state'])
 
     def test_types_section(self):
         types = self.rddl.domain.types

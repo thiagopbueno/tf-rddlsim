@@ -233,27 +233,27 @@ class RDDLParser(object):
             p[0] = p[3]
 
     def p_domain_list(self, p):
-        '''domain_list : type_section domain_list
+        '''domain_list : domain_list type_section
                        | empty'''
         if p[1] is None:
             p[0] = dict()
         else:
-            name, section = p[1]
-            p[2][name] = section
-            p[0] = p[2]
+            name, section = p[2]
+            p[1][name] = section
+            p[0] = p[1]
 
     def p_type_section(self, p):
         '''type_section : TYPES LCURLY type_list RCURLY SEMI'''
         p[0] = ('types', p[3])
 
     def p_type_list(self, p):
-        '''type_list : type_def type_list
+        '''type_list : type_list type_def
                      | empty'''
         if p[1] is None:
             p[0] = []
         else:
-            p[2].append(p[1])
-            p[0] = p[2]
+            p[1].append(p[2])
+            p[0] = p[1]
 
     def p_type_def(self, p):
         '''type_def : IDENT COLON OBJECT SEMI
@@ -284,14 +284,14 @@ class RDDLParser(object):
         p[0] = NonFluents(p[2])
 
     def p_string_list(self, p):
-        '''string_list : IDENT COMMA string_list
+        '''string_list : string_list COMMA IDENT
                        | IDENT
                        | empty'''
         if p[1] is None:
             p[0] = []
         elif len(p) == 4:
-            p[3].append(p[1])
-            p[0] = p[3]
+            p[1].append(p[3])
+            p[0] = p[1]
         elif len(p) == 2:
             p[0] = [p[1]]
 
