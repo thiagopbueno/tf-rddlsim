@@ -1,7 +1,7 @@
 from ply import lex, yacc
 
 from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
-from tfrddlsim.pvariable import NonFluent, StateFluent
+from tfrddlsim.pvariable import NonFluent, StateFluent, ActionFluent
 
 
 alpha = r'[A-Za-z]'
@@ -298,7 +298,8 @@ class RDDLParser(object):
 
     def p_pvar_def(self, p):
         '''pvar_def : nonfluent_def
-                    | statefluent_def'''
+                    | statefluent_def
+                    | actionfluent_def'''
         p[0] = p[1]
 
     def p_nonfluent_def(self, p):
@@ -316,6 +317,14 @@ class RDDLParser(object):
             p[0] = StateFluent(name=p[1], range_type=p[9], param_types=p[3], def_value=p[13])
         else:
             p[0] = StateFluent(name=p[1], range_type=p[6], def_value=p[10])
+
+    def p_actionfluent_def(self, p):
+        '''actionfluent_def : IDENT LPAREN param_list RPAREN COLON LCURLY ACTION COMMA type_spec COMMA DEFAULT ASSIGN_EQUAL range_const RCURLY SEMI
+                           | IDENT COLON LCURLY ACTION COMMA type_spec COMMA DEFAULT ASSIGN_EQUAL range_const RCURLY SEMI'''
+        if len(p) == 16:
+            p[0] = ActionFluent(name=p[1], range_type=p[9], param_types=p[3], def_value=p[13])
+        else:
+            p[0] = ActionFluent(name=p[1], range_type=p[6], def_value=p[10])
 
     def p_param_list(self, p):
         '''param_list : string_list'''

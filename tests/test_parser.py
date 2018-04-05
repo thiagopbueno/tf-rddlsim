@@ -1,6 +1,6 @@
 from tfrddlsim import parser
 from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
-from tfrddlsim.pvariable import NonFluent, StateFluent
+from tfrddlsim.pvariable import NonFluent, StateFluent, ActionFluent
 
 import unittest
 
@@ -235,6 +235,12 @@ class TestRDDLyacc(unittest.TestCase):
                 yPos : { state-fluent, real, default = 0.0 };
                 time : { state-fluent, real, default = 0.0 };
                 picTaken(picture-point) : { state-fluent, bool, default = false };
+
+                // Action fluents
+                outflow(res): { action-fluent, real, default = 0.0 }; // Action to set outflow of res
+                xMove       : { action-fluent, real, default = 0.0 };
+                yMove       : { action-fluent, real, default = 0.0 };
+                snapPicture : { action-fluent, bool, default = false };
             };
 
         }
@@ -295,7 +301,11 @@ class TestRDDLyacc(unittest.TestCase):
             'xPos' : { 'params': [], 'type': 'state-fluent', 'range': 'real', 'default': 0.0 },
             'yPos' : { 'params': [], 'type': 'state-fluent', 'range': 'real', 'default': 0.0 },
             'time' : { 'params': [], 'type': 'state-fluent', 'range': 'real', 'default': 0.0 },
-            'picTaken' : { 'params': ['picture-point'], 'type': 'state-fluent', 'range': 'bool', 'default': False }
+            'picTaken' : { 'params': ['picture-point'], 'type': 'state-fluent', 'range': 'bool', 'default': False },
+            'outflow'     : { 'params': ['res'], 'type': 'action-fluent', 'range': 'real', 'default': 0.0 },
+            'xMove'       : { 'params': [], 'type': 'action-fluent', 'range': 'real', 'default': 0.0 },
+            'yMove'       : { 'params': [], 'type': 'action-fluent', 'range': 'real', 'default': 0.0 },
+            'snapPicture' : { 'params': [], 'type': 'action-fluent', 'range': 'bool', 'default': False }
         }
 
         for pvar in pvariables:
@@ -312,6 +322,8 @@ class TestRDDLyacc(unittest.TestCase):
                 self.assertIsInstance(pvar, NonFluent)
             elif pvar_type == 'state-fluent':
                 self.assertIsInstance(pvar, StateFluent)
+            elif pvar_type == 'action-fluent':
+                self.assertIsInstance(pvar, ActionFluent)
             self.assertEqual(pvar.range, pvar_range)
             self.assertAlmostEqual(pvar.def_value, pvar_def_value)
             if pvar.range == 'bool':
