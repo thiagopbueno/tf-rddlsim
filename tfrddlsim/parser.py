@@ -211,6 +211,13 @@ class RDDLParser(object):
         self.tokens = self.lexer.tokens
 
         self.precedence = (
+            ('left', 'ASSIGN_EQUAL'),
+            ('left', 'EQUIV'),
+            ('left', 'IMPLY'),
+            ('left', 'OR'),
+            ('left', 'AND', 'AMPERSAND'),
+            ('left', 'NOT'),
+            ('left', 'COMP_EQUAL', 'NEQ', 'LESS', 'LESSEQ', 'GREATER', 'GREATEREQ'),
             ('left', 'PLUS', 'MINUS'),
             ('left', 'TIMES', 'DIV'),
             ('right', 'UMINUS')
@@ -387,6 +394,8 @@ class RDDLParser(object):
         '''expr : pvar_expr
                 | group_expr
                 | function_expr
+                | relational_expr
+                | boolean_expr
                 | numerical_expr
                 | randomvar_expr'''
         p[0] = p[1]
@@ -407,6 +416,30 @@ class RDDLParser(object):
     def p_function_expr(self, p):
         '''function_expr : IDENT LBRACK expr_list RBRACK'''
         p[0] = ('func', (p[1], p[3]))
+
+    def p_relational_expr(self, p):
+        '''relational_expr : expr COMP_EQUAL expr
+                           | expr NEQ expr
+                           | expr GREATER expr
+                           | expr GREATEREQ expr
+                           | expr LESS expr
+                           | expr LESSEQ expr'''
+        p[0] = (p[2], (p[1], p[3]))
+
+    def p_boolean_expr(self, p):
+        '''boolean_expr : expr AND expr
+                        | expr AMPERSAND expr
+                        | expr OR expr
+                        | expr IMPLY expr
+                        | expr EQUIV expr
+                        | NOT expr %prec UMINUS
+                        | bool_type'''
+        if len(p) == 4:
+            p[0] = (p[2], (p[1], p[3]))
+        elif len(p) == 3:
+            p[0] = (p[1], (p[2],))
+        elif len(p) == 2:
+            p[0] = ('boolean', p[1])
 
     def p_numerical_expr(self, p):
         '''numerical_expr : expr PLUS expr
@@ -489,7 +522,7 @@ class RDDLParser(object):
     def p_bool_type(self, p):
         '''bool_type : TRUE
                      | FALSE'''
-        p[0] = True if p[1] == 'TRUE' else False
+        p[0] = True if p[1] == 'true' else False
 
     def p_double_type(self, p):
         '''double_type : DOUBLE

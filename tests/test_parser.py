@@ -277,6 +277,12 @@ class TestRDDLyacc(unittest.TestCase):
 
                 i1 = KronDelta(p + Bernoulli( (p + q + r)/3.0 ) + r);  // Just set i1 to a count of true state variables
 
+                picTaken'(?p) = picTaken(?p) == true | ~notPicTaken(?p) &
+                        [~snapPicture ~= false ^ (time <= MAX_TIME)
+                         & (PICT_ERROR_ALLOW(?p) > abs[xPos - PICT_XPOS(?p)])
+                         ^ ~(abs[yPos - PICT_YPOS(?p)] == PICT_ERROR_ALLOW(?p))];
+
+
             };
 
         }
@@ -528,6 +534,38 @@ class TestRDDLyacc(unittest.TestCase):
                 '-',
                 ('i1', None),
                 0.2
+            ],
+            "picTaken'": [
+                '|',
+                '==',
+                ('picTaken', ['?p']),
+                True,
+                '&',
+                '~',
+                ('notPicTaken', ['?p']),
+                '^',
+                '&',
+                '^',
+                '~=',
+                '~',
+                ('snapPicture', None),
+                False,
+                '<=',
+                ('time', None),
+                ('MAX_TIME', None),
+                '>',
+                ('PICT_ERROR_ALLOW', ['?p']),
+                'abs',
+                '-',
+                ('xPos', None),
+                ('PICT_XPOS', ['?p']),
+                '~',
+                '==',
+                'abs',
+                '-',
+                ('yPos', None),
+                ('PICT_YPOS', ['?p']),
+                ('PICT_ERROR_ALLOW', ['?p'])
             ]
         }
 
@@ -549,6 +587,8 @@ class TestRDDLyacc(unittest.TestCase):
                         self.assertEqual(expr[1], expected[i])
                     else:
                         self.assertAlmostEqual(expr[1], expected[i])
+                elif expr[0] == 'boolean':
+                    self.assertEqual(expr[1], expected[i])
                 elif expr[0] == 'func':
                     self.assertEqual(expr[1][0], expected[i])
                     for subexpr in expr[1][1][::-1]:
