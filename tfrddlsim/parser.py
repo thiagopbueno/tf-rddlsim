@@ -211,6 +211,7 @@ class RDDLParser(object):
         self.tokens = self.lexer.tokens
 
         self.precedence = (
+            ('left', 'IF'),
             ('left', 'ASSIGN_EQUAL'),
             ('left', 'EQUIV'),
             ('left', 'IMPLY'),
@@ -397,6 +398,7 @@ class RDDLParser(object):
                 | relational_expr
                 | boolean_expr
                 | numerical_expr
+                | control_expr
                 | randomvar_expr'''
         p[0] = p[1]
 
@@ -457,6 +459,14 @@ class RDDLParser(object):
         elif len(p) == 2:
             p[0] = ('number', p[1])
 
+    def p_control_expr(self, p):
+        '''control_expr : IF LPAREN expr RPAREN THEN expr ELSE expr %prec IF
+                        | SWITCH LPAREN term RPAREN LCURLY case_list RCURLY'''
+        if len(p) == 9:
+            p[0] = (p[1], (p[3], p[6], p[8]))
+        elif len(p) == 8:
+            p[0] = (p[1], (p[3], *p[6]))
+
     def p_randomvar_expr(self, p):
         '''randomvar_expr : BERNOULLI LPAREN expr RPAREN
                           | DIRAC_DELTA LPAREN expr RPAREN
@@ -485,6 +495,23 @@ class RDDLParser(object):
             p[0] = p[1]
         elif len(p) == 2:
             p[0] = [p[1]]
+
+    def p_case_list(self, p):
+        '''case_list : case_list COMMA case_def
+                     | case_def'''
+        if len(p) == 4:
+            p[1].append(p[3])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
+
+    def p_case_def(self, p):
+        '''case_def : CASE term COLON expr
+                    | DEFAULT COLON expr'''
+        if len(p) == 5:
+            p[0] = ('case', (p[2], p[4]))
+        elif len(p) == 4:
+            p[0] = ('default', p[3])
 
     def p_lconst_case_list(self, p):
         '''lconst_case_list : lconst COLON expr

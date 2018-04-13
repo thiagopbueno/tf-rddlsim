@@ -282,7 +282,26 @@ class TestRDDLyacc(unittest.TestCase):
                          & (PICT_ERROR_ALLOW(?p) > abs[xPos - PICT_XPOS(?p)])
                          ^ ~(abs[yPos - PICT_YPOS(?p)] == PICT_ERROR_ALLOW(?p))];
 
+                time' = if (snapPicture)
+                    then (time + 0.25)
+                    else (time + abs[xMove] + abs[yMove]);
 
+                j2 = Discrete(enum_level,
+                        @high : 0.3,
+                        @low : if (i1 >= 2) then 0.5 else 0.2
+                    );
+
+                // Conditional linear stochastic equation
+                o2 = switch (i2) {
+                    case @high   : i1 + 3.0 + Normal(0.0, i1*i1/4.0),
+                    case @medium : -i2 + 2 + Normal(1.0, i2*i1/2.0)
+                };
+
+                o3 = switch (i2) {
+                    case @high   : i1 + 3.0 + Normal(0.0, i1*i1/4.0),
+                    case @medium : -i2 + 2 + Normal(1.0, i2*i1/2.0),
+                    default : -Normal(1.0, 0.0) * (-16.0)
+                };
             };
 
         }
@@ -566,6 +585,99 @@ class TestRDDLyacc(unittest.TestCase):
                 ('yPos', None),
                 ('PICT_YPOS', ['?p']),
                 ('PICT_ERROR_ALLOW', ['?p'])
+            ],
+            "time'": [
+                'if',
+                ('snapPicture', None),
+                '+',
+                ('time', None),
+                0.25,
+                '+',
+                '+',
+                ('time', None),
+                'abs',
+                ('xMove', None),
+                'abs',
+                ('yMove', None)
+            ],
+            'j2': [
+                'Discrete',
+                'enum_level',
+                '@high',
+                0.3,
+                '@low',
+                'if',
+                '>=',
+                ('i1', None),
+                2,
+                0.5,
+                0.2
+            ],
+            'o2': [
+                'switch',
+                ('i2', None),
+                '@high',
+                '+',
+                '+',
+                ('i1', None),
+                3.0,
+                'Normal',
+                0.0,
+                '/',
+                '*',
+                ('i1', None),
+                ('i1', None),
+                4.0,
+                '@medium',
+                '+',
+                '+',
+                '-',
+                ('i2', None),
+                2,
+                'Normal',
+                1.0,
+                '/',
+                '*',
+                ('i2', None),
+                ('i1', None),
+                2.0
+            ],
+            'o3': [
+                'switch',
+                ('i2', None),
+                '@high',
+                '+',
+                '+',
+                ('i1', None),
+                3.0,
+                'Normal',
+                0.0,
+                '/',
+                '*',
+                ('i1', None),
+                ('i1', None),
+                4.0,
+                '@medium',
+                '+',
+                '+',
+                '-',
+                ('i2', None),
+                2,
+                'Normal',
+                1.0,
+                '/',
+                '*',
+                ('i2', None),
+                ('i1', None),
+                2.0,
+                'default',
+                '*',
+                '-',
+                'Normal',
+                1.0,
+                0.0,
+                '-',
+                16.0
             ]
         }
 
@@ -598,6 +710,12 @@ class TestRDDLyacc(unittest.TestCase):
                 elif expr[0] == 'lconst':
                     self.assertEqual(expr[1][0], expected[i])
                     stack.append(expr[1][1])
+                elif expr[0] == 'case':
+                    self.assertEqual(expr[1][0], expected[i])
+                    stack.append(expr[1][1])
+                elif expr[0] == 'default':
+                    self.assertEqual(expr[0], expected[i])
+                    stack.append(expr[1])
                 elif expr[0] == 'randomvar':
                     self.assertEqual(expr[1][0], expected[i])
                     for subexpr in expr[1][1][::-1]:
