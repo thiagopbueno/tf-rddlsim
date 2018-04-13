@@ -387,7 +387,8 @@ class RDDLParser(object):
         '''expr : pvar_expr
                 | group_expr
                 | function_expr
-                | numerical_expr'''
+                | numerical_expr
+                | randomvar_expr'''
         p[0] = p[1]
 
     def p_pvar_expr(self, p):
@@ -423,6 +424,26 @@ class RDDLParser(object):
         elif len(p) == 2:
             p[0] = ('number', p[1])
 
+    def p_randomvar_expr(self, p):
+        '''randomvar_expr : BERNOULLI LPAREN expr RPAREN
+                          | DIRAC_DELTA LPAREN expr RPAREN
+                          | KRON_DELTA LPAREN expr RPAREN
+                          | UNIFORM LPAREN expr COMMA expr RPAREN
+                          | NORMAL LPAREN expr COMMA expr RPAREN
+                          | EXPONENTIAL LPAREN expr RPAREN
+                          | DISCRETE LPAREN IDENT COMMA lconst_case_list RPAREN
+                          | DIRICHLET LPAREN IDENT COMMA expr RPAREN
+                          | POISSON LPAREN expr RPAREN
+                          | WEIBULL LPAREN expr COMMA expr RPAREN
+                          | GAMMA   LPAREN expr COMMA expr RPAREN'''
+        if len(p) == 7:
+            if isinstance(p[5], list):
+                p[0] = ('randomvar', (p[1], (('enum_type', p[3]), *p[5])))
+            else:
+                p[0] = ('randomvar', (p[1], (p[3], p[5])))
+        elif len(p) == 5:
+            p[0] = ('randomvar', (p[1], (p[3],)))
+
     def p_expr_list(self, p):
         '''expr_list : expr_list COMMA expr
                      | expr'''
@@ -431,6 +452,21 @@ class RDDLParser(object):
             p[0] = p[1]
         elif len(p) == 2:
             p[0] = [p[1]]
+
+    def p_lconst_case_list(self, p):
+        '''lconst_case_list : lconst COLON expr
+                            | lconst COLON OTHERWISE
+                            | lconst_case_list COMMA lconst COLON expr'''
+        if len(p) == 4:
+            p[0] = [('lconst', (p[1], p[3]))]
+        elif len(p) == 6:
+            p[1].append(('lconst', (p[3], p[5])))
+            p[0] = p[1]
+
+    def p_lconst(self, p):
+        '''lconst : IDENT
+                  | ENUM_VAL'''
+        p[0] = p[1]
 
     def p_param_list(self, p):
         '''param_list : string_list'''

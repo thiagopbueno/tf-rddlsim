@@ -262,6 +262,21 @@ class TestRDDLyacc(unittest.TestCase):
 
                 distance(?r) = sqrt[pow[(location(?l)-CENTER(?l)),2]];
                 scalefactor = 2.0/(1.0+exp[-2*distance])-0.99;
+
+                rainfall(?r, ?s) = Gamma(RAIN_SHAPE(?r, ?s) - (- 2), 0.1 * RAIN_SCALE(?s));
+
+                xPos' = xPos + xMove + Normal(0.0, MOVE_VARIANCE_MULT*abs[xMove]);
+                yPos' = cos[yPos + exp[yMove + (-Normal(1.0, abs[yMove] - (10 * MOVE_VARIANCE_MULT)))]];
+
+                // Choose a level with following probabilities
+                i2 = Discrete(enum_level,
+                                @low : 0.5 + i1,
+                                @high : 0.3,
+                                @medium : - i1 + 0.2
+                            );
+
+                i1 = KronDelta(p + Bernoulli( (p + q + r)/3.0 ) + r);  // Just set i1 to a count of true state variables
+
             };
 
         }
@@ -444,6 +459,75 @@ class TestRDDLyacc(unittest.TestCase):
                 2,
                 ('distance', None),
                 0.99
+            ],
+            'rainfall': [
+                'Gamma',
+                '-',
+                ('RAIN_SHAPE', ['?r', '?s']),
+                '-',
+                2,
+                '*',
+                0.1,
+                ('RAIN_SCALE', ['?s'])
+            ],
+            "xPos'": [
+                '+',
+                '+',
+                ('xPos', None),
+                ('xMove', None),
+                'Normal',
+                0.0,
+                '*',
+                ('MOVE_VARIANCE_MULT', None),
+                'abs',
+                ('xMove', None)
+            ],
+            "yPos'": [
+                'cos',
+                '+',
+                ('yPos', None),
+                'exp',
+                '+',
+                ('yMove', None),
+                '-',
+                'Normal',
+                1.0,
+                '-',
+                'abs',
+                ('yMove', None),
+                '*',
+                10,
+                ('MOVE_VARIANCE_MULT', None)
+            ],
+            'i1': [
+                'KronDelta',
+                '+',
+                '+',
+                ('p', None),
+                'Bernoulli',
+                '/',
+                '+',
+                '+',
+                ('p', None),
+                ('q', None),
+                ('r', None),
+                3.0,
+                ('r', None)
+            ],
+            'i2': [
+                'Discrete',
+                'enum_level',
+                '@low',
+                '+',
+                0.5,
+                ('i1', None),
+                '@high',
+                0.3,
+                '@medium',
+                '+',
+                '-',
+                ('i1', None),
+                0.2
             ]
         }
 
@@ -466,6 +550,15 @@ class TestRDDLyacc(unittest.TestCase):
                     else:
                         self.assertAlmostEqual(expr[1], expected[i])
                 elif expr[0] == 'func':
+                    self.assertEqual(expr[1][0], expected[i])
+                    for subexpr in expr[1][1][::-1]:
+                        stack.append(subexpr)
+                elif expr[0] == 'enum_type':
+                    self.assertEqual(expr[1], expected[i])
+                elif expr[0] == 'lconst':
+                    self.assertEqual(expr[1][0], expected[i])
+                    stack.append(expr[1][1])
+                elif expr[0] == 'randomvar':
                     self.assertEqual(expr[1][0], expected[i])
                     for subexpr in expr[1][1][::-1]:
                         stack.append(subexpr)
