@@ -1,6 +1,6 @@
 from tfrddlsim import parser
 from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
-from tfrddlsim.pvariable import NonFluent, StateFluent, ActionFluent
+from tfrddlsim.pvariable import NonFluent, StateFluent, ActionFluent, IntermediateFluent
 
 import unittest
 
@@ -241,6 +241,11 @@ class TestRDDLyacc(unittest.TestCase):
                 xMove       : { action-fluent, real, default = 0.0 };
                 yMove       : { action-fluent, real, default = 0.0 };
                 snapPicture : { action-fluent, bool, default = false };
+
+                // Intermediate fluents
+                evaporated(res): {interm-fluent, real, level=1}; // How much evaporates from res in this time step?
+                rainfall(res):   {interm-fluent, real, level=1}; // How much rainfall is there in this time step?
+                overflow(res):   {interm-fluent, real, level=1}; // Is there any excess overflow (over the rim)?
             };
 
         }
@@ -305,33 +310,55 @@ class TestRDDLyacc(unittest.TestCase):
             'outflow'     : { 'params': ['res'], 'type': 'action-fluent', 'range': 'real', 'default': 0.0 },
             'xMove'       : { 'params': [], 'type': 'action-fluent', 'range': 'real', 'default': 0.0 },
             'yMove'       : { 'params': [], 'type': 'action-fluent', 'range': 'real', 'default': 0.0 },
-            'snapPicture' : { 'params': [], 'type': 'action-fluent', 'range': 'bool', 'default': False }
+            'snapPicture' : { 'params': [], 'type': 'action-fluent', 'range': 'bool', 'default': False },
+            'evaporated': { 'params': ['res'], 'type': 'interm-fluent', 'range': 'real', 'level': 1},
+            'rainfall':   { 'params': ['res'], 'type': 'interm-fluent', 'range': 'real', 'level': 1},
+            'overflow':   { 'params': ['res'], 'type': 'interm-fluent', 'range': 'real', 'level': 1}
         }
 
         for pvar in pvariables:
             pvar_params = expected[pvar.name]['params']
             pvar_type = expected[pvar.name]['type']
             pvar_range = expected[pvar.name]['range']
-            pvar_def_value = expected[pvar.name]['default']
+            pvar_def_value = expected[pvar.name]['default'] if pvar_type != 'interm-fluent' else None
+            pvar_level = expected[pvar.name]['level'] if pvar_type == 'interm-fluent' else None
+
+            # name
             self.assertIn(pvar.name, expected)
+
+            # params
             if len(pvar_params) == 0:
                 self.assertIsNone(pvar.param_types)
             else:
                 self.assertListEqual(pvar.param_types, pvar_params)
+
+            # type
             if pvar_type == 'non-fluent':
                 self.assertIsInstance(pvar, NonFluent)
             elif pvar_type == 'state-fluent':
                 self.assertIsInstance(pvar, StateFluent)
             elif pvar_type == 'action-fluent':
                 self.assertIsInstance(pvar, ActionFluent)
+            elif pvar_type == 'interm-fluent':
+                self.assertIsInstance(pvar, IntermediateFluent)
+
+            # range
             self.assertEqual(pvar.range, pvar_range)
-            self.assertAlmostEqual(pvar.def_value, pvar_def_value)
-            if pvar.range == 'bool':
-                self.assertIsInstance(pvar.def_value, bool)
-            elif pvar.range == 'real':
-                self.assertIsInstance(pvar.def_value, float)
-            elif pvar.range == 'int':
-                self.assertIsInstance(pvar.def_value, int)
+
+            # default value
+            if pvar_type != 'interm-fluent':
+                self.assertAlmostEqual(pvar.def_value, pvar_def_value)
+                if pvar.range == 'bool':
+                    self.assertIsInstance(pvar.def_value, bool)
+                elif pvar.range == 'real':
+                    self.assertIsInstance(pvar.def_value, float)
+                elif pvar.range == 'int':
+                    self.assertIsInstance(pvar.def_value, int)
+
+            # level
+            if pvar_type == 'interm-fluent':
+                self.assertEqual(pvar.level, pvar_level)
+                self.assertIsInstance(pvar.level, int)
 
     def test_instance_block(self):
         instance = self.rddl.instance

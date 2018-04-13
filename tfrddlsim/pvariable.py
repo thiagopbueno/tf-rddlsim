@@ -71,3 +71,22 @@ class ActionFluent(object):
             else:
                 nf = '{}: {{ action-fluent, {} }}'.format(self.name, self.range)
         return nf
+
+
+class IntermediateFluent(object):
+
+    def __init__(self, name, range_type, level, param_types=None):
+        self.name = name
+        self.range = range_type
+        self.level = level
+        self.param_types = param_types
+
+    def arity(self):
+        return len(self.param_types) if self.param_types is not None else 0
+
+    def __repr__(self):
+        if self.arity() > 0:
+            nf = '{}({}): {{ interm-fluent, {}, level = {} }}'.format(self.name, ', '.join(self.param_types), self.range, self.level)
+        else:
+            nf = '{}: {{ interm-fluent, {}, level = {} }}'.format(self.name, self.range, self.level)
+        return nf
