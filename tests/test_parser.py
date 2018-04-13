@@ -254,7 +254,14 @@ class TestRDDLyacc(unittest.TestCase):
                                  *[(-11.8 * rlevel(?r)*rlevel(?r))/(MAX_RES_CAP(?r)*MAX_RES_CAP(?r) - 5)]
                                  * (+ rlevel(?r));
 
+                // Consider MAX_RES_CAP=90, rlevel=100, outflow=4, then the excess overflow is 6 units
+                // Consider MAX_RES_CAP=100, rlevel=90, outflow=4, then the excess overflow is 0 units
+                overflow(?r) = max[0, rlevel(?r) - outflow(?x) - MAX_RES_CAP(?r, ?t)];
+
                 rlevel'(?r) = rlevel(?r) + rainfall(?r) + (- evaporated(?r)) - outflow(?r) + [- overflow(?r)];
+
+                distance(?r) = sqrt[pow[(location(?l)-CENTER(?l)),2]];
+                scalefactor = 2.0/(1.0+exp[-2*distance])-0.99;
             };
 
         }
@@ -407,6 +414,36 @@ class TestRDDLyacc(unittest.TestCase):
                 ('outflow', ['?r']),
                 '-',
                 ('overflow', ['?r'])
+            ],
+            'overflow': [
+                'max',
+                0,
+                '-',
+                '-',
+                ('rlevel', ['?r']),
+                ('outflow', ['?x']),
+                ('MAX_RES_CAP', ['?r', '?t'])
+            ],
+            'distance': [
+                'sqrt',
+                'pow',
+                '-',
+                ('location', ['?l']),
+                ('CENTER', ['?l']),
+                2
+            ],
+            'scalefactor': [
+                '-',
+                '/',
+                2.0,
+                '+',
+                1.0,
+                'exp',
+                '*',
+                '-',
+                2,
+                ('distance', None),
+                0.99
             ]
         }
 
@@ -428,6 +465,10 @@ class TestRDDLyacc(unittest.TestCase):
                         self.assertEqual(expr[1], expected[i])
                     else:
                         self.assertAlmostEqual(expr[1], expected[i])
+                elif expr[0] == 'func':
+                    self.assertEqual(expr[1][0], expected[i])
+                    for subexpr in expr[1][1][::-1]:
+                        stack.append(subexpr)
                 else:
                     self.assertEqual(expr[0], expected[i])
                     for subexpr in expr[1][::-1]:

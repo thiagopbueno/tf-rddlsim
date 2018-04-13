@@ -386,6 +386,7 @@ class RDDLParser(object):
     def p_expr(self, p):
         '''expr : pvar_expr
                 | group_expr
+                | function_expr
                 | numerical_expr'''
         p[0] = p[1]
 
@@ -402,6 +403,10 @@ class RDDLParser(object):
                       | LPAREN expr RPAREN'''
         p[0] = p[2]
 
+    def p_function_expr(self, p):
+        '''function_expr : IDENT LBRACK expr_list RBRACK'''
+        p[0] = ('func', (p[1], p[3]))
+
     def p_numerical_expr(self, p):
         '''numerical_expr : expr PLUS expr
                           | expr MINUS expr
@@ -417,6 +422,15 @@ class RDDLParser(object):
             p[0] = (p[1], (p[2],))
         elif len(p) == 2:
             p[0] = ('number', p[1])
+
+    def p_expr_list(self, p):
+        '''expr_list : expr_list COMMA expr
+                     | expr'''
+        if len(p) == 4:
+            p[1].append(p[3])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
 
     def p_param_list(self, p):
         '''param_list : string_list'''
