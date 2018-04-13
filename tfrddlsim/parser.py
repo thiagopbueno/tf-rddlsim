@@ -2,6 +2,7 @@ from ply import lex, yacc
 
 from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
 from tfrddlsim.pvariable import NonFluent, StateFluent, ActionFluent, IntermediateFluent
+from tfrddlsim.cpf import CPF
 
 
 alpha = r'[A-Za-z]'
@@ -209,6 +210,12 @@ class RDDLParser(object):
 
         self.tokens = self.lexer.tokens
 
+        self.precedence = (
+            ('left', 'PLUS', 'MINUS'),
+            ('left', 'TIMES', 'DIV'),
+            ('right', 'UMINUS')
+        )
+
     def p_rddl(self, p):
         '''rddl : rddl_block'''
         p[0] = RDDL(p[1])
@@ -242,6 +249,7 @@ class RDDLParser(object):
     def p_domain_list(self, p):
         '''domain_list : domain_list type_section
                        | domain_list pvar_section
+                       | domain_list cpf_section
                        | empty'''
         if p[1] is None:
             p[0] = dict()
@@ -334,6 +342,81 @@ class RDDLParser(object):
             p[0] = IntermediateFluent(name=p[1], range_type=p[9], level=p[13], param_types=p[3])
         else:
             p[0] = IntermediateFluent(name=p[1], range_type=p[6], level=p[10])
+
+    def p_cpf_section(self, p):
+        '''cpf_section : cpf_header LCURLY cpf_list RCURLY SEMI'''
+        p[0] = ('cpfs', (p[1], p[3]))
+
+    def p_cpf_header(self, p):
+        '''cpf_header : CPFS
+                      | CDFS'''
+        p[0] = p[1]
+
+    def p_cpf_list(self, p):
+        '''cpf_list : cpf_list cpf_def
+                    | empty'''
+        if p[1] is None:
+            p[0] = []
+        else:
+            p[1].append(p[2])
+            p[0] = p[1]
+
+    def p_cpf_def(self, p):
+        '''cpf_def : pvar_expr ASSIGN_EQUAL expr SEMI'''
+        p[0] = CPF(pvar=p[1], expr=p[3])
+
+    def p_term_list(self, p):
+        '''term_list : term_list COMMA term
+                     | term
+                     | empty'''
+        if p[1] is None:
+            p[0] = []
+        elif len(p) == 4:
+            p[1].append(p[3])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
+
+    def p_term(self, p):
+        '''term : VAR
+                | ENUM_VAL
+                | pvar_expr'''
+        p[0] = p[1]
+
+    def p_expr(self, p):
+        '''expr : pvar_expr
+                | group_expr
+                | numerical_expr'''
+        p[0] = p[1]
+
+    def p_pvar_expr(self, p):
+        '''pvar_expr : IDENT LPAREN term_list RPAREN
+                     | IDENT'''
+        if len(p) == 2:
+            p[0] = ('pvar_expr', (p[1], None))
+        elif len(p) == 5:
+            p[0] = ('pvar_expr', (p[1], p[3]))
+
+    def p_group_expr(self, p):
+        '''group_expr : LBRACK expr RBRACK
+                      | LPAREN expr RPAREN'''
+        p[0] = p[2]
+
+    def p_numerical_expr(self, p):
+        '''numerical_expr : expr PLUS expr
+                          | expr MINUS expr
+                          | expr TIMES expr
+                          | expr DIV expr
+                          | MINUS expr %prec UMINUS
+                          | PLUS expr %prec UMINUS
+                          | INTEGER
+                          | DOUBLE'''
+        if len(p) == 4:
+            p[0] = (p[2], (p[1], p[3]))
+        elif len(p) == 3:
+            p[0] = (p[1], (p[2],))
+        elif len(p) == 2:
+            p[0] = ('number', p[1])
 
     def p_param_list(self, p):
         '''param_list : string_list'''

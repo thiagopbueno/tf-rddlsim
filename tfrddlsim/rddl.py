@@ -31,6 +31,14 @@ class Domain(object):
     def pvariables(self):
         return self.domain_list.get('pvariables')
 
+    @property
+    def cpfs(self):
+        return self.domain_list.get('cpfs')
+
+    @property
+    def cdfs(self):
+        return self.domain_list.get('cdfs')
+
 
 class Instance(object):
 

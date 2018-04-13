@@ -1,6 +1,7 @@
 from tfrddlsim import parser
 from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
 from tfrddlsim.pvariable import NonFluent, StateFluent, ActionFluent, IntermediateFluent
+from tfrddlsim.cpf import CPF
 
 import unittest
 
@@ -248,6 +249,14 @@ class TestRDDLyacc(unittest.TestCase):
                 overflow(res):   {interm-fluent, real, level=1}; // Is there any excess overflow (over the rim)?
             };
 
+            cpfs {
+                evaporated(?r) = MAX_WATER_EVAP_FRAC_PER_TIME_UNIT
+                                 *[(-11.8 * rlevel(?r)*rlevel(?r))/(MAX_RES_CAP(?r)*MAX_RES_CAP(?r) - 5)]
+                                 * (+ rlevel(?r));
+
+                rlevel'(?r) = rlevel(?r) + rainfall(?r) + (- evaporated(?r)) - outflow(?r) + [- overflow(?r)];
+            };
+
         }
 
         non-fluents res8 { }
@@ -359,6 +368,71 @@ class TestRDDLyacc(unittest.TestCase):
             if pvar_type == 'interm-fluent':
                 self.assertEqual(pvar.level, pvar_level)
                 self.assertIsInstance(pvar.level, int)
+
+    def test_cpfs_section(self):
+        header, cpfs = self.rddl.domain.cpfs
+        self.assertEqual(header, 'cpfs')
+        for cpf in cpfs:
+            self.assertEqual(cpf.pvar[0], 'pvar_expr')
+
+        ast = {
+            'evaporated': [
+                '*',
+                '*',
+                ('MAX_WATER_EVAP_FRAC_PER_TIME_UNIT', None),
+                '/',
+                '*',
+                '*',
+                '-',
+                11.8,
+                ('rlevel', ['?r']),
+                ('rlevel', ['?r']),
+                '-',
+                '*',
+                ('MAX_RES_CAP', ['?r']),
+                ('MAX_RES_CAP', ['?r']),
+                5,
+                '+',
+                ('rlevel', ['?r'])
+            ],
+            "rlevel'": [
+                '+',
+                '-',
+                '+',
+                '+',
+                ('rlevel', ['?r']),
+                ('rainfall', ['?r']),
+                '-',
+                ('evaporated', ['?r']),
+                ('outflow', ['?r']),
+                '-',
+                ('overflow', ['?r'])
+            ]
+        }
+
+        for cpf in cpfs:
+
+            pvar = cpf.pvar[1][0]
+            self.assertIn(pvar, ast)
+
+            expected = ast[pvar]
+            i = 0
+
+            stack = [cpf.expr]
+            while len(stack) > 0:
+                expr = stack.pop()
+                if expr[0] == 'pvar_expr':
+                    self.assertEqual(expr[1], expected[i])
+                elif expr[0] == 'number':
+                    if isinstance(expr[1], int):
+                        self.assertEqual(expr[1], expected[i])
+                    else:
+                        self.assertAlmostEqual(expr[1], expected[i])
+                else:
+                    self.assertEqual(expr[0], expected[i])
+                    for subexpr in expr[1][::-1]:
+                        stack.append(subexpr)
+                i += 1
 
     def test_instance_block(self):
         instance = self.rddl.instance

@@ -37,15 +37,15 @@ class StateFluent(object):
     def __repr__(self):
         if self.arity() > 0:
             if self.def_value is not None:
-                nf = '{}({}): {{ state-fluent, {}, default = {} }}'.format(self.name, ', '.join(self.param_types), self.range, self.def_value)
+                sf = '{}({}): {{ state-fluent, {}, default = {} }}'.format(self.name, ', '.join(self.param_types), self.range, self.def_value)
             else:
-                nf = '{}({}): {{ state-fluent, {} }}'.format(self.name, ', '.join(self.param_types), self.range)
+                sf = '{}({}): {{ state-fluent, {} }}'.format(self.name, ', '.join(self.param_types), self.range)
         else:
             if self.def_value is not None:
-                nf = '{}: {{ state-fluent, {}, default = {} }}'.format(self.name, self.range, self.def_value)
+                sf = '{}: {{ state-fluent, {}, default = {} }}'.format(self.name, self.range, self.def_value)
             else:
-                nf = '{}: {{ state-fluent, {} }}'.format(self.name, self.range)
-        return nf
+                sf = '{}: {{ state-fluent, {} }}'.format(self.name, self.range)
+        return sf
 
 
 class ActionFluent(object):
@@ -62,15 +62,15 @@ class ActionFluent(object):
     def __repr__(self):
         if self.arity() > 0:
             if self.def_value is not None:
-                nf = '{}({}): {{ action-fluent, {}, default = {} }}'.format(self.name, ', '.join(self.param_types), self.range, self.def_value)
+                af = '{}({}): {{ action-fluent, {}, default = {} }}'.format(self.name, ', '.join(self.param_types), self.range, self.def_value)
             else:
-                nf = '{}({}): {{ action-fluent, {} }}'.format(self.name, ', '.join(self.param_types), self.range)
+                af = '{}({}): {{ action-fluent, {} }}'.format(self.name, ', '.join(self.param_types), self.range)
         else:
             if self.def_value is not None:
-                nf = '{}: {{ action-fluent, {}, default = {} }}'.format(self.name, self.range, self.def_value)
+                af = '{}: {{ action-fluent, {}, default = {} }}'.format(self.name, self.range, self.def_value)
             else:
-                nf = '{}: {{ action-fluent, {} }}'.format(self.name, self.range)
-        return nf
+                af = '{}: {{ action-fluent, {} }}'.format(self.name, self.range)
+        return af
 
 
 class IntermediateFluent(object):
@@ -86,7 +86,7 @@ class IntermediateFluent(object):
 
     def __repr__(self):
         if self.arity() > 0:
-            nf = '{}({}): {{ interm-fluent, {}, level = {} }}'.format(self.name, ', '.join(self.param_types), self.range, self.level)
+            intf = '{}({}): {{ interm-fluent, {}, level = {} }}'.format(self.name, ', '.join(self.param_types), self.range, self.level)
         else:
-            nf = '{}: {{ interm-fluent, {}, level = {} }}'.format(self.name, self.range, self.level)
-        return nf
+            intf = '{}: {{ interm-fluent, {}, level = {} }}'.format(self.name, self.range, self.level)
+        return intf
