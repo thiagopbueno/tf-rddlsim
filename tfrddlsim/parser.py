@@ -213,6 +213,7 @@ class RDDLParser(object):
         self.precedence = (
             ('left', 'IF'),
             ('left', 'ASSIGN_EQUAL'),
+            ('left', 'AGG_OPER'),
             ('left', 'EQUIV'),
             ('left', 'IMPLY'),
             ('left', 'OR'),
@@ -398,6 +399,7 @@ class RDDLParser(object):
                 | relational_expr
                 | boolean_expr
                 | numerical_expr
+                | aggregation_expr
                 | control_expr
                 | randomvar_expr'''
         p[0] = p[1]
@@ -459,6 +461,10 @@ class RDDLParser(object):
         elif len(p) == 2:
             p[0] = ('number', p[1])
 
+    def p_aggregation_expr(self, p):
+        '''aggregation_expr : IDENT UNDERSCORE LCURLY typed_var_list RCURLY expr %prec AGG_OPER'''
+        p[0] = (p[1], (*p[4], p[6]))
+
     def p_control_expr(self, p):
         '''control_expr : IF LPAREN expr RPAREN THEN expr ELSE expr %prec IF
                         | SWITCH LPAREN term RPAREN LCURLY case_list RCURLY'''
@@ -486,6 +492,19 @@ class RDDLParser(object):
                 p[0] = ('randomvar', (p[1], (p[3], p[5])))
         elif len(p) == 5:
             p[0] = ('randomvar', (p[1], (p[3],)))
+
+    def p_typed_var_list(self, p):
+        '''typed_var_list : typed_var_list COMMA typed_var
+                          | typed_var'''
+        if len(p) == 4:
+            p[1].append(p[3])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
+
+    def p_typed_var(self, p):
+        '''typed_var : VAR COLON IDENT'''
+        p[0] = ('typed_var', (p[1], p[3]))
 
     def p_expr_list(self, p):
         '''expr_list : expr_list COMMA expr

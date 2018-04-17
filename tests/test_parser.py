@@ -302,6 +302,25 @@ class TestRDDLyacc(unittest.TestCase):
                     case @medium : -i2 + 2 + Normal(1.0, i2*i1/2.0),
                     default : -Normal(1.0, 0.0) * (-16.0)
                 };
+
+                rlevel2'(?r) = sum_{?up : res} [DOWNSTREAM(?up,?r) * (outflow(?up) + overflow(?up))];
+
+                rlevel3'(?r) = rlevel(?r) + rainfall(?r) - evaporated(?r) - outflow(?r) - overflow(?r)
+                      + sum_{?up : res} [DOWNSTREAM(?up,?r)*(outflow(?up) + overflow(?up))];
+
+                rlevel4'(?r) = rlevel(?r) + rainfall(?r) - evaporated(?r) - outflow(?r)
+                      + sum_{?up : res} [DOWNSTREAM(?up,?r)*(outflow(?up) + overflow(?up))]
+                      - overflow(?r);
+
+                rlevel5'(?r) = rlevel(?r) + rainfall(?r) - evaporated(?r) - outflow(?r)
+                      + (sum_{?up : res} [DOWNSTREAM(?up,?r)*(outflow(?up) + overflow(?up))])
+                      - overflow(?r);
+
+                rlevel6'(?r) = max_{?up : res, ?down : res2} [DOWNSTREAM(?up,?down) * outflow(?up) + overflow(?up)];
+
+                rlevel7'(?r) = rlevel(?r) + rainfall(?r) - evaporated(?r) - outflow(?r)
+                      + sum_{?up : res1, ?down : res} [DOWNSTREAM(?up,?down)*(outflow(?up) + overflow(?up))]
+                      - overflow(?r);
             };
 
         }
@@ -678,6 +697,102 @@ class TestRDDLyacc(unittest.TestCase):
                 0.0,
                 '-',
                 16.0
+            ],
+            "rlevel2'": [
+                'sum',
+                ('?up', 'res'),
+                '*',
+                ('DOWNSTREAM', ['?up', '?r']),
+                '+',
+                ('outflow', ['?up']),
+                ('overflow', ['?up'])
+            ],
+            "rlevel3'": [
+                '+',
+                '-',
+                '-',
+                '-',
+                '+',
+                ('rlevel', ['?r']),
+                ('rainfall', ['?r']),
+                ('evaporated', ['?r']),
+                ('outflow', ['?r']),
+                ('overflow', ['?r']),
+                'sum',
+                ('?up', 'res'),
+                '*',
+                ('DOWNSTREAM', ['?up', '?r']),
+                '+',
+                ('outflow', ['?up']),
+                ('overflow', ['?up'])
+            ],
+            "rlevel4'": [
+                '+',
+                '-',
+                '-',
+                '+',
+                ('rlevel', ['?r']),
+                ('rainfall', ['?r']),
+                ('evaporated', ['?r']),
+                ('outflow', ['?r']),
+                'sum',
+                ('?up', 'res'),
+                '-',
+                '*',
+                ('DOWNSTREAM', ['?up', '?r']),
+                '+',
+                ('outflow', ['?up']),
+                ('overflow', ['?up']),
+                ('overflow', ['?r'])
+            ],
+            "rlevel5'": [
+                '-',
+                '+',
+                '-',
+                '-',
+                '+',
+                ('rlevel', ['?r']),
+                ('rainfall', ['?r']),
+                ('evaporated', ['?r']),
+                ('outflow', ['?r']),
+                'sum',
+                ('?up', 'res'),
+                '*',
+                ('DOWNSTREAM', ['?up', '?r']),
+                '+',
+                ('outflow', ['?up']),
+                ('overflow', ['?up']),
+                ('overflow', ['?r'])
+            ],
+            "rlevel6'": [
+                'max',
+                ('?up', 'res'),
+                ('?down', 'res2'),
+                '+',
+                '*',
+                ('DOWNSTREAM', ['?up', '?down']),
+                ('outflow', ['?up']),
+                ('overflow', ['?up'])
+            ],
+            "rlevel7'": [
+                '+',
+                '-',
+                '-',
+                '+',
+                ('rlevel', ['?r']),
+                ('rainfall', ['?r']),
+                ('evaporated', ['?r']),
+                ('outflow', ['?r']),
+                'sum',
+                ('?up', 'res1'),
+                ('?down', 'res'),
+                '-',
+                '*',
+                ('DOWNSTREAM', ['?up', '?down']),
+                '+',
+                ('outflow', ['?up']),
+                ('overflow', ['?up']),
+                ('overflow', ['?r'])
             ]
         }
 
@@ -706,6 +821,8 @@ class TestRDDLyacc(unittest.TestCase):
                     for subexpr in expr[1][1][::-1]:
                         stack.append(subexpr)
                 elif expr[0] == 'enum_type':
+                    self.assertEqual(expr[1], expected[i])
+                elif expr[0] == 'typed_var':
                     self.assertEqual(expr[1], expected[i])
                 elif expr[0] == 'lconst':
                     self.assertEqual(expr[1][0], expected[i])
