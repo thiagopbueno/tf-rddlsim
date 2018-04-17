@@ -213,6 +213,8 @@ class RDDLParser(object):
         self.precedence = (
             ('left', 'IF'),
             ('left', 'ASSIGN_EQUAL'),
+            ('left', 'EXISTS'),
+            ('left', 'FORALL'),
             ('left', 'AGG_OPER'),
             ('left', 'EQUIV'),
             ('left', 'IMPLY'),
@@ -398,6 +400,7 @@ class RDDLParser(object):
                 | function_expr
                 | relational_expr
                 | boolean_expr
+                | quantifier_expr
                 | numerical_expr
                 | aggregation_expr
                 | control_expr
@@ -444,6 +447,11 @@ class RDDLParser(object):
             p[0] = (p[1], (p[2],))
         elif len(p) == 2:
             p[0] = ('boolean', p[1])
+
+    def p_quantifier_expr(self, p):
+        '''quantifier_expr : FORALL UNDERSCORE LCURLY typed_var_list RCURLY expr %prec FORALL
+                           | EXISTS UNDERSCORE LCURLY typed_var_list RCURLY expr %prec EXISTS'''
+        p[0] = (p[1], (*p[4], p[6]))
 
     def p_numerical_expr(self, p):
         '''numerical_expr : expr PLUS expr

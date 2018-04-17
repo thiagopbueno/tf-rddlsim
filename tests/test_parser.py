@@ -321,6 +321,29 @@ class TestRDDLyacc(unittest.TestCase):
                 rlevel7'(?r) = rlevel(?r) + rainfall(?r) - evaporated(?r) - outflow(?r)
                       + sum_{?up : res1, ?down : res} [DOWNSTREAM(?up,?down)*(outflow(?up) + overflow(?up))]
                       - overflow(?r);
+
+
+                // skill_teaching_mdp.rddl
+                hintedRight'(?s) =
+                    KronDelta( [forall_{?s3: skill} ~updateTurn(?s3)] ^
+                                giveHint(?s) ^
+                                forall_{?s2: skill}[PRE_REQ(?s2, ?s) => proficiencyHigh(?s2)] );
+
+                hintDelayVar'(?s) =
+                    KronDelta( [forall_{?s2: skill} ~updateTurn(?s2)] ^ giveHint(?s) );
+
+                // crossing_traffic_mdp.rddl
+                robot-at'(?x,?y) =
+                    if ( exists_{?x2 : xpos, ?y2 : ypos} [ GOAL(?x2,?y2) ^ robot-at(?x2,?y2)  ] )
+                    then
+                        KronDelta(false) // because of fall-through we know (?x,y) != (?x2,?y2)
+                    // Check for legal robot movement (robot disappears if at an obstacle)
+                    else if ( move-north ^ exists_{?y2 : ypos} [ NORTH(?y2,?y) ^ robot-at(?x,?y2) ^ ~obstacle-at(?x,?y2) ] )
+                    then
+                        KronDelta(true) // robot moves to this location
+                    else
+                        false;
+
             };
 
         }
@@ -793,6 +816,55 @@ class TestRDDLyacc(unittest.TestCase):
                 ('outflow', ['?up']),
                 ('overflow', ['?up']),
                 ('overflow', ['?r'])
+            ],
+            "hintedRight'": [
+                'KronDelta',
+                '^',
+                '^',
+                'forall',
+                ('?s3', 'skill'),
+                '~',
+                ('updateTurn', ['?s3']),
+                ('giveHint', ['?s']),
+                'forall',
+                ('?s2', 'skill'),
+                '=>',
+                ('PRE_REQ', ['?s2', '?s']),
+                ('proficiencyHigh', ['?s2'])
+            ],
+            "hintDelayVar'": [
+                'KronDelta',
+                '^',
+                'forall',
+                ('?s2', 'skill'),
+                '~',
+                ('updateTurn', ['?s2']),
+                ('giveHint', ['?s'])
+            ],
+            "robot-at'": [
+                'if',
+                'exists',
+                ('?x2', 'xpos'),
+                ('?y2', 'ypos'),
+                '^',
+                ('GOAL', ['?x2', '?y2']),
+                ('robot-at', ['?x2', '?y2']),
+                'KronDelta',
+                False,
+                'if',
+                '^',
+                ('move-north', None),
+                'exists',
+                ('?y2', 'ypos'),
+                '^',
+                '^',
+                ('NORTH', ['?y2', '?y']),
+                ('robot-at', ['?x', '?y2']),
+                '~',
+                ('obstacle-at', ['?x', '?y2']),
+                'KronDelta',
+                True,
+                False
             ]
         }
 
