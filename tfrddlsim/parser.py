@@ -261,6 +261,7 @@ class RDDLParser(object):
         '''domain_list : domain_list type_section
                        | domain_list pvar_section
                        | domain_list cpf_section
+                       | domain_list reward_section
                        | empty'''
         if p[1] is None:
             p[0] = dict()
@@ -375,6 +376,10 @@ class RDDLParser(object):
     def p_cpf_def(self, p):
         '''cpf_def : pvar_expr ASSIGN_EQUAL expr SEMI'''
         p[0] = CPF(pvar=p[1], expr=p[3])
+
+    def p_reward_section(self, p):
+        '''reward_section : REWARD ASSIGN_EQUAL expr SEMI'''
+        p[0] = ('reward', p[3])
 
     def p_term_list(self, p):
         '''term_list : term_list COMMA term

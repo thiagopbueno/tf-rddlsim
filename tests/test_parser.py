@@ -346,6 +346,59 @@ class TestRDDLyacc(unittest.TestCase):
 
             };
 
+            reward =
+                    // Mars_Rover.rddl
+                    sum_{?p : picture-point} [ (~picTaken(?p) ^ picTaken'(?p)) * PICT_VALUE(?p) ] +
+
+                    // Reservoir.rddl
+                    sum_{?r: res} [if (rlevel'(?r)>=LOWER_BOUND(?r) ^ (rlevel'(?r)<=UPPER_BOUND(?r)))
+                                    then 0
+                                    else if (rlevel'(?r)<=LOWER_BOUND(?r))
+                                        then LOW_PENALTY(?r)*(LOWER_BOUND(?r)-rlevel'(?r))
+                                        else HIGH_PENALTY(?r)*(rlevel'(?r)-UPPER_BOUND(?r))] +
+
+                    // Navigation_Radius.rddl
+                    - sum_{?l: dim}[abs[GOAL(?l) - location(?l)]] +
+
+                    // game_of_life_mdp.rddl
+                    sum_{?x : x_pos, ?y : y_pos} [alive(?x,?y) - set(?x,?y)] +
+
+                    // recon_mdp.rddl
+                    [sum_{?o : obj}
+                        (GOOD_PIC_WEIGHT *
+                        [ ~pictureTaken(?o) ^ lifeDetected(?o) ^ exists_{?x : x_pos, ?y : y_pos, ?a: agent, ?t: tool} [agentAt(?a, ?x, ?y) ^ objAt(?o, ?x, ?y) ^ useToolOn(?a, ?t, ?o) ^ CAMERA_TOOL(?t) ^ ~damaged(?t)]])
+                    ] +
+                    [sum_{?o : obj}
+                        -(BAD_PIC_WEIGHT *
+                        [ ~lifeDetected(?o) ^ exists_{?x : x_pos, ?y : y_pos, ?a: agent, ?t: tool} [agentAt(?a, ?x, ?y) ^ objAt(?o, ?x, ?y) ^ useToolOn(?a, ?t, ?o) ^ CAMERA_TOOL(?t)]])
+                    ] -
+
+                    // navigation_mdp.rddl
+                    [sum_{?x : xpos, ?y : ypos} -(GOAL(?x,?y) ^ ~robot-at(?x,?y))] -
+
+                    // elevators_mdp.rddl
+                    [sum_{?e: elevator} [
+                    -ELEVATOR-PENALTY-RIGHT-DIR * (person-in-elevator-going-up(?e) ^ elevator-dir-up(?e))
+                    ]] +
+                    [sum_{?e: elevator} [
+                        -ELEVATOR-PENALTY-RIGHT-DIR * (person-in-elevator-going-down(?e) ^ ~elevator-dir-up(?e))
+                    ]] +
+                    [sum_{?e: elevator} [
+                        -ELEVATOR-PENALTY-WRONG-DIR * (person-in-elevator-going-up(?e) ^ ~elevator-dir-up(?e))
+                    ]] +
+                    [sum_{?e: elevator} [
+                        -ELEVATOR-PENALTY-WRONG-DIR * (person-in-elevator-going-down(?e) ^ elevator-dir-up(?e))
+                    ]] +
+                    [sum_{?f: floor} [
+                        - person-waiting-up(?f) - person-waiting-down(?f)
+                    ]] +
+
+                    // traffic_mdp.rddl
+                    sum_{?c : cell} -[occupied(?c) ^ exists_{?c2 : cell} (FLOWS-INTO-CELL(?c2, ?c) ^ occupied(?c2))] +
+
+                    // skill_teaching_mdp.rddl
+                    [sum_{?s : skill} [SKILL_WEIGHT(?s) * proficiencyHigh(?s)]] + [sum_{?s : skill} -[SKILL_WEIGHT(?s) * ~proficiencyMed(?s)]]
+                    ;
         }
 
         non-fluents res8 { }
@@ -914,6 +967,10 @@ class TestRDDLyacc(unittest.TestCase):
                     for subexpr in expr[1][::-1]:
                         stack.append(subexpr)
                 i += 1
+
+    def test_reward_section(self):
+        reward = self.rddl.domain.reward
+        self.assertIsNotNone(reward)
 
     def test_instance_block(self):
         instance = self.rddl.instance

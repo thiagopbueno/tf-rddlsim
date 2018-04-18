@@ -39,6 +39,10 @@ class Domain(object):
     def cdfs(self):
         return self.domain_list.get('cdfs')
 
+    @property
+    def reward(self):
+        return self.domain_list.get('reward')
+
 
 class Instance(object):
 
