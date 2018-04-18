@@ -1,6 +1,5 @@
 from tfrddlsim import parser
 from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
-from tfrddlsim.pvariable import NonFluent, StateFluent, ActionFluent, IntermediateFluent
 from tfrddlsim.cpf import CPF
 
 import unittest
@@ -599,7 +598,7 @@ class TestRDDLyacc(unittest.TestCase):
             pvar_params = expected[pvar.name]['params']
             pvar_type = expected[pvar.name]['type']
             pvar_range = expected[pvar.name]['range']
-            pvar_def_value = expected[pvar.name]['default'] if pvar_type != 'interm-fluent' else None
+            pvar_default = expected[pvar.name]['default'] if pvar_type != 'interm-fluent' else None
             pvar_level = expected[pvar.name]['level'] if pvar_type == 'interm-fluent' else None
 
             # name
@@ -613,26 +612,26 @@ class TestRDDLyacc(unittest.TestCase):
 
             # type
             if pvar_type == 'non-fluent':
-                self.assertIsInstance(pvar, NonFluent)
+                self.assertEqual(pvar.fluent_type, 'non-fluent')
             elif pvar_type == 'state-fluent':
-                self.assertIsInstance(pvar, StateFluent)
+                self.assertEqual(pvar.fluent_type, 'state-fluent')
             elif pvar_type == 'action-fluent':
-                self.assertIsInstance(pvar, ActionFluent)
+                self.assertEqual(pvar.fluent_type, 'action-fluent')
             elif pvar_type == 'interm-fluent':
-                self.assertIsInstance(pvar, IntermediateFluent)
+                self.assertEqual(pvar.fluent_type, 'interm-fluent')
 
             # range
             self.assertEqual(pvar.range, pvar_range)
 
             # default value
             if pvar_type != 'interm-fluent':
-                self.assertAlmostEqual(pvar.def_value, pvar_def_value)
+                self.assertAlmostEqual(pvar.default, pvar_default)
                 if pvar.range == 'bool':
-                    self.assertIsInstance(pvar.def_value, bool)
+                    self.assertIsInstance(pvar.default, bool)
                 elif pvar.range == 'real':
-                    self.assertIsInstance(pvar.def_value, float)
+                    self.assertIsInstance(pvar.default, float)
                 elif pvar.range == 'int':
-                    self.assertIsInstance(pvar.def_value, int)
+                    self.assertIsInstance(pvar.default, int)
 
             # level
             if pvar_type == 'interm-fluent':

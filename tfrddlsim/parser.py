@@ -1,7 +1,7 @@
 from ply import lex, yacc
 
 from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
-from tfrddlsim.pvariable import NonFluent, StateFluent, ActionFluent, IntermediateFluent
+from tfrddlsim.pvariable import PVariable
 from tfrddlsim.cpf import CPF
 
 
@@ -330,33 +330,33 @@ class RDDLParser(object):
         '''nonfluent_def : IDENT LPAREN param_list RPAREN COLON LCURLY NON_FLUENT COMMA type_spec COMMA DEFAULT ASSIGN_EQUAL range_const RCURLY SEMI
                          | IDENT COLON LCURLY NON_FLUENT COMMA type_spec COMMA DEFAULT ASSIGN_EQUAL range_const RCURLY SEMI'''
         if len(p) == 16:
-            p[0] = NonFluent(name=p[1], range_type=p[9], param_types=p[3], def_value=p[13])
+            p[0] = PVariable(name=p[1], fluent_type='non-fluent', range_type=p[9], param_types=p[3], default=p[13])
         else:
-            p[0] = NonFluent(name=p[1], range_type=p[6], def_value=p[10])
+            p[0] = PVariable(name=p[1], fluent_type='non-fluent', range_type=p[6], default=p[10])
 
     def p_statefluent_def(self, p):
         '''statefluent_def : IDENT LPAREN param_list RPAREN COLON LCURLY STATE COMMA type_spec COMMA DEFAULT ASSIGN_EQUAL range_const RCURLY SEMI
                            | IDENT COLON LCURLY STATE COMMA type_spec COMMA DEFAULT ASSIGN_EQUAL range_const RCURLY SEMI'''
         if len(p) == 16:
-            p[0] = StateFluent(name=p[1], range_type=p[9], param_types=p[3], def_value=p[13])
+            p[0] = PVariable(name=p[1], fluent_type='state-fluent', range_type=p[9], param_types=p[3], default=p[13])
         else:
-            p[0] = StateFluent(name=p[1], range_type=p[6], def_value=p[10])
+            p[0] = PVariable(name=p[1], fluent_type='state-fluent', range_type=p[6], default=p[10])
 
     def p_actionfluent_def(self, p):
         '''actionfluent_def : IDENT LPAREN param_list RPAREN COLON LCURLY ACTION COMMA type_spec COMMA DEFAULT ASSIGN_EQUAL range_const RCURLY SEMI
                             | IDENT COLON LCURLY ACTION COMMA type_spec COMMA DEFAULT ASSIGN_EQUAL range_const RCURLY SEMI'''
         if len(p) == 16:
-            p[0] = ActionFluent(name=p[1], range_type=p[9], param_types=p[3], def_value=p[13])
+            p[0] = PVariable(name=p[1], fluent_type='action-fluent', range_type=p[9], param_types=p[3], default=p[13])
         else:
-            p[0] = ActionFluent(name=p[1], range_type=p[6], def_value=p[10])
+            p[0] = PVariable(name=p[1], fluent_type='action-fluent', range_type=p[6], default=p[10])
 
     def p_intermfluent_def(self, p):
         '''intermfluent_def : IDENT LPAREN param_list RPAREN COLON LCURLY INTERMEDIATE COMMA type_spec COMMA LEVEL ASSIGN_EQUAL range_const RCURLY SEMI
                             | IDENT COLON LCURLY INTERMEDIATE COMMA type_spec COMMA LEVEL ASSIGN_EQUAL range_const RCURLY SEMI'''
         if len(p) == 16:
-            p[0] = IntermediateFluent(name=p[1], range_type=p[9], level=p[13], param_types=p[3])
+            p[0] = PVariable(name=p[1], fluent_type='interm-fluent', range_type=p[9], param_types=p[3], level=p[13])
         else:
-            p[0] = IntermediateFluent(name=p[1], range_type=p[6], level=p[10])
+            p[0] = PVariable(name=p[1], fluent_type='interm-fluent', range_type=p[6], level=p[10])
 
     def p_cpf_section(self, p):
         '''cpf_section : cpf_header LCURLY cpf_list RCURLY SEMI'''
