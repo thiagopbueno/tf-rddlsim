@@ -667,9 +667,69 @@ class RDDLParser(object):
         p[0] = ('instance', i)
 
     def p_nonfluent_block(self, p):
-        '''nonfluent_block : NON_FLUENTS IDENT LCURLY RCURLY'''
-        nf = NonFluents(p[2])
+        '''nonfluent_block : NON_FLUENTS IDENT LCURLY DOMAIN ASSIGN_EQUAL IDENT SEMI OBJECTS LCURLY objects_list RCURLY SEMI NON_FLUENTS LCURLY pvar_inst_list RCURLY SEMI RCURLY'''
+        nf = NonFluents(p[2], p[6], p[10], p[15])
         p[0] = ('non_fluents', nf)
+
+    def p_objects_list(self, p):
+        '''objects_list : objects_list objects_def
+                        | objects_def'''
+        if len(p) == 3:
+            p[1].append(p[2])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
+
+    def p_objects_def(self, p):
+        '''objects_def : IDENT COLON LCURLY object_const_list RCURLY SEMI'''
+        p[0] = (p[1], p[4])
+
+    def p_object_const_list(self, p):
+        '''object_const_list : object_const_list COMMA IDENT
+                             | IDENT'''
+        if len(p) == 4:
+            p[1].append(p[3])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
+
+    def p_pvar_inst_list(self, p):
+        '''pvar_inst_list : pvar_inst_list pvar_inst_def
+                          | pvar_inst_def'''
+        if len(p) == 3:
+            p[1].append(p[2])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
+
+    def p_pvar_inst_def(self, p):
+        '''pvar_inst_def : IDENT LPAREN lconst_list RPAREN SEMI
+                         | IDENT SEMI
+                         | NOT IDENT LPAREN lconst_list RPAREN SEMI
+                         | NOT IDENT SEMI
+                         | IDENT LPAREN lconst_list RPAREN ASSIGN_EQUAL range_const SEMI
+                         | IDENT ASSIGN_EQUAL range_const SEMI'''
+        if len(p) == 6:
+            p[0] = ((p[1], p[3]), True)
+        elif len(p) == 3:
+            p[0] = ((p[1], None), True)
+        elif len(p) == 7:
+            p[0] = ((p[2], p[4]), False)
+        elif len(p) == 4:
+            p[0] = ((p[2], None), False)
+        elif len(p) == 8:
+            p[0] = ((p[1], p[3]), p[6])
+        elif len(p) == 5:
+            p[0] = ((p[1], None), p[3])
+
+    def p_lconst_list(self, p):
+        '''lconst_list : lconst_list COMMA lconst
+                       | lconst'''
+        if len(p) == 4:
+            p[1].append(p[3])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
 
     def p_string_list(self, p):
         '''string_list : string_list COMMA IDENT

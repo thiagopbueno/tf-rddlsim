@@ -64,5 +64,8 @@ class Instance(object):
 
 class NonFluents(object):
 
-    def __init__(self, name):
+    def __init__(self, name, domain, objects, values):
         self.name = name
+        self.domain = domain
+        self.objects = objects
+        self.values = values

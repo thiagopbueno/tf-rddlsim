@@ -481,7 +481,35 @@ class TestRDDLyacc(unittest.TestCase):
 
         }
 
-        non-fluents res8 { }
+        non-fluents res8 {
+            domain = reservoir;
+            objects{
+                res: {t1,t2,t3,t4,t5,t6,t7,t8};
+                dim: {x,y};
+                picture-point : {p1, p2, p3};
+            };
+
+            non-fluents {
+                MAX_TIME = 12;
+                MOVE_VARIANCE_MULT = 0.00001;
+                RAIN_SHAPE(t1) = 0.0;
+                RAIN_SCALE(t2,t2) = 5.0;
+                RAIN_SCALE(t7) = 25.0;
+                RAIN_SHAPE(t8, t7) = 1.0;
+                RAIN_SCALE(t8) = 30.0;
+                MAX_RES_CAP(t3) = 200.0;
+                UPPER_BOUND(t3, t5) = -180.0;
+                MAX_RES_CAP(t4) = 300.2;
+                DOWNSTREAM(t1,t6);
+                DOWNSTREAM(t2,t3);
+                DOWNSTREAM(t3, t5);
+                DOWNSTREAM(t4,t8);
+                DOWNSTREAM(t5,t7);
+                DOWNSTREAM(t6,t7);
+                DOWNSTREAM(t7,t8);
+                SINK_RES(t8);
+            };
+        }
 
         instance inst_reservoir_res8 { }
         '''
@@ -1076,3 +1104,37 @@ class TestRDDLyacc(unittest.TestCase):
         non_fluents = self.rddl.non_fluents
         self.assertIsInstance(non_fluents, NonFluents)
         self.assertEqual(non_fluents.name, 'res8')
+        self.assertEqual(non_fluents.domain, 'reservoir')
+
+    def test_nonfluents_objects_section(self):
+        objects = self.rddl.non_fluents.objects
+        expected = [
+            ('res', ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8']),
+            ('dim', ['x', 'y']),
+            ('picture-point', ['p1', 'p2', 'p3'])
+        ]
+        self.assertListEqual(objects, expected)
+
+    def test_nonfluents_instantiation_section(self):
+        values = self.rddl.non_fluents.values
+        expected = [
+            (('MAX_TIME', None), 12),
+            (('MOVE_VARIANCE_MULT', None), 1e-05),
+            (('RAIN_SHAPE', ['t1']), 0.0),
+            (('RAIN_SCALE', ['t2', 't2']), 5.0),
+            (('RAIN_SCALE', ['t7']), 25.0),
+            (('RAIN_SHAPE', ['t8', 't7']), 1.0),
+            (('RAIN_SCALE', ['t8']), 30.0),
+            (('MAX_RES_CAP', ['t3']), 200.0),
+            (('UPPER_BOUND', ['t3', 't5']), -180.0),
+            (('MAX_RES_CAP', ['t4']), 300.2),
+            (('DOWNSTREAM', ['t1', 't6']), True),
+            (('DOWNSTREAM', ['t2', 't3']), True),
+            (('DOWNSTREAM', ['t3', 't5']), True),
+            (('DOWNSTREAM', ['t4', 't8']), True),
+            (('DOWNSTREAM', ['t5', 't7']), True),
+            (('DOWNSTREAM', ['t6', 't7']), True),
+            (('DOWNSTREAM', ['t7', 't8']), True),
+            (('SINK_RES', ['t8']), True)
+        ]
+        self.assertListEqual(values, expected)
