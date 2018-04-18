@@ -51,6 +51,10 @@ class Domain(object):
     def constraints(self):
         return self.domain_list.get('constraints')
 
+    @property
+    def invariants(self):
+        return self.domain_list.get('invariants')
+
 
 class Instance(object):
 

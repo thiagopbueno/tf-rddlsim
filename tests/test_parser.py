@@ -461,6 +461,24 @@ class TestRDDLyacc(unittest.TestCase):
 
             };
 
+            state-invariants {
+
+                // Reservoir.rddl
+                forall_{?r : res} rlevel(?r) >= 0;
+                forall_{?up : res} (sum_{?down : res} DOWNSTREAM(?up,?down)) <= 1;
+
+                // traffic_control_ctm.rddl2
+                // ensure exactly two cells flow into a merge cell
+                forall_{?c : cell} [MERGE-CELL(?c)
+                        => ((sum_{?c1 : cell} NEXT(?c1, ?c)) == 2)];
+                // ensure a diverge cell flows into exactly two cells
+                forall_{?c : cell} [DIVERGE-CELL(?c)
+                        => ((sum_{?c2 : cell} NEXT(?c, ?c2)) == 2)];
+                // ensure other (normal) cells flow into exactly one cell
+                forall_{?c : cell} [(~DIVERGE-CELL(?c) ^ ~MERGE-CELL(?c) ^ ~LAST(?c))
+                        => ((sum_{?c2 : cell} NEXT(?c, ?c2)) == 1)];
+            };
+
         }
 
         non-fluents res8 { }
@@ -1039,10 +1057,15 @@ class TestRDDLyacc(unittest.TestCase):
         self.assertIsNotNone(preconds)
         self.assertEqual(len(preconds), 3)
 
-    def test_state_action_constraints(self):
+    def test_state_action_constraints_section(self):
         constraints = self.rddl.domain.constraints
         self.assertIsNotNone(constraints)
         self.assertEqual(len(constraints), 24)
+
+    def test_state_invariants_section(self):
+        invariants = self.rddl.domain.invariants
+        self.assertIsNotNone(invariants)
+        self.assertEqual(len(invariants), 5)
 
     def test_instance_block(self):
         instance = self.rddl.instance

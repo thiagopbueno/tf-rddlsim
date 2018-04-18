@@ -264,6 +264,7 @@ class RDDLParser(object):
                        | domain_list reward_section
                        | domain_list action_precond_section
                        | domain_list state_action_constraint_section
+                       | domain_list state_invariant_section
                        | empty'''
         if p[1] is None:
             p[0] = dict()
@@ -423,6 +424,27 @@ class RDDLParser(object):
 
     def p_state_cons_def(self, p):
         '''state_cons_def : expr SEMI'''
+        p[0] = p[1]
+
+    def p_state_invariant_section(self, p):
+        '''state_invariant_section : STATE_INVARIANTS LCURLY state_invariant_list RCURLY SEMI
+                                   | STATE_INVARIANTS LCURLY RCURLY SEMI'''
+        if len(p) == 6:
+            p[0] = ('invariants', p[3])
+        elif len(p) == 5:
+            p[0] = ('invariants', [])
+
+    def p_state_invariant_list(self, p):
+        '''state_invariant_list : state_invariant_list state_invariant_def
+                                | state_invariant_def'''
+        if len(p) == 3:
+            p[1].append(p[2])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
+
+    def p_state_invariant_def(self, p):
+        '''state_invariant_def : expr SEMI'''
         p[0] = p[1]
 
     def p_term_list(self, p):
