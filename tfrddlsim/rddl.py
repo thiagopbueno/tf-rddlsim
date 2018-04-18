@@ -1,7 +1,6 @@
 class RDDL(object):
 
     def __init__(self, blocks):
-        self.blocks = blocks
         self.__dict__.update(blocks)
 
 
