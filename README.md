@@ -1,6 +1,6 @@
-# tf-rddlsim
+# tf-rddlsim [![Build Status](https://travis-ci.org/thiagopbueno/tf-rddlsim.svg?branch=master)](https://travis-ci.org/thiagopbueno/tf-rddlsim) [![License](https://img.shields.io/aur/license/yaourt.svg)](https://github.com/thiagopbueno/tf-mdp/blob/master/LICENSE)
 
-RDDL2TensorFlow compiler and MDP simulator
+RDDL2TensorFlow compiler and MDP simulator in Python3.
 
 # Usage
 
