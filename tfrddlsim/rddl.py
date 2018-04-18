@@ -58,8 +58,9 @@ class Domain(object):
 
 class Instance(object):
 
-    def __init__(self, name):
+    def __init__(self, name, sections):
         self.name = name
+        self.__dict__.update(sections)
 
 
 class NonFluents(object):

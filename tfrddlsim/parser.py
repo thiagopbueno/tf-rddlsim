@@ -661,10 +661,63 @@ class RDDLParser(object):
                     | MINUS INTEGER'''
         p[0] = p[1] if len(p) == 2 else -p[2]
 
+    def p_pos_int_type_or_pos_inf(self, p):
+        '''pos_int_type_or_pos_inf : INTEGER
+                                   | POS_INF'''
+        p[0] = p[1]
+
     def p_instance_block(self, p):
-        '''instance_block : INSTANCE IDENT LCURLY RCURLY'''
-        i = Instance(p[2])
-        p[0] = ('instance', i)
+        '''instance_block : INSTANCE IDENT LCURLY instance_list RCURLY'''
+        inst = Instance(p[2], p[4])
+        p[0] = ('instance', inst)
+
+    def p_instance_list(self, p):
+        '''instance_list : instance_list domain_section
+                         | instance_list nonfluents_section
+                         | instance_list objects_section
+                         | instance_list init_state_section
+                         | instance_list max_nondef_actions_section
+                         | instance_list horizon_spec_section
+                         | instance_list discount_section
+                         | empty'''
+        if p[1] is None:
+            p[0] = dict()
+        else:
+            name, section = p[2]
+            p[1][name] = section
+            p[0] = p[1]
+
+    def p_domain_section(self, p):
+        '''domain_section : DOMAIN ASSIGN_EQUAL IDENT SEMI'''
+        p[0] = ('domain', p[3])
+
+    def p_nonfluents_section(self, p):
+        '''nonfluents_section : NON_FLUENTS ASSIGN_EQUAL IDENT SEMI'''
+        p[0] = ('non_fluents', p[3])
+
+    def p_objects_section(self, p):
+        '''objects_section : OBJECTS LCURLY objects_list RCURLY SEMI'''
+        p[0] = ('objects', p[3])
+
+    def p_init_state_section(self, p):
+        '''init_state_section : INIT_STATE LCURLY pvar_inst_list RCURLY SEMI'''
+        p[0] = ('init_state', p[3])
+
+    def p_max_nondef_actions_section(self, p):
+        '''max_nondef_actions_section : MAX_NONDEF_ACTIONS ASSIGN_EQUAL pos_int_type_or_pos_inf SEMI'''
+        p[0] = ('max_nondef_actions', p[3])
+
+    def p_horizon_spec_section(self, p):
+        '''horizon_spec_section : HORIZON ASSIGN_EQUAL pos_int_type_or_pos_inf SEMI
+                                | HORIZON ASSIGN_EQUAL TERMINATE_WHEN LPAREN expr RPAREN'''
+        if len(p) == 5:
+            p[0] = ('horizon', p[3])
+        elif len(p) == 7:
+            p[0] = ('horizon', p[5])
+
+    def p_discount_section(self, p):
+        '''discount_section : DISCOUNT ASSIGN_EQUAL DOUBLE SEMI'''
+        p[0] = ('discount', p[3])
 
     def p_nonfluent_block(self, p):
         '''nonfluent_block : NON_FLUENTS IDENT LCURLY DOMAIN ASSIGN_EQUAL IDENT SEMI OBJECTS LCURLY objects_list RCURLY SEMI NON_FLUENTS LCURLY pvar_inst_list RCURLY SEMI RCURLY'''

@@ -511,7 +511,27 @@ class TestRDDLyacc(unittest.TestCase):
             };
         }
 
-        instance inst_reservoir_res8 { }
+        instance inst_reservoir_res8 {
+            domain = reservoir;
+            non-fluents = res8;
+            init-state{
+                rlevel(t1) = 75.0;
+                rlevel(t1, t2) = -75;
+                location(x) = 1.0;
+                location(y) = 2;
+                xPos = 0.0;
+                yPos = 0.0;
+                time = 0.0;
+                picTaken(p1) = true;
+                picTaken(p3) = false;
+            };
+            // State-action constraints above are sufficient
+            max-nondef-actions = pos-inf;
+
+            horizon = 40;
+
+            discount = 0.9;
+        }
         '''
         self.parser = parser.RDDLParser()
         self.parser.build()
@@ -1099,6 +1119,26 @@ class TestRDDLyacc(unittest.TestCase):
         instance = self.rddl.instance
         self.assertIsInstance(instance, Instance)
         self.assertEqual(instance.name, 'inst_reservoir_res8')
+        self.assertEqual(instance.domain, 'reservoir')
+        self.assertEqual(instance.non_fluents, 'res8')
+        self.assertEqual(instance.max_nondef_actions, 'pos-inf')
+        self.assertEqual(instance.horizon, 40)
+        self.assertAlmostEqual(instance.discount, 0.9)
+
+    def test_instance_init_state_section(self):
+        init_state = self.rddl.instance.init_state
+        expected = [
+            (('rlevel', ['t1']), 75.0),
+            (('rlevel', ['t1', 't2']), -75),
+            (('location', ['x']), 1.0),
+            (('location', ['y']), 2),
+            (('xPos', None), 0.0),
+            (('yPos', None), 0.0),
+            (('time', None), 0.0),
+            (('picTaken', ['p1']), True),
+            (('picTaken', ['p3']), False)
+        ]
+        self.assertEqual(init_state, expected)
 
     def test_nonfluents_block(self):
         non_fluents = self.rddl.non_fluents
