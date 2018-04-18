@@ -412,6 +412,55 @@ class TestRDDLyacc(unittest.TestCase):
 
             };
 
+            state-action-constraints {
+
+                // Navigation_Radius.rddl
+                forall_{?l:dim} move(?l)<=MAXACTIONBOUND(?l);
+                forall_{?l:dim} move(?l)>=MINACTIONBOUND(?l);
+                forall_{?l:dim} location(?l)<=MAXMAZEBOUND(?l);
+                forall_{?l:dim} location(?l)>=MINMAZEBOUND(?l);
+
+                // recon_mdp.rddl
+                (sum_{?t: tool}[WATER_TOOL(?t)])  >= 1;
+                (sum_{?t: tool}[CAMERA_TOOL(?t)]) >= 1;
+                (sum_{?t: tool}[LIFE_TOOL(?t)])   >= 1;
+
+                // crossing_traffic_mdp.rddl
+                // Robot at exactly one position
+                [sum_{?x : xpos, ?y : ypos} robot-at(?x,?y)] <= 1;
+
+                // EAST, WEST, NORTH, SOUTH defined properly (unique and symmetric)
+                forall_{?x1 : xpos} [(sum_{?x2 : xpos} WEST(?x1,?x2)) <= 1];
+                forall_{?x1 : xpos} [(sum_{?x2 : xpos} EAST(?x1,?x2)) <= 1];
+                forall_{?y1 : ypos} [(sum_{?y2 : ypos} NORTH(?y1,?y2)) <= 1];
+                forall_{?y1 : ypos} [(sum_{?y2 : ypos} SOUTH(?y1,?y2)) <= 1];
+                forall_{?x1 : xpos, ?x2 : xpos} [ EAST(?x1,?x2) <=> WEST(?x2,?x1) ];
+                forall_{?y1 : ypos, ?y2 : ypos} [ SOUTH(?y1,?y2) <=> NORTH(?y2,?y1) ];
+
+                // Definition verification
+                [ sum_{?x : xpos} MIN-XPOS(?x) ] == 1;
+                [ sum_{?x : xpos} MAX-XPOS(?x) ] == 1;
+                [ sum_{?y : ypos} MIN-YPOS(?y) ] == 1;
+                [ sum_{?y : ypos} MAX-YPOS(?y) ] == 1;
+                [ sum_{?x : xpos, ?y : ypos} GOAL(?x,?y) ] == 1;
+
+                // elevators_mdp.rddl
+                // Can check uniqueness constraint in many ways, but for simulator easiest
+                // is just to count.
+                forall_{?e : elevator} ([sum_{?f: floor} elevator-at-floor(?e, ?f)] == 1);
+
+                // Max of one action per elevator.
+                forall_{?e : elevator} [(open-door-going-up(?e) + open-door-going-down(?e) + close-door(?e) + move-current-dir(?e)) <= 1];
+
+                // All floors except top and bottom must have one adjacent floor above/below
+                forall_{?f : floor} [ TOP-FLOOR(?f) | (sum_{?fup : floor} ADJACENT-UP(?f,?fup)) == 1 ];
+                forall_{?f : floor} [ BOTTOM-FLOOR(?f) | (sum_{?fdown : floor} ADJACENT-UP(?fdown,?f)) == 1 ];
+
+                // game_of_life_mdp.rddl
+                forall_{?x : x_pos, ?y : y_pos} [(NOISE-PROB(?x,?y) >= 0.0) ^ (NOISE-PROB(?x,?y) <= 1.0)];
+
+            };
+
         }
 
         non-fluents res8 { }
@@ -989,6 +1038,11 @@ class TestRDDLyacc(unittest.TestCase):
         preconds = self.rddl.domain.preconds
         self.assertIsNotNone(preconds)
         self.assertEqual(len(preconds), 3)
+
+    def test_state_action_constraints(self):
+        constraints = self.rddl.domain.constraints
+        self.assertIsNotNone(constraints)
+        self.assertEqual(len(constraints), 24)
 
     def test_instance_block(self):
         instance = self.rddl.instance

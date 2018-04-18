@@ -263,6 +263,7 @@ class RDDLParser(object):
                        | domain_list cpf_section
                        | domain_list reward_section
                        | domain_list action_precond_section
+                       | domain_list state_action_constraint_section
                        | empty'''
         if p[1] is None:
             p[0] = dict()
@@ -401,6 +402,27 @@ class RDDLParser(object):
 
     def p_action_precond_def(self, p):
         '''action_precond_def : expr SEMI'''
+        p[0] = p[1]
+
+    def p_state_action_constraint_section(self, p):
+        '''state_action_constraint_section : STATE_ACTION_CONSTRAINTS LCURLY state_cons_list RCURLY SEMI
+                                           | STATE_ACTION_CONSTRAINTS LCURLY RCURLY SEMI'''
+        if len(p) == 6:
+            p[0] = ('constraints', p[3])
+        elif len(p) == 5:
+            p[0] = ('constraints', [])
+
+    def p_state_cons_list(self, p):
+        '''state_cons_list : state_cons_list state_cons_def
+                           | state_cons_def'''
+        if len(p) == 3:
+            p[1].append(p[2])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
+
+    def p_state_cons_def(self, p):
+        '''state_cons_def : expr SEMI'''
         p[0] = p[1]
 
     def p_term_list(self, p):

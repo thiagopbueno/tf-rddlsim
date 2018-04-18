@@ -47,6 +47,10 @@ class Domain(object):
     def preconds(self):
         return self.domain_list.get('preconds')
 
+    @property
+    def constraints(self):
+        return self.domain_list.get('constraints')
+
 
 class Instance(object):
 
