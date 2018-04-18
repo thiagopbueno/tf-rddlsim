@@ -245,7 +245,7 @@ class RDDLParser(object):
 
     def p_domain_block(self, p):
         '''domain_block : DOMAIN IDENT LCURLY req_section domain_list RCURLY'''
-        d = Domain(name=p[2], requirements=p[4], domain_list=p[5])
+        d = Domain(p[2], p[4], p[5])
         p[0] = ('domain', d)
 
     def p_req_section(self, p):
@@ -720,9 +720,25 @@ class RDDLParser(object):
         p[0] = ('discount', p[3])
 
     def p_nonfluent_block(self, p):
-        '''nonfluent_block : NON_FLUENTS IDENT LCURLY DOMAIN ASSIGN_EQUAL IDENT SEMI OBJECTS LCURLY objects_list RCURLY SEMI NON_FLUENTS LCURLY pvar_inst_list RCURLY SEMI RCURLY'''
-        nf = NonFluents(p[2], p[6], p[10], p[15])
+        '''nonfluent_block : NON_FLUENTS IDENT LCURLY nonfluent_list RCURLY'''
+        nf = NonFluents(p[2], p[4])
         p[0] = ('non_fluents', nf)
+
+    def p_nonfluent_list(self, p):
+        '''nonfluent_list : nonfluent_list domain_section
+                          | nonfluent_list objects_section
+                          | nonfluent_list init_non_fluent_section
+                          | empty'''
+        if p[1] is None:
+            p[0] = dict()
+        else:
+            name, section = p[2]
+            p[1][name] = section
+            p[0] = p[1]
+
+    def p_init_non_fluent_section(self, p):
+        '''init_non_fluent_section : NON_FLUENTS LCURLY pvar_inst_list RCURLY SEMI'''
+        p[0] = ('init_non_fluent', p[3])
 
     def p_objects_list(self, p):
         '''objects_list : objects_list objects_def

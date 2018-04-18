@@ -1155,8 +1155,8 @@ class TestRDDLyacc(unittest.TestCase):
         ]
         self.assertListEqual(objects, expected)
 
-    def test_nonfluents_instantiation_section(self):
-        values = self.rddl.non_fluents.values
+    def test_nonfluents_initialization_section(self):
+        init_non_fluent = self.rddl.non_fluents.init_non_fluent
         expected = [
             (('MAX_TIME', None), 12),
             (('MOVE_VARIANCE_MULT', None), 1e-05),
@@ -1177,4 +1177,4 @@ class TestRDDLyacc(unittest.TestCase):
             (('DOWNSTREAM', ['t7', 't8']), True),
             (('SINK_RES', ['t8']), True)
         ]
-        self.assertListEqual(values, expected)
+        self.assertListEqual(init_non_fluent, expected)
