@@ -43,6 +43,10 @@ class Domain(object):
     def reward(self):
         return self.domain_list.get('reward')
 
+    @property
+    def preconds(self):
+        return self.domain_list.get('preconds')
+
 
 class Instance(object):
 

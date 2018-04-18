@@ -262,6 +262,7 @@ class RDDLParser(object):
                        | domain_list pvar_section
                        | domain_list cpf_section
                        | domain_list reward_section
+                       | domain_list action_precond_section
                        | empty'''
         if p[1] is None:
             p[0] = dict()
@@ -380,6 +381,27 @@ class RDDLParser(object):
     def p_reward_section(self, p):
         '''reward_section : REWARD ASSIGN_EQUAL expr SEMI'''
         p[0] = ('reward', p[3])
+
+    def p_action_precond_section(self, p):
+        '''action_precond_section : ACTION_PRECONDITIONS LCURLY action_precond_list RCURLY SEMI
+                                  | ACTION_PRECONDITIONS LCURLY RCURLY SEMI'''
+        if len(p) == 6:
+            p[0] = ('preconds', p[3])
+        elif len(p) == 5:
+            p[0] = ('preconds', [])
+
+    def p_action_precond_list(self, p):
+        '''action_precond_list : action_precond_list action_precond_def
+                               | action_precond_def'''
+        if len(p) == 3:
+            p[1].append(p[2])
+            p[0] = p[1]
+        elif len(p) == 2:
+            p[0] = [p[1]]
+
+    def p_action_precond_def(self, p):
+        '''action_precond_def : expr SEMI'''
+        p[0] = p[1]
 
     def p_term_list(self, p):
         '''term_list : term_list COMMA term

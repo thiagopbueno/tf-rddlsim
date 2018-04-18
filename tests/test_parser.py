@@ -399,6 +399,19 @@ class TestRDDLyacc(unittest.TestCase):
                     // skill_teaching_mdp.rddl
                     [sum_{?s : skill} [SKILL_WEIGHT(?s) * proficiencyHigh(?s)]] + [sum_{?s : skill} -[SKILL_WEIGHT(?s) * ~proficiencyMed(?s)]]
                     ;
+
+            action-preconditions {
+
+                // Mars_Rover.rddl
+                // Cannot snap a picture and move at the same time
+                snapPicture => ((xMove == 0.0) ^ (yMove == 0.0));
+
+                // Reservoir.rddl
+                forall_{?r : res} outflow(?r) <= rlevel(?r);
+                forall_{?r : res} outflow(?r) >= 0;
+
+            };
+
         }
 
         non-fluents res8 { }
@@ -971,6 +984,11 @@ class TestRDDLyacc(unittest.TestCase):
     def test_reward_section(self):
         reward = self.rddl.domain.reward
         self.assertIsNotNone(reward)
+
+    def test_action_preconditions_section(self):
+        preconds = self.rddl.domain.preconds
+        self.assertIsNotNone(preconds)
+        self.assertEqual(len(preconds), 3)
 
     def test_instance_block(self):
         instance = self.rddl.instance
