@@ -10,3 +10,9 @@ class PVariable(object):
 
     def arity(self):
         return len(self.param_types) if self.param_types is not None else 0
+
+    def is_non_fluent(self):
+        return self.fluent_type == 'non-fluent'
+
+    def __str__(self):
+        return '{}/{}'.format(self.name, self.arity())
