@@ -22,3 +22,14 @@ class TestCompiler(unittest.TestCase):
         self.compiler = Compiler(self.rddl, self.graph)
         self.assertIs(self.compiler._rddl, self.rddl)
         self.assertIs(self.compiler._graph, self.graph)
+
+    def test_build_object_table(self):
+        self.compiler._build_object_table()
+        self.assertIn('res', self.compiler._object_table)
+        size = self.compiler._object_table['res']['size']
+        idx = self.compiler._object_table['res']['idx']
+        self.assertEqual(size, 8)
+        objs = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8']
+        for i, obj in enumerate(objs):
+            self.assertIn(obj, idx)
+            self.assertEqual(idx[obj], i)
