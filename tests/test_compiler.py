@@ -90,3 +90,32 @@ class TestCompiler(unittest.TestCase):
                 list2 = list(np.array(expected_initializers[name]).flatten())
                 for v1, v2 in zip(list1, list2):
                     self.assertAlmostEqual(v1, v2)
+
+    def test_instantiate_initial_state_fluents(self):
+        self.compiler._build_object_table()
+        sf = self.compiler._instantiate_initial_state_fluents()
+
+        expected_state_fluents = {
+            'rlevel/1': { 'shape': (8,) , 'dtype': tf.float32 }
+        }
+        self.assertIsInstance(sf, dict)
+        self.assertEqual(len(sf), len(expected_state_fluents))
+        for name, tensor in sf.items():
+            self.assertIn(name, expected_state_fluents)
+            shape = expected_state_fluents[name]['shape']
+            dtype = expected_state_fluents[name]['dtype']
+            self.assertEqual(tensor.name, '{}:0'.format(name))
+            self.assertIsInstance(tensor, tf.Tensor)
+            self.assertEqual(tensor.dtype, dtype)
+            self.assertEqual(tensor.shape, tf.TensorShape(shape))
+
+        expected_initializers = {
+            'rlevel/1': [75., 50., 50., 50., 50., 50., 50., 50.]
+        }
+        with tf.Session(graph=self.graph) as sess:
+            for name, tensor in sf.items():
+                value = sess.run(tensor)
+                list1 = list(value.flatten())
+                list2 = list(np.array(expected_initializers[name]).flatten())
+                for v1, v2 in zip(list1, list2):
+                    self.assertAlmostEqual(v1, v2)

@@ -48,6 +48,36 @@ class Compiler(object):
 
         return self._non_fluents
 
+    def _instantiate_initial_state_fluents(self):
+        state_fluents_initializer = dict()
+        for ((name, params), value) in self._rddl.instance.init_state:
+            name = '{}/{}'.format(name, len(params))
+            state_fluents_initializer[name] = state_fluents_initializer.get(name, [])
+            state_fluents_initializer[name].append((params, value))
+
+        self._initial_state_fluents = dict()
+        pvariables = self._rddl.domain.pvariables
+        for pvar in pvariables:
+            if pvar.is_state_fluent():
+                name = str(pvar)
+                dtype = self._range_type_to_dtype(pvar.range)
+                shape = self._param_types_to_shape(pvar.param_types)
+                sf = np.full(shape, pvar.default)
+
+                init = state_fluents_initializer.get(name, [])
+                for args, val in init:
+                    idx = []
+                    for ptype, arg in zip(pvar.param_types, args):
+                        idx.append(self._object_table[ptype]['idx'][arg])
+                    idx = tuple(idx)
+                    sf[idx] = val
+
+                with self._graph.as_default():
+                    constant = tf.constant(sf, dtype=dtype, name=name)
+                    self._initial_state_fluents[name] = constant
+
+        return self._initial_state_fluents
+
     @classmethod
     def _range_type_to_dtype(cls, range_type):
         dtype = None
