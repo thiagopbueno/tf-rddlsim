@@ -18,6 +18,24 @@ class Compiler(object):
                 idx = { obj: i for i, obj in enumerate(objs) }
                 self._object_table[name] = { 'size': len(objs), 'idx': idx }
 
+    def _build_pvariable_table(self):
+        self._pvariable_table = {
+            'non_fluents': {},
+            'state_fluents': {},
+            'action_fluents': {},
+            'intermediate_fluents': {}
+        }
+        for pvar in self._rddl.domain.pvariables:
+            name = str(pvar)
+            if pvar.is_non_fluent():
+                self._pvariable_table['non_fluents'][name] = pvar
+            elif pvar.is_state_fluent():
+                self._pvariable_table['state_fluents'][name] = pvar
+            elif pvar.is_action_fluent():
+                self._pvariable_table['action_fluents'][name] = pvar
+            elif pvar.is_intermediate_fluent():
+                self._pvariable_table['intermediate_fluents'][name] = pvar
+
     def _instantiate_pvariables(self, pvariables, initializer=None):
 
         if initializer is not None:

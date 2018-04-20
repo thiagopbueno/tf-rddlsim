@@ -23,6 +23,10 @@ class Domain(object):
     def action_fluents(self):
         return (pvar for pvar in self.pvariables if pvar.is_action_fluent())
 
+    @property
+    def intermediate_fluents(self):
+        return (pvar for pvar in self.pvariables if pvar.is_intermediate_fluent())
+
 class Instance(object):
 
     def __init__(self, name, sections):

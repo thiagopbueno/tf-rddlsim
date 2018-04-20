@@ -35,6 +35,40 @@ class TestCompiler(unittest.TestCase):
             self.assertIn(obj, idx)
             self.assertEqual(idx[obj], i)
 
+    def test_build_pvariable_table(self):
+        self.compiler._build_pvariable_table()
+
+        expected = {
+            'non_fluents': {
+                'MAX_RES_CAP/1',
+                'UPPER_BOUND/1',
+                'LOWER_BOUND/1',
+                'RAIN_SHAPE/1',
+                'RAIN_SCALE/1',
+                'DOWNSTREAM/2',
+                'SINK_RES/1',
+                'MAX_WATER_EVAP_FRAC_PER_TIME_UNIT/0',
+                'LOW_PENALTY/1',
+                'HIGH_PENALTY/1'
+            },
+            'intermediate_fluents': {
+                'evaporated/1',
+                'rainfall/1',
+                'overflow/1'
+            },
+            'state_fluents': {
+                'rlevel/1'
+            },
+            'action_fluents': {
+                'outflow/1'
+            }
+        }
+
+        self.assertIsInstance(self.compiler._pvariable_table, dict)
+        for fluent_type, fluents in self.compiler._pvariable_table.items():
+            self.assertIn(fluent_type, expected)
+            self.assertSetEqual(set(fluents), expected[fluent_type])
+
     def test_instantiate_non_fluents(self):
         self.compiler._build_object_table()
         nf = self.compiler._instantiate_non_fluents()
