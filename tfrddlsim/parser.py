@@ -3,6 +3,7 @@ from ply import lex, yacc
 from tfrddlsim.rddl import RDDL, Domain, Instance, NonFluents
 from tfrddlsim.pvariable import PVariable
 from tfrddlsim.cpf import CPF
+from tfrddlsim.expr import Expression
 
 
 alpha = r'[A-Za-z]'
@@ -476,7 +477,7 @@ class RDDLParser(object):
                 | aggregation_expr
                 | control_expr
                 | randomvar_expr'''
-        p[0] = p[1]
+        p[0] = Expression(p[1])
 
     def p_pvar_expr(self, p):
         '''pvar_expr : IDENT LPAREN term_list RPAREN
