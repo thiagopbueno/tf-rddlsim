@@ -119,3 +119,32 @@ class TestCompiler(unittest.TestCase):
                 list2 = list(np.array(expected_initializers[name]).flatten())
                 for v1, v2 in zip(list1, list2):
                     self.assertAlmostEqual(v1, v2)
+
+    def test_instantiate_default_action_fluents(self):
+        self.compiler._build_object_table()
+        af = self.compiler._instantiate_default_action_fluents()
+
+        expected_action_fluents = {
+            'outflow/1': { 'shape': (8,) , 'dtype': tf.float32 }
+        }
+        self.assertIsInstance(af, dict)
+        self.assertEqual(len(af), len(expected_action_fluents))
+        for name, tensor in af.items():
+            self.assertIn(name, expected_action_fluents)
+            shape = expected_action_fluents[name]['shape']
+            dtype = expected_action_fluents[name]['dtype']
+            self.assertEqual(tensor.name, '{}:0'.format(name))
+            self.assertIsInstance(tensor, tf.Tensor)
+            self.assertEqual(tensor.dtype, dtype)
+            self.assertEqual(tensor.shape, tf.TensorShape(shape))
+
+        expected_initializers = {
+            'outflow/1': [0., 0., 0., 0., 0., 0., 0., 0.]
+        }
+        with tf.Session(graph=self.graph) as sess:
+            for name, tensor in af.items():
+                value = sess.run(tensor)
+                list1 = list(value.flatten())
+                list2 = list(np.array(expected_initializers[name]).flatten())
+                for v1, v2 in zip(list1, list2):
+                    self.assertAlmostEqual(v1, v2)

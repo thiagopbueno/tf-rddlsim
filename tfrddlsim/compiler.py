@@ -60,6 +60,11 @@ class Compiler(object):
         self._initial_state_fluents = self._instantiate_pvariables(state_fluents, initializer)
         return self._initial_state_fluents
 
+    def _instantiate_default_action_fluents(self):
+        action_fluents = self._rddl.domain.action_fluents
+        self._default_action_fluents = self._instantiate_pvariables(action_fluents)
+        return self._default_action_fluents
+
     @classmethod
     def _range_type_to_dtype(cls, range_type):
         dtype = None

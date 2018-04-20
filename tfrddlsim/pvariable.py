@@ -17,5 +17,8 @@ class PVariable(object):
     def is_state_fluent(self):
         return self.fluent_type == 'state-fluent'
 
+    def is_action_fluent(self):
+        return self.fluent_type == 'action-fluent'
+
     def __str__(self):
         return '{}/{}'.format(self.name, self.arity())

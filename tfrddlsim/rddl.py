@@ -19,6 +19,10 @@ class Domain(object):
     def state_fluents(self):
         return (pvar for pvar in self.pvariables if pvar.is_state_fluent())
 
+    @property
+    def action_fluents(self):
+        return (pvar for pvar in self.pvariables if pvar.is_action_fluent())
+
 class Instance(object):
 
     def __init__(self, name, sections):
