@@ -69,6 +69,20 @@ class TestCompiler(unittest.TestCase):
             self.assertIn(fluent_type, expected)
             self.assertSetEqual(set(fluents), expected[fluent_type])
 
+    def test_build_action_preconditions_table(self):
+        self.compiler._build_pvariable_table()
+        self.compiler._build_preconditions_table()
+
+        local_preconds = self.compiler._local_action_preconditions
+        self.assertIsInstance(local_preconds, dict)
+        self.assertEqual(len(local_preconds), 1)
+        self.assertIn('outflow/1', local_preconds)
+        self.assertEqual(len(local_preconds['outflow/1']), 2)
+
+        global_preconds = self.compiler._global_action_preconditions
+        self.assertIsInstance(global_preconds, list)
+        self.assertEqual(len(global_preconds), 0)
+
     def test_instantiate_non_fluents(self):
         self.compiler._build_object_table()
         nf = self.compiler._instantiate_non_fluents()

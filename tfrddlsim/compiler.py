@@ -36,6 +36,20 @@ class Compiler(object):
             elif pvar.is_intermediate_fluent():
                 self._pvariable_table['intermediate_fluents'][name] = pvar
 
+    def _build_preconditions_table(self):
+        self._local_action_preconditions = dict()
+        self._global_action_preconditions = []
+        action_fluents = self._pvariable_table['action_fluents']
+        for precond in self._rddl.domain.preconds:
+            scope = precond.scope
+            action_scope = [action for action in scope if action in action_fluents]
+            if len(action_scope) == 1:
+                name = action_scope[0]
+                self._local_action_preconditions[name] = self._local_action_preconditions.get(name, [])
+                self._local_action_preconditions[name].append(precond)
+            else:
+                self._global_action_preconditions.append(precond)
+
     def _instantiate_pvariables(self, pvariables, initializer=None):
 
         if initializer is not None:
