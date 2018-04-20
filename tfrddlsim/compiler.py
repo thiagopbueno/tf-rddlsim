@@ -18,64 +18,46 @@ class Compiler(object):
                 idx = { obj: i for i, obj in enumerate(objs) }
                 self._object_table[name] = { 'size': len(objs), 'idx': idx }
 
-    def _instantiate_non_fluents(self):
-        init_non_fluent = dict()
-        for ((name, params), value) in self._rddl.non_fluents.init_non_fluent:
-            name = '{}/{}'.format(name, len(params))
-            init_non_fluent[name] = init_non_fluent.get(name, [])
-            init_non_fluent[name].append((params, value))
+    def _instantiate_pvariables(self, pvariables, initializer=None):
 
-        self._non_fluents = dict()
-        pvariables = self._rddl.domain.pvariables
+        if initializer is not None:
+            init = dict()
+            for ((name, params), value) in initializer:
+                name = '{}/{}'.format(name, len(params))
+                init[name] = init.get(name, [])
+                init[name].append((params, value))
+
+        fluents = {}
+
         for pvar in pvariables:
-            if pvar.is_non_fluent():
-                name = str(pvar)
-                dtype = self._range_type_to_dtype(pvar.range)
-                shape = self._param_types_to_shape(pvar.param_types)
-                nf = np.full(shape, pvar.default)
+            name = str(pvar)
+            shape = self._param_types_to_shape(pvar.param_types)
+            dtype = self._range_type_to_dtype(pvar.range)
+            fluent = np.full(shape, pvar.default)
 
-                init = init_non_fluent.get(name, [])
-                for args, val in init:
+            if initializer is not None:
+                for args, val in init.get(name, []):
                     idx = []
                     for ptype, arg in zip(pvar.param_types, args):
                         idx.append(self._object_table[ptype]['idx'][arg])
                     idx = tuple(idx)
-                    nf[idx] = val
+                    fluent[idx] = val
 
-                with self._graph.as_default():
-                    constant = tf.constant(nf, dtype=dtype, name=name)
-                    self._non_fluents[name] = constant
+            with self._graph.as_default():
+                fluents[name] = tf.constant(fluent, dtype=dtype, name=name)
 
+        return fluents
+
+    def _instantiate_non_fluents(self):
+        non_fluents = self._rddl.domain.non_fluents
+        initializer = self._rddl.non_fluents.init_non_fluent
+        self._non_fluents = self._instantiate_pvariables(non_fluents, initializer)
         return self._non_fluents
 
     def _instantiate_initial_state_fluents(self):
-        state_fluents_initializer = dict()
-        for ((name, params), value) in self._rddl.instance.init_state:
-            name = '{}/{}'.format(name, len(params))
-            state_fluents_initializer[name] = state_fluents_initializer.get(name, [])
-            state_fluents_initializer[name].append((params, value))
-
-        self._initial_state_fluents = dict()
-        pvariables = self._rddl.domain.pvariables
-        for pvar in pvariables:
-            if pvar.is_state_fluent():
-                name = str(pvar)
-                dtype = self._range_type_to_dtype(pvar.range)
-                shape = self._param_types_to_shape(pvar.param_types)
-                sf = np.full(shape, pvar.default)
-
-                init = state_fluents_initializer.get(name, [])
-                for args, val in init:
-                    idx = []
-                    for ptype, arg in zip(pvar.param_types, args):
-                        idx.append(self._object_table[ptype]['idx'][arg])
-                    idx = tuple(idx)
-                    sf[idx] = val
-
-                with self._graph.as_default():
-                    constant = tf.constant(sf, dtype=dtype, name=name)
-                    self._initial_state_fluents[name] = constant
-
+        state_fluents = self._rddl.domain.state_fluents
+        initializer = self._rddl.instance.init_state
+        self._initial_state_fluents = self._instantiate_pvariables(state_fluents, initializer)
         return self._initial_state_fluents
 
     @classmethod

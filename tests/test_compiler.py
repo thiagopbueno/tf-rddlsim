@@ -40,16 +40,16 @@ class TestCompiler(unittest.TestCase):
         nf = self.compiler._instantiate_non_fluents()
 
         expected_non_fluents = {
-            'MAX_RES_CAP/1': { 'shape': (8,), 'dtype': tf.float32, 'default': 100.0 },
-            'UPPER_BOUND/1': { 'shape': (8,), 'dtype': tf.float32, 'default': 80.0 },
-            'LOWER_BOUND/1': { 'shape': (8,), 'dtype': tf.float32, 'default': 20.0 },
-            'RAIN_SHAPE/1': { 'shape': (8,), 'dtype': tf.float32, 'default': 25.0 },
-            'RAIN_SCALE/1': { 'shape': (8,), 'dtype': tf.float32, 'default': 25.0 },
-            'DOWNSTREAM/2': { 'shape': (8,8), 'dtype': tf.bool, 'default': False },
-            'SINK_RES/1': { 'shape': (8,), 'dtype': tf.bool, 'default': False },
-            'MAX_WATER_EVAP_FRAC_PER_TIME_UNIT/0': { 'shape': (), 'dtype': tf.float32, 'default': 0.05 },
-            'LOW_PENALTY/1': { 'shape': (8,), 'dtype': tf.float32, 'default': -5.0 },
-            'HIGH_PENALTY/1': { 'shape': (8,), 'dtype': tf.float32, 'default': -10.0 }
+            'MAX_RES_CAP/1': { 'shape': (8,), 'dtype': tf.float32 },
+            'UPPER_BOUND/1': { 'shape': (8,), 'dtype': tf.float32 },
+            'LOWER_BOUND/1': { 'shape': (8,), 'dtype': tf.float32 },
+            'RAIN_SHAPE/1': { 'shape': (8,), 'dtype': tf.float32 },
+            'RAIN_SCALE/1': { 'shape': (8,), 'dtype': tf.float32 },
+            'DOWNSTREAM/2': { 'shape': (8,8), 'dtype': tf.bool },
+            'SINK_RES/1': { 'shape': (8,), 'dtype': tf.bool },
+            'MAX_WATER_EVAP_FRAC_PER_TIME_UNIT/0': { 'shape': (), 'dtype': tf.float32 },
+            'LOW_PENALTY/1': { 'shape': (8,), 'dtype': tf.float32 },
+            'HIGH_PENALTY/1': { 'shape': (8,), 'dtype': tf.float32 }
         }
         self.assertIsInstance(nf, dict)
         self.assertEqual(len(nf), len(expected_non_fluents))
