@@ -254,3 +254,64 @@ class TestCompiler(unittest.TestCase):
             self.assertEqual(t.shape, [])
             self.assertEqual(t.dtype, tf.float32)
             self.assertEqual(t.scope.as_list(), [])
+
+    def test_intermediate_cpfs(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            compiler._build_object_table()
+            compiler._build_pvariable_table()
+
+            interm_cpfs = compiler._intermediate_cpfs
+            self.assertIsInstance(interm_cpfs, list)
+
+            interm_fluents = compiler._pvariable_table['intermediate_fluents']
+            self.assertEqual(len(interm_cpfs), len(interm_fluents))
+            for cpf in interm_cpfs:
+                self.assertIn(cpf.name, interm_fluents)
+
+            for i, cpf in enumerate(interm_cpfs[:-1]):
+                level1 = interm_fluents[cpf.name].level
+                level2 = interm_fluents[interm_cpfs[i+1].name].level
+                self.assertLessEqual(level1, level2)
+
+    def test_state_cpfs(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            compiler._build_object_table()
+            compiler._build_pvariable_table()
+
+            state_cpfs = compiler._state_cpfs
+            self.assertIsInstance(state_cpfs, list)
+
+            state_fluents = compiler._pvariable_table['state_fluents']
+            self.assertEqual(len(state_cpfs), len(state_fluents))
+            for cpf in state_cpfs:
+                name = cpf.name
+                functor = name[:name.index('/')-1]
+                arity = name[name.index('/')+1:]
+                name = '{}/{}'.format(functor, arity)
+                self.assertIn(name, state_fluents)
+
+    def test_compile_cpfs(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            compiler._build_object_table()
+            compiler._build_pvariable_table()
+
+            nf = compiler._instantiate_non_fluents()
+            sf = compiler._instantiate_initial_state_fluents()
+            af = compiler._instantiate_default_action_fluents()
+            scope = {}
+            scope.update(nf)
+            scope.update(sf)
+            scope.update(af)
+
+            next_state_fluents = compiler.compile_cpfs(scope)
+            self.assertIsInstance(next_state_fluents, dict)
+            self.assertEqual(len(next_state_fluents), len(sf))
+            for fluent in sf:
+                functor = fluent[:fluent.index('/')]
+                arity = fluent[fluent.index('/')+1:]
+                next_fluent = "{}'/{}".format(functor, arity)
+                self.assertIn(next_fluent, next_state_fluents)
+                self.assertIsInstance(next_state_fluents[next_fluent], tf.Tensor)

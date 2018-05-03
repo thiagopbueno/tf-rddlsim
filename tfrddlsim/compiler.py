@@ -10,6 +10,41 @@ class Compiler(object):
         self._rddl = rddl
         self._graph = graph
 
+    def compile_cpfs(self, scope):
+        next_state_fluents = {}
+
+        for cpf in self._intermediate_cpfs:
+            t = self._compile_expression(cpf.expr, scope)
+            scope[cpf.name] = t.tensor
+
+        for cpf in self._state_cpfs:
+            t = self._compile_expression(cpf.expr, scope)
+            next_state_fluents[cpf.name] = t.tensor
+
+        return next_state_fluents
+
+    @property
+    def _intermediate_cpfs(self):
+        _, cpfs = self._rddl.domain.cpfs
+        interm_fluents = self._pvariable_table['intermediate_fluents']
+        interm_cpfs = (cpf for cpf in cpfs if cpf.name in interm_fluents)
+        interm_cpfs = sorted(interm_cpfs, key=lambda cpf: interm_fluents[cpf.name].level)
+        return interm_cpfs
+
+    @property
+    def _state_cpfs(self):
+        _, cpfs = self._rddl.domain.cpfs
+        state_fluents = self._pvariable_table['state_fluents']
+        state_cpfs = []
+        for cpf in cpfs:
+            name = cpf.name
+            functor = name[:name.index('/')-1]
+            arity = name[name.index('/')+1:]
+            name = '{}/{}'.format(functor, arity)
+            if name in state_fluents:
+                state_cpfs.append(cpf)
+        return state_cpfs
+
     def _build_object_table(self):
         types = self._rddl.domain.types
         objects = dict(self._rddl.non_fluents.objects)
