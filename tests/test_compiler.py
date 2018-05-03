@@ -46,39 +46,6 @@ class TestCompiler(unittest.TestCase):
             self.assertIn(obj, idx)
             self.assertEqual(idx[obj], i)
 
-    def test_build_pvariable_table(self):
-
-        expected = {
-            'non_fluents': {
-                'MAX_RES_CAP/1',
-                'UPPER_BOUND/1',
-                'LOWER_BOUND/1',
-                'RAIN_SHAPE/1',
-                'RAIN_SCALE/1',
-                'DOWNSTREAM/2',
-                'SINK_RES/1',
-                'MAX_WATER_EVAP_FRAC_PER_TIME_UNIT/0',
-                'LOW_PENALTY/1',
-                'HIGH_PENALTY/1'
-            },
-            'intermediate_fluents': {
-                'evaporated/1',
-                'rainfall/1',
-                'overflow/1'
-            },
-            'state_fluents': {
-                'rlevel/1'
-            },
-            'action_fluents': {
-                'outflow/1'
-            }
-        }
-
-        self.assertIsInstance(self.compiler1.pvariable_table, dict)
-        for fluent_type, fluents in self.compiler1.pvariable_table.items():
-            self.assertIn(fluent_type, expected)
-            self.assertSetEqual(set(fluents), expected[fluent_type])
-
     def test_build_action_preconditions_table(self):
         local_preconds = self.compiler1.local_action_preconditions
         self.assertIsInstance(local_preconds, dict)
@@ -244,37 +211,6 @@ class TestCompiler(unittest.TestCase):
             self.assertEqual(t.shape, [])
             self.assertEqual(t.dtype, tf.float32)
             self.assertEqual(t.scope.as_list(), [])
-
-    def test_intermediate_cpfs(self):
-        compilers = [self.compiler1, self.compiler2]
-        for compiler in compilers:
-            interm_cpfs = compiler._intermediate_cpfs
-            self.assertIsInstance(interm_cpfs, list)
-
-            interm_fluents = compiler.pvariable_table['intermediate_fluents']
-            self.assertEqual(len(interm_cpfs), len(interm_fluents))
-            for cpf in interm_cpfs:
-                self.assertIn(cpf.name, interm_fluents)
-
-            for i, cpf in enumerate(interm_cpfs[:-1]):
-                level1 = interm_fluents[cpf.name].level
-                level2 = interm_fluents[interm_cpfs[i+1].name].level
-                self.assertLessEqual(level1, level2)
-
-    def test_state_cpfs(self):
-        compilers = [self.compiler1, self.compiler2]
-        for compiler in compilers:
-            state_cpfs = compiler._state_cpfs
-            self.assertIsInstance(state_cpfs, list)
-
-            state_fluents = compiler.pvariable_table['state_fluents']
-            self.assertEqual(len(state_cpfs), len(state_fluents))
-            for cpf in state_cpfs:
-                name = cpf.name
-                functor = name[:name.index('/')-1]
-                arity = name[name.index('/')+1:]
-                name = '{}/{}'.format(functor, arity)
-                self.assertIn(name, state_fluents)
 
     def test_compile_cpfs(self):
         compilers = [self.compiler1, self.compiler2]

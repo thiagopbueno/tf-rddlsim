@@ -13,49 +13,21 @@ class Compiler(object):
     def compile_cpfs(self, scope):
         next_state_fluents = {}
 
-        for cpf in self._intermediate_cpfs:
+        for cpf in self._rddl.domain.intermediate_cpfs:
             t = self._compile_expression(cpf.expr, scope)
             scope[cpf.name] = t.tensor
 
-        for cpf in self._state_cpfs:
+        for cpf in self._rddl.domain.state_cpfs:
             t = self._compile_expression(cpf.expr, scope)
             next_state_fluents[cpf.name] = t.tensor
 
         return next_state_fluents
 
     @property
-    def _intermediate_cpfs(self):
-        _, cpfs = self._rddl.domain.cpfs
-        interm_fluents = self.pvariable_table['intermediate_fluents']
-        interm_cpfs = (cpf for cpf in cpfs if cpf.name in interm_fluents)
-        interm_cpfs = sorted(interm_cpfs, key=lambda cpf: interm_fluents[cpf.name].level)
-        return interm_cpfs
-
-    @property
-    def _state_cpfs(self):
-        _, cpfs = self._rddl.domain.cpfs
-        state_fluents = self.pvariable_table['state_fluents']
-        state_cpfs = []
-        for cpf in cpfs:
-            name = cpf.name
-            functor = name[:name.index('/')-1]
-            arity = name[name.index('/')+1:]
-            name = '{}/{}'.format(functor, arity)
-            if name in state_fluents:
-                state_cpfs.append(cpf)
-        return state_cpfs
-
-    @property
     def object_table(self):
         if self.__dict__.get('_object_table') is None:
             self._build_object_table()
         return self._object_table
-
-    @property
-    def pvariable_table(self):
-        if self.__dict__.get('_pvariable_table') is None:
-            self._build_pvariable_table()
-        return self._pvariable_table
 
     @property
     def non_fluents(self):
@@ -97,28 +69,10 @@ class Compiler(object):
                 idx = { obj: i for i, obj in enumerate(objs) }
                 self._object_table[name] = { 'size': len(objs), 'idx': idx }
 
-    def _build_pvariable_table(self):
-        self._pvariable_table = {
-            'non_fluents': {},
-            'state_fluents': {},
-            'action_fluents': {},
-            'intermediate_fluents': {}
-        }
-        for pvar in self._rddl.domain.pvariables:
-            name = str(pvar)
-            if pvar.is_non_fluent():
-                self._pvariable_table['non_fluents'][name] = pvar
-            elif pvar.is_state_fluent():
-                self._pvariable_table['state_fluents'][name] = pvar
-            elif pvar.is_action_fluent():
-                self._pvariable_table['action_fluents'][name] = pvar
-            elif pvar.is_intermediate_fluent():
-                self._pvariable_table['intermediate_fluents'][name] = pvar
-
     def _build_preconditions_table(self):
         self._local_action_preconditions = dict()
         self._global_action_preconditions = []
-        action_fluents = self.pvariable_table['action_fluents']
+        action_fluents = self._rddl.domain.action_fluents
         for precond in self._rddl.domain.preconds:
             scope = precond.scope
             action_scope = [action for action in scope if action in action_fluents]
@@ -130,7 +84,6 @@ class Compiler(object):
                 self._global_action_preconditions.append(precond)
 
     def _instantiate_pvariables(self, pvariables, initializer=None):
-
         if initializer is not None:
             init = dict()
             for ((name, params), value) in initializer:
@@ -141,8 +94,7 @@ class Compiler(object):
 
         fluents = {}
 
-        for pvar in pvariables:
-            name = str(pvar)
+        for name, pvar in pvariables.items():
             shape = self._param_types_to_shape(pvar.param_types)
             dtype = self._range_type_to_dtype(pvar.range)
             fluent = np.full(shape, pvar.default)
