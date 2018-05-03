@@ -37,10 +37,9 @@ class TestCompiler(unittest.TestCase):
         self.assertIs(self.compiler2._graph, self.graph2)
 
     def test_build_object_table(self):
-        self.compiler1._build_object_table()
-        self.assertIn('res', self.compiler1._object_table)
-        size = self.compiler1._object_table['res']['size']
-        idx = self.compiler1._object_table['res']['idx']
+        self.assertIn('res', self.compiler1.object_table)
+        size = self.compiler1.object_table['res']['size']
+        idx = self.compiler1.object_table['res']['idx']
         self.assertEqual(size, 8)
         objs = ['t1', 't2', 't3', 't4', 't5', 't6', 't7', 't8']
         for i, obj in enumerate(objs):
@@ -48,7 +47,6 @@ class TestCompiler(unittest.TestCase):
             self.assertEqual(idx[obj], i)
 
     def test_build_pvariable_table(self):
-        self.compiler1._build_pvariable_table()
 
         expected = {
             'non_fluents': {
@@ -76,28 +74,24 @@ class TestCompiler(unittest.TestCase):
             }
         }
 
-        self.assertIsInstance(self.compiler1._pvariable_table, dict)
-        for fluent_type, fluents in self.compiler1._pvariable_table.items():
+        self.assertIsInstance(self.compiler1.pvariable_table, dict)
+        for fluent_type, fluents in self.compiler1.pvariable_table.items():
             self.assertIn(fluent_type, expected)
             self.assertSetEqual(set(fluents), expected[fluent_type])
 
     def test_build_action_preconditions_table(self):
-        self.compiler1._build_pvariable_table()
-        self.compiler1._build_preconditions_table()
-
-        local_preconds = self.compiler1._local_action_preconditions
+        local_preconds = self.compiler1.local_action_preconditions
         self.assertIsInstance(local_preconds, dict)
         self.assertEqual(len(local_preconds), 1)
         self.assertIn('outflow/1', local_preconds)
         self.assertEqual(len(local_preconds['outflow/1']), 2)
 
-        global_preconds = self.compiler1._global_action_preconditions
+        global_preconds = self.compiler1.global_action_preconditions
         self.assertIsInstance(global_preconds, list)
         self.assertEqual(len(global_preconds), 0)
 
     def test_instantiate_non_fluents(self):
-        self.compiler1._build_object_table()
-        nf = self.compiler1._instantiate_non_fluents()
+        nf = self.compiler1.non_fluents
 
         expected_non_fluents = {
             'MAX_RES_CAP/1': { 'shape': (8,), 'dtype': tf.float32 },
@@ -152,8 +146,7 @@ class TestCompiler(unittest.TestCase):
                     self.assertAlmostEqual(v1, v2)
 
     def test_instantiate_initial_state_fluents(self):
-        self.compiler1._build_object_table()
-        sf = self.compiler1._instantiate_initial_state_fluents()
+        sf = self.compiler1.initial_state_fluents
 
         expected_state_fluents = {
             'rlevel/1': { 'shape': (8,) , 'dtype': tf.float32 }
@@ -181,8 +174,7 @@ class TestCompiler(unittest.TestCase):
                     self.assertAlmostEqual(v1, v2)
 
     def test_instantiate_default_action_fluents(self):
-        self.compiler1._build_object_table()
-        af = self.compiler1._instantiate_default_action_fluents()
+        af = self.compiler1.default_action_fluents
 
         expected_action_fluents = {
             'outflow/1': { 'shape': (8,) , 'dtype': tf.float32 }
@@ -227,11 +219,9 @@ class TestCompiler(unittest.TestCase):
         compilers = [self.compiler1, self.compiler2]
         rddls = [self.rddl1, self.rddl2]
         for compiler, rddl in zip(compilers, rddls):
-            compiler._build_object_table()
-
-            nf = compiler._instantiate_non_fluents()
-            sf = compiler._instantiate_initial_state_fluents()
-            af = compiler._instantiate_default_action_fluents()
+            nf = compiler.non_fluents
+            sf = compiler.initial_state_fluents
+            af = compiler.default_action_fluents
             scope = {}
             scope.update(nf)
             scope.update(sf)
@@ -258,13 +248,10 @@ class TestCompiler(unittest.TestCase):
     def test_intermediate_cpfs(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
-            compiler._build_object_table()
-            compiler._build_pvariable_table()
-
             interm_cpfs = compiler._intermediate_cpfs
             self.assertIsInstance(interm_cpfs, list)
 
-            interm_fluents = compiler._pvariable_table['intermediate_fluents']
+            interm_fluents = compiler.pvariable_table['intermediate_fluents']
             self.assertEqual(len(interm_cpfs), len(interm_fluents))
             for cpf in interm_cpfs:
                 self.assertIn(cpf.name, interm_fluents)
@@ -277,13 +264,10 @@ class TestCompiler(unittest.TestCase):
     def test_state_cpfs(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
-            compiler._build_object_table()
-            compiler._build_pvariable_table()
-
             state_cpfs = compiler._state_cpfs
             self.assertIsInstance(state_cpfs, list)
 
-            state_fluents = compiler._pvariable_table['state_fluents']
+            state_fluents = compiler.pvariable_table['state_fluents']
             self.assertEqual(len(state_cpfs), len(state_fluents))
             for cpf in state_cpfs:
                 name = cpf.name
@@ -295,12 +279,9 @@ class TestCompiler(unittest.TestCase):
     def test_compile_cpfs(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
-            compiler._build_object_table()
-            compiler._build_pvariable_table()
-
-            nf = compiler._instantiate_non_fluents()
-            sf = compiler._instantiate_initial_state_fluents()
-            af = compiler._instantiate_default_action_fluents()
+            nf = compiler.non_fluents
+            sf = compiler.initial_state_fluents
+            af = compiler.default_action_fluents
             scope = {}
             scope.update(nf)
             scope.update(sf)

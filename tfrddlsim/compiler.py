@@ -26,7 +26,7 @@ class Compiler(object):
     @property
     def _intermediate_cpfs(self):
         _, cpfs = self._rddl.domain.cpfs
-        interm_fluents = self._pvariable_table['intermediate_fluents']
+        interm_fluents = self.pvariable_table['intermediate_fluents']
         interm_cpfs = (cpf for cpf in cpfs if cpf.name in interm_fluents)
         interm_cpfs = sorted(interm_cpfs, key=lambda cpf: interm_fluents[cpf.name].level)
         return interm_cpfs
@@ -34,7 +34,7 @@ class Compiler(object):
     @property
     def _state_cpfs(self):
         _, cpfs = self._rddl.domain.cpfs
-        state_fluents = self._pvariable_table['state_fluents']
+        state_fluents = self.pvariable_table['state_fluents']
         state_cpfs = []
         for cpf in cpfs:
             name = cpf.name
@@ -44,6 +44,48 @@ class Compiler(object):
             if name in state_fluents:
                 state_cpfs.append(cpf)
         return state_cpfs
+
+    @property
+    def object_table(self):
+        if self.__dict__.get('_object_table') is None:
+            self._build_object_table()
+        return self._object_table
+
+    @property
+    def pvariable_table(self):
+        if self.__dict__.get('_pvariable_table') is None:
+            self._build_pvariable_table()
+        return self._pvariable_table
+
+    @property
+    def non_fluents(self):
+        if self.__dict__.get('_non_fluents') is None:
+            self._instantiate_non_fluents()
+        return self._non_fluents
+
+    @property
+    def initial_state_fluents(self):
+        if self.__dict__.get('_initial_state_fluents') is None:
+            self._instantiate_initial_state_fluents()
+        return self._initial_state_fluents
+
+    @property
+    def default_action_fluents(self):
+        if self.__dict__.get('_default_action_fluents') is None:
+            self._instantiate_default_action_fluents()
+        return self._default_action_fluents
+
+    @property
+    def local_action_preconditions(self):
+        if self.__dict__.get('_local_action_preconditions') is None:
+            self._build_preconditions_table()
+        return self._local_action_preconditions
+
+    @property
+    def global_action_preconditions(self):
+        if self.__dict__.get('_global_action_preconditions') is None:
+            self._build_preconditions_table()
+        return self._global_action_preconditions
 
     def _build_object_table(self):
         types = self._rddl.domain.types
@@ -76,7 +118,7 @@ class Compiler(object):
     def _build_preconditions_table(self):
         self._local_action_preconditions = dict()
         self._global_action_preconditions = []
-        action_fluents = self._pvariable_table['action_fluents']
+        action_fluents = self.pvariable_table['action_fluents']
         for precond in self._rddl.domain.preconds:
             scope = precond.scope
             action_scope = [action for action in scope if action in action_fluents]
@@ -110,7 +152,7 @@ class Compiler(object):
                     if args is not None:
                         idx = []
                         for ptype, arg in zip(pvar.param_types, args):
-                            idx.append(self._object_table[ptype]['idx'][arg])
+                            idx.append(self.object_table[ptype]['idx'][arg])
                         idx = tuple(idx)
                         fluent[idx] = val
                     else:
@@ -298,5 +340,5 @@ class Compiler(object):
 
     def _param_types_to_shape(self, param_types):
         param_types = [] if param_types is None else param_types
-        shape = tuple(self._object_table[ptype]['size'] for ptype in param_types)
+        shape = tuple(self.object_table[ptype]['size'] for ptype in param_types)
         return shape
