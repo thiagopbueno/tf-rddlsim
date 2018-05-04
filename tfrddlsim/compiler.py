@@ -11,7 +11,7 @@ class Compiler(object):
         self._graph = graph
 
     def compile_cpfs(self, scope):
-        next_state_fluents = {}
+        next_state_fluents = []
 
         for cpf in self._rddl.domain.intermediate_cpfs:
             t = self._compile_expression(cpf.expr, scope)
@@ -19,7 +19,10 @@ class Compiler(object):
 
         for cpf in self._rddl.domain.state_cpfs:
             t = self._compile_expression(cpf.expr, scope)
-            next_state_fluents[cpf.name] = t.tensor
+            next_state_fluents.append((cpf.name, t.tensor))
+
+        key = lambda f: self.next_state_fluent_ordering.index(f[0])
+        next_state_fluents = sorted(next_state_fluents, key=key)
 
         return next_state_fluents
 
@@ -306,6 +309,20 @@ class Compiler(object):
         elif range_type == 'bool':
             dtype = tf.bool
         return dtype
+
+    @classmethod
+    def _rename_next_state_fluent(cls, name):
+        i = name.index('/')
+        functor = name[:i-1]
+        arity = name[i+1:]
+        return "{}/{}".format(functor, arity)
+
+    @classmethod
+    def _rename_state_fluent(cls, name):
+        i = name.index('/')
+        functor = name[:i]
+        arity = name[i+1:]
+        return "{}'/{}".format(functor, arity)
 
     def _param_types_to_shape(self, param_types):
         param_types = [] if param_types is None else param_types

@@ -279,11 +279,13 @@ class TestCompiler(unittest.TestCase):
             scope.update(af)
 
             next_state_fluents = compiler.compile_cpfs(scope)
-            self.assertIsInstance(next_state_fluents, dict)
+            self.assertIsInstance(next_state_fluents, list)
+            for cpf in next_state_fluents:
+                self.assertIsInstance(cpf, tuple)
             self.assertEqual(len(next_state_fluents), len(sf))
+
+            next_state_fluents = dict(next_state_fluents)
             for fluent in sf:
-                functor = fluent[:fluent.index('/')]
-                arity = fluent[fluent.index('/')+1:]
-                next_fluent = "{}'/{}".format(functor, arity)
+                next_fluent = compiler._rename_state_fluent(fluent)
                 self.assertIn(next_fluent, next_state_fluents)
                 self.assertIsInstance(next_state_fluents[next_fluent], tf.Tensor)

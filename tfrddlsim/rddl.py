@@ -45,6 +45,7 @@ class Domain(object):
             name = '{}/{}'.format(functor, arity)
             if name in self.state_fluents:
                 state_cpfs.append(cpf)
+        state_cpfs = sorted(state_cpfs, key=lambda cpf: cpf.name)
         return state_cpfs
 
 
