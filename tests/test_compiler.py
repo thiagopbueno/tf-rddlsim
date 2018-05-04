@@ -168,6 +168,61 @@ class TestCompiler(unittest.TestCase):
                 for v1, v2 in zip(list1, list2):
                     self.assertAlmostEqual(v1, v2)
 
+    def test_state_fluent_ordering(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            initial_state_fluents = compiler.initial_state_fluents
+            current_state_ordering = compiler.state_fluent_ordering
+            self.assertEqual(len(current_state_ordering), len(initial_state_fluents))
+            for fluent in initial_state_fluents:
+                self.assertIn(fluent, current_state_ordering)
+
+            next_state_ordering = compiler.next_state_fluent_ordering
+            self.assertEqual(len(current_state_ordering), len(next_state_ordering))
+
+            for current_fluent, next_fluent in zip(current_state_ordering, next_state_ordering):
+                self.assertEqual(compiler._rename_state_fluent(current_fluent), next_fluent)
+                self.assertEqual(compiler._rename_next_state_fluent(next_fluent), current_fluent)
+
+    def test_action_fluent_ordering(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            default_action_fluents = compiler.default_action_fluents
+            action_fluent_ordering = compiler.action_fluent_ordering
+            self.assertEqual(len(action_fluent_ordering), len(default_action_fluents))
+            for action_fluent in action_fluent_ordering:
+                self.assertIn(action_fluent, default_action_fluents)
+
+    def test_state_size(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            state_size = compiler.state_size
+            initial_state_fluents = compiler.initial_state_fluents
+            state_fluent_ordering = compiler.state_fluent_ordering
+            next_state_fluent_ordering = compiler.next_state_fluent_ordering
+
+            self.assertIsInstance(state_size, tuple)
+            for shape in state_size:
+                self.assertIsInstance(shape, tf.TensorShape)
+            self.assertEqual(len(state_size), len(initial_state_fluents))
+            self.assertEqual(len(state_size), len(state_fluent_ordering))
+            self.assertEqual(len(state_size), len(next_state_fluent_ordering))
+
+            for shape, name in zip(state_size, state_fluent_ordering):
+                actual = shape.as_list()
+                expected = initial_state_fluents[name].shape.as_list()
+                self.assertListEqual(actual, expected)
+
+            scope = {}
+            scope.update(compiler.non_fluents)
+            scope.update(compiler.initial_state_fluents)
+            scope.update(compiler.default_action_fluents)
+            next_state_fluents = dict(compiler.compile_cpfs(scope))
+            for shape, name in zip(state_size, next_state_fluent_ordering):
+                actual = shape.as_list()
+                expected = next_state_fluents[name].shape.as_list()
+                self.assertListEqual(actual, expected)
+
     def test_compile_expressions(self):
         expected = {
             # rddl1: RESERVOIR ====================================================

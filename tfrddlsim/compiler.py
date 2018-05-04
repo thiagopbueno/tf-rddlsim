@@ -59,6 +59,23 @@ class Compiler(object):
             self._build_preconditions_table()
         return self._global_action_preconditions
 
+    @property
+    def state_fluent_ordering(self):
+        return [name for name in sorted(self._rddl.domain.state_fluents)]
+
+    @property
+    def action_fluent_ordering(self):
+        return [name for name in sorted(self.default_action_fluents)]
+
+    @property
+    def next_state_fluent_ordering(self):
+        key = lambda x: x.name
+        return [cpf.name for cpf in sorted(self._rddl.domain.state_cpfs, key=key)]
+
+    @property
+    def state_size(self):
+        return tuple(self.initial_state_fluents[name].shape for name in self.state_fluent_ordering)
+
     def _build_object_table(self):
         types = self._rddl.domain.types
         objects = dict(self._rddl.non_fluents.objects)
