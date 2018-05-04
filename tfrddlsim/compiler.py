@@ -315,20 +315,6 @@ class Compiler(object):
             dtype = tf.bool
         return dtype
 
-    @classmethod
-    def _rename_next_state_fluent(cls, name):
-        i = name.index('/')
-        functor = name[:i-1]
-        arity = name[i+1:]
-        return "{}/{}".format(functor, arity)
-
-    @classmethod
-    def _rename_state_fluent(cls, name):
-        i = name.index('/')
-        functor = name[:i]
-        arity = name[i+1:]
-        return "{}'/{}".format(functor, arity)
-
     def _param_types_to_shape(self, param_types):
         param_types = [] if param_types is None else param_types
         shape = tuple(self.object_table[ptype]['size'] for ptype in param_types)

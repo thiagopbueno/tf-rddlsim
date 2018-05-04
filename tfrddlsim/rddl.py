@@ -3,6 +3,20 @@ class RDDL(object):
     def __init__(self, blocks):
         self.__dict__.update(blocks)
 
+    @classmethod
+    def rename_next_state_fluent(cls, name):
+        i = name.index('/')
+        functor = name[:i-1]
+        arity = name[i+1:]
+        return "{}/{}".format(functor, arity)
+
+    @classmethod
+    def rename_state_fluent(cls, name):
+        i = name.index('/')
+        functor = name[:i]
+        arity = name[i+1:]
+        return "{}'/{}".format(functor, arity)
+
 
 class Domain(object):
 
@@ -39,10 +53,7 @@ class Domain(object):
         _, cpfs = self.cpfs
         state_cpfs = []
         for cpf in cpfs:
-            name = cpf.name
-            functor = name[:name.index('/')-1]
-            arity = name[name.index('/')+1:]
-            name = '{}/{}'.format(functor, arity)
+            name = RDDL.rename_next_state_fluent(cpf.name)
             if name in self.state_fluents:
                 state_cpfs.append(cpf)
         state_cpfs = sorted(state_cpfs, key=lambda cpf: cpf.name)

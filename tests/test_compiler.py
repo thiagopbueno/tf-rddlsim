@@ -1,3 +1,4 @@
+from tfrddlsim.rddl import RDDL
 from tfrddlsim.parser import RDDLParser
 from tfrddlsim.compiler import Compiler
 from tfrddlsim.tensorfluent import TensorFluent
@@ -181,8 +182,8 @@ class TestCompiler(unittest.TestCase):
             self.assertEqual(len(current_state_ordering), len(next_state_ordering))
 
             for current_fluent, next_fluent in zip(current_state_ordering, next_state_ordering):
-                self.assertEqual(compiler._rename_state_fluent(current_fluent), next_fluent)
-                self.assertEqual(compiler._rename_next_state_fluent(next_fluent), current_fluent)
+                self.assertEqual(RDDL.rename_state_fluent(current_fluent), next_fluent)
+                self.assertEqual(RDDL.rename_next_state_fluent(next_fluent), current_fluent)
 
     def test_action_fluent_ordering(self):
         compilers = [self.compiler1, self.compiler2]
@@ -286,7 +287,7 @@ class TestCompiler(unittest.TestCase):
 
             next_state_fluents = dict(next_state_fluents)
             for fluent in sf:
-                next_fluent = compiler._rename_state_fluent(fluent)
+                next_fluent = RDDL.rename_state_fluent(fluent)
                 self.assertIn(next_fluent, next_state_fluents)
                 self.assertIsInstance(next_state_fluents[next_fluent], tf.Tensor)
 
