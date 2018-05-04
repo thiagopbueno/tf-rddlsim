@@ -114,7 +114,7 @@ class TestCompiler(unittest.TestCase):
                     self.assertAlmostEqual(v1, v2)
 
     def test_instantiate_initial_state_fluents(self):
-        sf = self.compiler1.initial_state_fluents
+        sf = dict(self.compiler1.initial_state_fluents)
 
         expected_state_fluents = {
             'rlevel/1': { 'shape': (8,) , 'dtype': tf.float32 }
@@ -142,12 +142,20 @@ class TestCompiler(unittest.TestCase):
                     self.assertAlmostEqual(v1, v2)
 
     def test_instantiate_default_action_fluents(self):
-        af = self.compiler1.default_action_fluents
+        action_fluents = self.compiler1.default_action_fluents
+        self.assertIsInstance(action_fluents, list)
+        for fluent in action_fluents:
+            self.assertIsInstance(fluent, tuple)
+            self.assertEqual(len(fluent), 2)
+            self.assertIsInstance(fluent[0], str)
+            self.assertIsInstance(fluent[1], tf.Tensor)
+
+        af = dict(action_fluents)
+        print(af)
 
         expected_action_fluents = {
             'outflow/1': { 'shape': (8,) , 'dtype': tf.float32 }
         }
-        self.assertIsInstance(af, dict)
         self.assertEqual(len(af), len(expected_action_fluents))
         for name, tensor in af.items():
             self.assertIn(name, expected_action_fluents)
@@ -172,7 +180,7 @@ class TestCompiler(unittest.TestCase):
     def test_state_fluent_ordering(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
-            initial_state_fluents = compiler.initial_state_fluents
+            initial_state_fluents = dict(compiler.initial_state_fluents)
             current_state_ordering = compiler.state_fluent_ordering
             self.assertEqual(len(current_state_ordering), len(initial_state_fluents))
             for fluent in initial_state_fluents:
@@ -188,7 +196,7 @@ class TestCompiler(unittest.TestCase):
     def test_action_fluent_ordering(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
-            default_action_fluents = compiler.default_action_fluents
+            default_action_fluents = dict(compiler.default_action_fluents)
             action_fluent_ordering = compiler.action_fluent_ordering
             self.assertEqual(len(action_fluent_ordering), len(default_action_fluents))
             for action_fluent in action_fluent_ordering:
@@ -198,7 +206,7 @@ class TestCompiler(unittest.TestCase):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
             state_size = compiler.state_size
-            initial_state_fluents = compiler.initial_state_fluents
+            initial_state_fluents = dict(compiler.initial_state_fluents)
             state_fluent_ordering = compiler.state_fluent_ordering
             next_state_fluent_ordering = compiler.next_state_fluent_ordering
 
@@ -216,8 +224,8 @@ class TestCompiler(unittest.TestCase):
 
             scope = {}
             scope.update(compiler.non_fluents)
-            scope.update(compiler.initial_state_fluents)
-            scope.update(compiler.default_action_fluents)
+            scope.update(dict(compiler.initial_state_fluents))
+            scope.update(dict(compiler.default_action_fluents))
             next_state_fluents = dict(compiler.compile_cpfs(scope))
             for shape, name in zip(state_size, next_state_fluent_ordering):
                 actual = shape.as_list()
@@ -243,8 +251,8 @@ class TestCompiler(unittest.TestCase):
         rddls = [self.rddl1, self.rddl2]
         for compiler, rddl in zip(compilers, rddls):
             nf = compiler.non_fluents
-            sf = compiler.initial_state_fluents
-            af = compiler.default_action_fluents
+            sf = dict(compiler.initial_state_fluents)
+            af = dict(compiler.default_action_fluents)
             scope = {}
             scope.update(nf)
             scope.update(sf)
@@ -272,8 +280,8 @@ class TestCompiler(unittest.TestCase):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
             nf = compiler.non_fluents
-            sf = compiler.initial_state_fluents
-            af = compiler.default_action_fluents
+            sf = dict(compiler.initial_state_fluents)
+            af = dict(compiler.default_action_fluents)
             scope = {}
             scope.update(nf)
             scope.update(sf)
@@ -296,8 +304,8 @@ class TestCompiler(unittest.TestCase):
         for compiler in compilers:
             scope = {}
             scope.update(compiler.non_fluents)
-            scope.update(compiler.initial_state_fluents)
-            scope.update(compiler.default_action_fluents)
+            scope.update(dict(compiler.initial_state_fluents))
+            scope.update(dict(compiler.default_action_fluents))
             next_state_fluents = dict(compiler.compile_cpfs(scope))
             scope.update(next_state_fluents)
             reward = compiler.compile_reward(scope)

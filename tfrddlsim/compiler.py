@@ -73,7 +73,7 @@ class Compiler(object):
 
     @property
     def action_fluent_ordering(self):
-        return [name for name in sorted(self.default_action_fluents)]
+        return [name for name in sorted(self._rddl.domain.action_fluents)]
 
     @property
     def next_state_fluent_ordering(self):
@@ -82,7 +82,8 @@ class Compiler(object):
 
     @property
     def state_size(self):
-        return tuple(self.initial_state_fluents[name].shape for name in self.state_fluent_ordering)
+        state_fluents = dict(self.initial_state_fluents)
+        return tuple(state_fluents[name].shape for name in self.state_fluent_ordering)
 
     def _build_object_table(self):
         types = self._rddl.domain.types
@@ -149,12 +150,18 @@ class Compiler(object):
     def _instantiate_initial_state_fluents(self):
         state_fluents = self._rddl.domain.state_fluents
         initializer = self._rddl.instance.init_state
-        self._initial_state_fluents = self._instantiate_pvariables(state_fluents, initializer)
+        initial_state_fluents = self._instantiate_pvariables(state_fluents, initializer)
+        self._initial_state_fluents = []
+        for name in self.state_fluent_ordering:
+            self._initial_state_fluents.append((name, initial_state_fluents[name]))
         return self._initial_state_fluents
 
     def _instantiate_default_action_fluents(self):
         action_fluents = self._rddl.domain.action_fluents
-        self._default_action_fluents = self._instantiate_pvariables(action_fluents)
+        default_action_fluents = self._instantiate_pvariables(action_fluents)
+        self._default_action_fluents = []
+        for name in self.action_fluent_ordering:
+            self._default_action_fluents.append((name, default_action_fluents[name]))
         return self._default_action_fluents
 
     def _compile_expression(self, expr, scope):
