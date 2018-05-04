@@ -289,3 +289,16 @@ class TestCompiler(unittest.TestCase):
                 next_fluent = compiler._rename_state_fluent(fluent)
                 self.assertIn(next_fluent, next_state_fluents)
                 self.assertIsInstance(next_state_fluents[next_fluent], tf.Tensor)
+
+    def test_compile_reward(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            scope = {}
+            scope.update(compiler.non_fluents)
+            scope.update(compiler.initial_state_fluents)
+            scope.update(compiler.default_action_fluents)
+            next_state_fluents = dict(compiler.compile_cpfs(scope))
+            scope.update(next_state_fluents)
+            reward = compiler.compile_reward(scope)
+            self.assertIsInstance(reward, tf.Tensor)
+            self.assertEqual(reward.shape.as_list(), [])

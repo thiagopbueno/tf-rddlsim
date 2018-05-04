@@ -26,6 +26,11 @@ class Compiler(object):
 
         return next_state_fluents
 
+    def compile_reward(self, scope):
+        reward_expr = self._rddl.domain.reward
+        t = self._compile_expression(reward_expr, scope)
+        return t.tensor
+
     @property
     def object_table(self):
         if self.__dict__.get('_object_table') is None:
