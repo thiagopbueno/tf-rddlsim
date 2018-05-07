@@ -241,6 +241,24 @@ class TestCompiler(unittest.TestCase):
                 expected = next_state_fluents[name].shape.as_list()
                 self.assertListEqual(actual, expected)
 
+    def test_state_scope(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            fluents = compiler.initial_state_fluents
+            scope = compiler.state_scope([t for _, t in fluents])
+            self.assertEqual(len(fluents), len(scope))
+            for i, name in enumerate(compiler.state_fluent_ordering):
+                self.assertIs(scope[name], fluents[i][1])
+
+    def test_state_scope(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            fluents = compiler.default_action_fluents
+            scope = compiler.action_scope([t for _, t in fluents])
+            self.assertEqual(len(fluents), len(scope))
+            for i, name in enumerate(compiler.action_fluent_ordering):
+                self.assertIs(scope[name], fluents[i][1])
+
     def test_compile_expressions(self):
         expected = {
             # rddl1: RESERVOIR ====================================================

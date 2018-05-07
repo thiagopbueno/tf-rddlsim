@@ -31,6 +31,12 @@ class Compiler(object):
         t = self._compile_expression(reward_expr, scope)
         return t.tensor
 
+    def state_scope(self, state_fluents):
+        return dict(zip(self.state_fluent_ordering, state_fluents))
+
+    def action_scope(self, action_fluents):
+        return dict(zip(self.action_fluent_ordering, action_fluents))
+
     @property
     def object_table(self):
         if self.__dict__.get('_object_table') is None:
