@@ -59,7 +59,7 @@ class TestCompiler(unittest.TestCase):
         self.assertEqual(len(global_preconds), 0)
 
     def test_instantiate_non_fluents(self):
-        nf = self.compiler1.non_fluents
+        nf = dict(self.compiler1.non_fluents)
 
         expected_non_fluents = {
             'MAX_RES_CAP/1': { 'shape': (8,), 'dtype': tf.float32 },
@@ -176,6 +176,15 @@ class TestCompiler(unittest.TestCase):
                 list2 = list(np.array(expected_initializers[name]).flatten())
                 for v1, v2 in zip(list1, list2):
                     self.assertAlmostEqual(v1, v2)
+
+    def test_non_fluent_ordering(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            non_fluents = dict(compiler.non_fluents)
+            action_fluent_ordering = compiler.non_fluent_ordering
+            self.assertEqual(len(action_fluent_ordering), len(non_fluents))
+            for action_fluent in action_fluent_ordering:
+                self.assertIn(action_fluent, non_fluents)
 
     def test_state_fluent_ordering(self):
         compilers = [self.compiler1, self.compiler2]

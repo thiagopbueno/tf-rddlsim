@@ -68,6 +68,10 @@ class Compiler(object):
         return self._global_action_preconditions
 
     @property
+    def non_fluent_ordering(self):
+        return [name for name in sorted(self._rddl.domain.non_fluents)]
+
+    @property
     def state_fluent_ordering(self):
         return [name for name in sorted(self._rddl.domain.state_fluents)]
 
@@ -109,7 +113,7 @@ class Compiler(object):
             else:
                 self._global_action_preconditions.append(precond)
 
-    def _instantiate_pvariables(self, pvariables, initializer=None):
+    def _instantiate_pvariables(self, pvariables, ordering, initializer=None):
         if initializer is not None:
             init = dict()
             for ((name, params), value) in initializer:
@@ -118,9 +122,10 @@ class Compiler(object):
                 init[name] = init.get(name, [])
                 init[name].append((params, value))
 
-        fluents = {}
+        fluents = []
 
-        for name, pvar in pvariables.items():
+        for name in ordering:
+            pvar = pvariables[name]
             shape = self._param_types_to_shape(pvar.param_types)
             dtype = self._range_type_to_dtype(pvar.range)
             fluent = np.full(shape, pvar.default)
@@ -137,31 +142,26 @@ class Compiler(object):
                         fluent = val
 
             with self._graph.as_default():
-                fluents[name] = tf.constant(fluent, dtype=dtype, name=name)
+                fluent_pair = (name, tf.constant(fluent, dtype=dtype, name=name))
+                fluents.append(fluent_pair)
 
         return fluents
 
     def _instantiate_non_fluents(self):
         non_fluents = self._rddl.domain.non_fluents
         initializer = self._rddl.non_fluents.init_non_fluent
-        self._non_fluents = self._instantiate_pvariables(non_fluents, initializer)
+        self._non_fluents = self._instantiate_pvariables(non_fluents, self.non_fluent_ordering, initializer)
         return self._non_fluents
 
     def _instantiate_initial_state_fluents(self):
         state_fluents = self._rddl.domain.state_fluents
         initializer = self._rddl.instance.init_state
-        initial_state_fluents = self._instantiate_pvariables(state_fluents, initializer)
-        self._initial_state_fluents = []
-        for name in self.state_fluent_ordering:
-            self._initial_state_fluents.append((name, initial_state_fluents[name]))
+        self._initial_state_fluents = self._instantiate_pvariables(state_fluents, self.state_fluent_ordering, initializer)
         return self._initial_state_fluents
 
     def _instantiate_default_action_fluents(self):
         action_fluents = self._rddl.domain.action_fluents
-        default_action_fluents = self._instantiate_pvariables(action_fluents)
-        self._default_action_fluents = []
-        for name in self.action_fluent_ordering:
-            self._default_action_fluents.append((name, default_action_fluents[name]))
+        self._default_action_fluents = self._instantiate_pvariables(action_fluents, self.action_fluent_ordering)
         return self._default_action_fluents
 
     def _compile_expression(self, expr, scope):
