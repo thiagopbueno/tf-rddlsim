@@ -1,8 +1,9 @@
 from tfrddlsim.rddl import RDDL
 from tfrddlsim.parser import RDDLParser
-from tfrddlsim.compiler import Compiler
-from tfrddlsim.tensorfluent import TensorFluent
 from tfrddlsim.expr import Expression
+from tfrddlsim.compiler import Compiler
+from tfrddlsim.fluent import TensorFluent
+from tfrddlsim.fluentshape import TensorFluentShape
 
 import numpy as np
 import tensorflow as tf
@@ -62,27 +63,27 @@ class TestCompiler(unittest.TestCase):
         nf = dict(self.compiler1.non_fluents)
 
         expected_non_fluents = {
-            'MAX_RES_CAP/1': { 'shape': (8,), 'dtype': tf.float32 },
-            'UPPER_BOUND/1': { 'shape': (8,), 'dtype': tf.float32 },
-            'LOWER_BOUND/1': { 'shape': (8,), 'dtype': tf.float32 },
-            'RAIN_SHAPE/1': { 'shape': (8,), 'dtype': tf.float32 },
-            'RAIN_SCALE/1': { 'shape': (8,), 'dtype': tf.float32 },
-            'DOWNSTREAM/2': { 'shape': (8,8), 'dtype': tf.bool },
-            'SINK_RES/1': { 'shape': (8,), 'dtype': tf.bool },
-            'MAX_WATER_EVAP_FRAC_PER_TIME_UNIT/0': { 'shape': (), 'dtype': tf.float32 },
-            'LOW_PENALTY/1': { 'shape': (8,), 'dtype': tf.float32 },
-            'HIGH_PENALTY/1': { 'shape': (8,), 'dtype': tf.float32 }
+            'MAX_RES_CAP/1': { 'shape': [8,], 'dtype': tf.float32 },
+            'UPPER_BOUND/1': { 'shape': [8,], 'dtype': tf.float32 },
+            'LOWER_BOUND/1': { 'shape': [8,], 'dtype': tf.float32 },
+            'RAIN_SHAPE/1': { 'shape': [8,], 'dtype': tf.float32 },
+            'RAIN_SCALE/1': { 'shape': [8,], 'dtype': tf.float32 },
+            'DOWNSTREAM/2': { 'shape': [8,8], 'dtype': tf.bool },
+            'SINK_RES/1': { 'shape': [8,], 'dtype': tf.bool },
+            'MAX_WATER_EVAP_FRAC_PER_TIME_UNIT/0': { 'shape': [], 'dtype': tf.float32 },
+            'LOW_PENALTY/1': { 'shape': [8,], 'dtype': tf.float32 },
+            'HIGH_PENALTY/1': { 'shape': [8,], 'dtype': tf.float32 }
         }
         self.assertIsInstance(nf, dict)
         self.assertEqual(len(nf), len(expected_non_fluents))
-        for name, tensor in nf.items():
+        for name, fluent in nf.items():
             self.assertIn(name, expected_non_fluents)
             shape = expected_non_fluents[name]['shape']
             dtype = expected_non_fluents[name]['dtype']
-            self.assertEqual(tensor.name, '{}:0'.format(name))
-            self.assertIsInstance(tensor, tf.Tensor)
-            self.assertEqual(tensor.dtype, dtype)
-            self.assertEqual(tensor.shape, shape)
+            self.assertEqual(fluent.name, '{}:0'.format(name))
+            self.assertIsInstance(fluent, TensorFluent)
+            self.assertEqual(fluent.dtype, dtype)
+            self.assertEqual(fluent.shape.as_list(), shape)
 
         expected_initializers = {
             'MAX_RES_CAP/1': [ 100.,  100.,  200.,  300.,  400.,  500.,  800., 1000.],
@@ -106,8 +107,8 @@ class TestCompiler(unittest.TestCase):
             'HIGH_PENALTY/1': [-10., -10., -10., -10., -10., -10., -10., -10.]
         }
         with tf.Session(graph=self.graph1) as sess:
-            for name, tensor in nf.items():
-                value = sess.run(tensor)
+            for name, fluent in nf.items():
+                value = sess.run(fluent.tensor)
                 list1 = list(value.flatten())
                 list2 = list(np.array(expected_initializers[name]).flatten())
                 for v1, v2 in zip(list1, list2):
@@ -117,25 +118,25 @@ class TestCompiler(unittest.TestCase):
         sf = dict(self.compiler1.initial_state_fluents)
 
         expected_state_fluents = {
-            'rlevel/1': { 'shape': (8,) , 'dtype': tf.float32 }
+            'rlevel/1': { 'shape': [8,] , 'dtype': tf.float32 }
         }
         self.assertIsInstance(sf, dict)
         self.assertEqual(len(sf), len(expected_state_fluents))
-        for name, tensor in sf.items():
+        for name, fluent in sf.items():
             self.assertIn(name, expected_state_fluents)
             shape = expected_state_fluents[name]['shape']
             dtype = expected_state_fluents[name]['dtype']
-            self.assertEqual(tensor.name, '{}:0'.format(name))
-            self.assertIsInstance(tensor, tf.Tensor)
-            self.assertEqual(tensor.dtype, dtype)
-            self.assertEqual(tensor.shape, shape)
+            self.assertEqual(fluent.name, '{}:0'.format(name))
+            self.assertIsInstance(fluent, TensorFluent)
+            self.assertEqual(fluent.dtype, dtype)
+            self.assertEqual(fluent.shape.as_list(), shape)
 
         expected_initializers = {
             'rlevel/1': [75., 50., 50., 50., 50., 50., 50., 50.]
         }
         with tf.Session(graph=self.graph1) as sess:
-            for name, tensor in sf.items():
-                value = sess.run(tensor)
+            for name, fluent in sf.items():
+                value = sess.run(fluent.tensor)
                 list1 = list(value.flatten())
                 list2 = list(np.array(expected_initializers[name]).flatten())
                 for v1, v2 in zip(list1, list2):
@@ -148,30 +149,29 @@ class TestCompiler(unittest.TestCase):
             self.assertIsInstance(fluent, tuple)
             self.assertEqual(len(fluent), 2)
             self.assertIsInstance(fluent[0], str)
-            self.assertIsInstance(fluent[1], tf.Tensor)
+            self.assertIsInstance(fluent[1], TensorFluent)
 
         af = dict(action_fluents)
-        print(af)
 
         expected_action_fluents = {
-            'outflow/1': { 'shape': (8,) , 'dtype': tf.float32 }
+            'outflow/1': { 'shape': [8,] , 'dtype': tf.float32 }
         }
         self.assertEqual(len(af), len(expected_action_fluents))
-        for name, tensor in af.items():
+        for name, fluent in af.items():
             self.assertIn(name, expected_action_fluents)
             shape = expected_action_fluents[name]['shape']
             dtype = expected_action_fluents[name]['dtype']
-            self.assertEqual(tensor.name, '{}:0'.format(name))
-            self.assertIsInstance(tensor, tf.Tensor)
-            self.assertEqual(tensor.dtype, dtype)
-            self.assertEqual(tensor.shape, shape)
+            self.assertEqual(fluent.name, '{}:0'.format(name))
+            self.assertIsInstance(fluent, TensorFluent)
+            self.assertEqual(fluent.dtype, dtype)
+            self.assertEqual(fluent.shape.as_list(), shape)
 
         expected_initializers = {
             'outflow/1': [0., 0., 0., 0., 0., 0., 0., 0.]
         }
         with tf.Session(graph=self.graph1) as sess:
-            for name, tensor in af.items():
-                value = sess.run(tensor)
+            for name, fluent in af.items():
+                value = sess.run(fluent.tensor)
                 list1 = list(value.flatten())
                 list2 = list(np.array(expected_initializers[name]).flatten())
                 for v1, v2 in zip(list1, list2):
@@ -221,7 +221,7 @@ class TestCompiler(unittest.TestCase):
 
             self.assertIsInstance(state_size, tuple)
             for shape in state_size:
-                self.assertIsInstance(shape, tf.TensorShape)
+                self.assertIsInstance(shape, TensorFluentShape)
             self.assertEqual(len(state_size), len(initial_state_fluents))
             self.assertEqual(len(state_size), len(state_fluent_ordering))
             self.assertEqual(len(state_size), len(next_state_fluent_ordering))
@@ -231,10 +231,13 @@ class TestCompiler(unittest.TestCase):
                 expected = initial_state_fluents[name].shape.as_list()
                 self.assertListEqual(actual, expected)
 
+            nf = compiler.non_fluents_scope()
+            sf = dict(compiler.initial_state_fluents)
+            af = dict(compiler.default_action_fluents)
             scope = {}
-            scope.update(compiler.non_fluents)
-            scope.update(dict(compiler.initial_state_fluents))
-            scope.update(dict(compiler.default_action_fluents))
+            scope.update(nf)
+            scope.update(sf)
+            scope.update(af)
             next_state_fluents = dict(compiler.compile_cpfs(scope))
             for shape, name in zip(state_size, next_state_fluent_ordering):
                 actual = shape.as_list()
@@ -245,7 +248,7 @@ class TestCompiler(unittest.TestCase):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
             fluents = compiler.initial_state_fluents
-            scope = compiler.state_scope([t for _, t in fluents])
+            scope = dict(fluents)
             self.assertEqual(len(fluents), len(scope))
             for i, name in enumerate(compiler.state_fluent_ordering):
                 self.assertIs(scope[name], fluents[i][1])
@@ -254,7 +257,7 @@ class TestCompiler(unittest.TestCase):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
             fluents = compiler.default_action_fluents
-            scope = compiler.action_scope([t for _, t in fluents])
+            scope = dict(fluents)
             self.assertEqual(len(fluents), len(scope))
             for i, name in enumerate(compiler.action_fluent_ordering):
                 self.assertIs(scope[name], fluents[i][1])
@@ -262,22 +265,22 @@ class TestCompiler(unittest.TestCase):
     def test_compile_expressions(self):
         expected = {
             # rddl1: RESERVOIR ====================================================
-            'rainfall/1':   { 'shape': [8], 'dtype': tf.float32, 'scope': ['?r'] },
-            'evaporated/1': { 'shape': [8], 'dtype': tf.float32, 'scope': ['?r'] },
-            'overflow/1':   { 'shape': [8], 'dtype': tf.float32, 'scope': ['?r'] },
-            "rlevel'/1":    { 'shape': [8], 'dtype': tf.float32, 'scope': ['?r'] },
+            'rainfall/1':   { 'shape': [8,], 'dtype': tf.float32, 'scope': ['?r'] },
+            'evaporated/1': { 'shape': [8,], 'dtype': tf.float32, 'scope': ['?r'] },
+            'overflow/1':   { 'shape': [8,], 'dtype': tf.float32, 'scope': ['?r'] },
+            "rlevel'/1":    { 'shape': [8,], 'dtype': tf.float32, 'scope': ['?r'] },
 
             # rddl2: MARS ROVER ===================================================
             "xPos'/0":   { 'shape': [], 'dtype': tf.float32, 'scope': [] },
             "yPos'/0":   { 'shape': [], 'dtype': tf.float32, 'scope': [] },
             "time'/0":   { 'shape': [], 'dtype': tf.float32, 'scope': [] },
-            "picTaken'/1": { 'shape': [3], 'dtype': tf.bool, 'scope': ['?p'] }
+            "picTaken'/1": { 'shape': [3,], 'dtype': tf.bool, 'scope': ['?p'] }
         }
 
         compilers = [self.compiler1, self.compiler2]
         rddls = [self.rddl1, self.rddl2]
         for compiler, rddl in zip(compilers, rddls):
-            nf = compiler.non_fluents
+            nf = compiler.non_fluents_scope()
             sf = dict(compiler.initial_state_fluents)
             af = dict(compiler.default_action_fluents)
             scope = {}
@@ -290,23 +293,23 @@ class TestCompiler(unittest.TestCase):
                 name = cpf.name
                 expr = cpf.expr
                 t = compiler._compile_expression(expr, scope)
-                scope[name] = t.tensor
+                scope[name] = t
                 self.assertIsInstance(t, TensorFluent)
-                self.assertEqual(t.shape, expected[name]['shape'])
+                self.assertEqual(t.shape.as_list(), expected[name]['shape'])
                 self.assertEqual(t.dtype, expected[name]['dtype'])
                 self.assertEqual(t.scope.as_list(), expected[name]['scope'])
 
             reward_expr = rddl.domain.reward
             t = compiler._compile_expression(reward_expr, scope)
             self.assertIsInstance(t, TensorFluent)
-            self.assertEqual(t.shape, [])
+            self.assertEqual(t.shape.as_list(), [])
             self.assertEqual(t.dtype, tf.float32)
             self.assertEqual(t.scope.as_list(), [])
 
     def test_compile_cpfs(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
-            nf = compiler.non_fluents
+            nf = compiler.non_fluents_scope()
             sf = dict(compiler.initial_state_fluents)
             af = dict(compiler.default_action_fluents)
             scope = {}
@@ -324,17 +327,20 @@ class TestCompiler(unittest.TestCase):
             for fluent in sf:
                 next_fluent = RDDL.rename_state_fluent(fluent)
                 self.assertIn(next_fluent, next_state_fluents)
-                self.assertIsInstance(next_state_fluents[next_fluent], tf.Tensor)
+                self.assertIsInstance(next_state_fluents[next_fluent], TensorFluent)
 
     def test_compile_reward(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
+            nf = compiler.non_fluents_scope()
+            sf = dict(compiler.initial_state_fluents)
+            af = dict(compiler.default_action_fluents)
             scope = {}
-            scope.update(compiler.non_fluents)
-            scope.update(dict(compiler.initial_state_fluents))
-            scope.update(dict(compiler.default_action_fluents))
+            scope.update(nf)
+            scope.update(sf)
+            scope.update(af)
             next_state_fluents = dict(compiler.compile_cpfs(scope))
             scope.update(next_state_fluents)
             reward = compiler.compile_reward(scope)
-            self.assertIsInstance(reward, tf.Tensor)
+            self.assertIsInstance(reward, TensorFluent)
             self.assertEqual(reward.shape.as_list(), [])

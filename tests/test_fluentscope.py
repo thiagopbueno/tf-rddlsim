@@ -1,4 +1,4 @@
-from tfrddlsim.tensorscope import TensorScope
+from tfrddlsim.fluentscope import TensorFluentScope
 
 import unittest
 
@@ -40,7 +40,7 @@ class TestTensorScope(unittest.TestCase):
         ]
 
         for (s1, s2), (s, p1, p2) in tests:
-            scope, perm1, perm2 = TensorScope.broadcast(s1, s2)
+            scope, perm1, perm2 = TensorFluentScope.broadcast(s1, s2)
             self.assertListEqual(perm1, p1)
             self.assertListEqual(perm2, p2)
             self.assertListEqual(scope, s)

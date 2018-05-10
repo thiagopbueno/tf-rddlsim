@@ -1,4 +1,4 @@
-from tfrddlsim.tensorfluent import TensorFluent
+from tfrddlsim.fluent import TensorFluent
 
 import numpy as np
 import tensorflow as tf
@@ -6,20 +6,33 @@ import tensorflow as tf
 
 class Compiler(object):
 
-    def __init__(self, rddl, graph):
+    def __init__(self, rddl, graph, batch_mode=False):
         self._rddl = rddl
         self._graph = graph
+        self.batch_mode = batch_mode
+
+    def batch_mode_on(self):
+        self.batch_mode = True
+
+    def batch_mode_off(self):
+        self.batch_mode = False
+
+    def compile_initial_state(self, batch_size):
+        return self._compile_batch_fluents(self.initial_state_fluents, batch_size)
+
+    def compile_default_action(self, batch_size):
+        return self._compile_batch_fluents(self.default_action_fluents, batch_size)
 
     def compile_cpfs(self, scope):
         next_state_fluents = []
 
         for cpf in self._rddl.domain.intermediate_cpfs:
             t = self._compile_expression(cpf.expr, scope)
-            scope[cpf.name] = t.tensor
+            scope[cpf.name] = t
 
         for cpf in self._rddl.domain.state_cpfs:
             t = self._compile_expression(cpf.expr, scope)
-            next_state_fluents.append((cpf.name, t.tensor))
+            next_state_fluents.append((cpf.name, t))
 
         key = lambda f: self.next_state_fluent_ordering.index(f[0])
         next_state_fluents = sorted(next_state_fluents, key=key)
@@ -29,13 +42,19 @@ class Compiler(object):
     def compile_reward(self, scope):
         reward_expr = self._rddl.domain.reward
         t = self._compile_expression(reward_expr, scope)
-        return t.tensor
+        return t
+
+    def non_fluents_scope(self):
+        return dict(self.non_fluents)
 
     def state_scope(self, state_fluents):
         return dict(zip(self.state_fluent_ordering, state_fluents))
 
     def action_scope(self, action_fluents):
         return dict(zip(self.action_fluent_ordering, action_fluents))
+
+    def next_state_scope(self, next_state_fluents):
+        return dict(zip(self.next_state_fluent_ordering, next_state_fluents))
 
     @property
     def object_table(self):
@@ -122,11 +141,11 @@ class Compiler(object):
     def _instantiate_pvariables(self, pvariables, ordering, initializer=None):
         if initializer is not None:
             init = dict()
-            for ((name, params), value) in initializer:
-                arity = len(params) if params is not None else 0
+            for ((name, args), value) in initializer:
+                arity = len(args) if args is not None else 0
                 name = '{}/{}'.format(name, arity)
                 init[name] = init.get(name, [])
-                init[name].append((params, value))
+                init[name].append((args, value))
 
         fluents = []
 
@@ -148,7 +167,10 @@ class Compiler(object):
                         fluent = val
 
             with self._graph.as_default():
-                fluent_pair = (name, tf.constant(fluent, dtype=dtype, name=name))
+                t = tf.constant(fluent, dtype=dtype, name=name)
+                scope = [None] * len(t.shape)
+                fluent = TensorFluent(t, scope, batch=False)
+                fluent_pair = (name, fluent)
                 fluents.append(fluent_pair)
 
         return fluents
@@ -170,6 +192,14 @@ class Compiler(object):
         self._default_action_fluents = self._instantiate_pvariables(action_fluents, self.action_fluent_ordering)
         return self._default_action_fluents
 
+    def _compile_batch_fluents(self, fluents, batch_size):
+        batch_fluents = []
+        with self._graph.as_default():
+            for name, fluent in fluents:
+                t = tf.stack([fluent.tensor] * batch_size, name=name)
+                batch_fluents.append(t)
+        return tuple(batch_fluents)
+
     def _compile_expression(self, expr, scope):
         etype = expr.etype
         args = expr.args
@@ -182,9 +212,15 @@ class Compiler(object):
                 name = expr._pvar_to_name(args)
                 if name not in scope:
                     raise ValueError('Variable {} not in scope.'.format(name))
-                t = scope[name]
-                s = args[1] if args[1] is not None else []
-                return TensorFluent(t, s)
+                fluent = scope[name]
+                scope = args[1] if args[1] is not None else []
+                if isinstance(fluent, TensorFluent):
+                    fluent = TensorFluent(fluent.tensor, scope, batch=fluent.batch)
+                elif isinstance(fluent, tf.Tensor):
+                    fluent = TensorFluent(fluent, scope, batch=self.batch_mode)
+                else:
+                    raise ValueError('Variable in scope must be TensorFluent-like: {}'.format(fluent))
+                return fluent
             elif etype[0] == 'randomvar':
                 if etype[1] == 'Normal':
                     mean = self._compile_expression(args[0], scope)
@@ -312,7 +348,7 @@ class Compiler(object):
             elif etype[0] == 'aggregation':
                 if etype[1] == 'sum':
                     typed_var_list = args[:-1]
-                    vars_list = [var for _, (var, _) in typed_var_list ]
+                    vars_list = [var for _, (var, _) in typed_var_list]
                     expr = args[-1]
                     op = self._compile_expression(expr, scope)
                     return op.sum(vars_list=vars_list)

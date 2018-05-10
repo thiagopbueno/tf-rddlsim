@@ -1,4 +1,4 @@
-class TensorScope(object):
+class TensorFluentScope(object):
 
     def __init__(self, scope):
         self._scope = scope
@@ -22,7 +22,7 @@ class TensorScope(object):
         return self._scope != other._scope
 
     def __str__(self):
-        return str(self._scope)
+        return 'TensorFluentScope({})'.format(str(self._scope))
 
     @classmethod
     def broadcast(cls, s1, s2):
