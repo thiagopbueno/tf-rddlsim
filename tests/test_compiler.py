@@ -221,13 +221,13 @@ class TestCompiler(unittest.TestCase):
 
             self.assertIsInstance(state_size, tuple)
             for shape in state_size:
-                self.assertIsInstance(shape, TensorFluentShape)
+                self.assertIsInstance(shape, tuple)
             self.assertEqual(len(state_size), len(initial_state_fluents))
             self.assertEqual(len(state_size), len(state_fluent_ordering))
             self.assertEqual(len(state_size), len(next_state_fluent_ordering))
 
             for shape, name in zip(state_size, state_fluent_ordering):
-                actual = shape.as_list()
+                actual = list(shape)
                 expected = initial_state_fluents[name].shape.as_list()
                 self.assertListEqual(actual, expected)
 
@@ -240,7 +240,7 @@ class TestCompiler(unittest.TestCase):
             scope.update(af)
             next_state_fluents = dict(compiler.compile_cpfs(scope))
             for shape, name in zip(state_size, next_state_fluent_ordering):
-                actual = shape.as_list()
+                actual = list(shape)
                 expected = next_state_fluents[name].shape.as_list()
                 self.assertListEqual(actual, expected)
 

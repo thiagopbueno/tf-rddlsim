@@ -31,7 +31,7 @@ class TensorFluentShape(object):
 
     @property
     def fluent_shape(self):
-        return self._shape.as_list()[1:] if self._batch else self._shape.as_list()[:]
+        return tuple(self._shape.as_list()[1:] if self._batch else self._shape.as_list()[:])
 
     @property
     def fluent_size(self):
