@@ -7,8 +7,8 @@ import tensorflow as tf
 class Compiler(object):
 
     def __init__(self, rddl, graph, batch_mode=False):
-        self._rddl = rddl
-        self._graph = graph
+        self.rddl = rddl
+        self.graph = graph
         self.batch_mode = batch_mode
 
     def batch_mode_on(self):
@@ -26,11 +26,11 @@ class Compiler(object):
     def compile_cpfs(self, scope):
         next_state_fluents = []
 
-        for cpf in self._rddl.domain.intermediate_cpfs:
+        for cpf in self.rddl.domain.intermediate_cpfs:
             t = self._compile_expression(cpf.expr, scope)
             scope[cpf.name] = t
 
-        for cpf in self._rddl.domain.state_cpfs:
+        for cpf in self.rddl.domain.state_cpfs:
             t = self._compile_expression(cpf.expr, scope)
             next_state_fluents.append((cpf.name, t))
 
@@ -40,7 +40,7 @@ class Compiler(object):
         return next_state_fluents
 
     def compile_reward(self, scope):
-        reward_expr = self._rddl.domain.reward
+        reward_expr = self.rddl.domain.reward
         t = self._compile_expression(reward_expr, scope)
         return t
 
@@ -94,31 +94,31 @@ class Compiler(object):
 
     @property
     def non_fluent_ordering(self):
-        return [name for name in sorted(self._rddl.domain.non_fluents)]
+        return [name for name in sorted(self.rddl.domain.non_fluents)]
 
     @property
     def state_fluent_ordering(self):
-        return [name for name in sorted(self._rddl.domain.state_fluents)]
+        return [name for name in sorted(self.rddl.domain.state_fluents)]
 
     @property
     def action_fluent_ordering(self):
-        return [name for name in sorted(self._rddl.domain.action_fluents)]
+        return [name for name in sorted(self.rddl.domain.action_fluents)]
 
     @property
     def next_state_fluent_ordering(self):
         key = lambda x: x.name
-        return [cpf.name for cpf in sorted(self._rddl.domain.state_cpfs, key=key)]
+        return [cpf.name for cpf in sorted(self.rddl.domain.state_cpfs, key=key)]
 
     @property
     def state_size(self):
         state_fluents = dict(self.initial_state_fluents)
-        return tuple(state_fluents[name].shape for name in self.state_fluent_ordering)
+        return tuple(state_fluents[name].shape.fluent_shape for name in self.state_fluent_ordering)
 
     def _build_object_table(self):
-        types = self._rddl.domain.types
-        objects = dict(self._rddl.non_fluents.objects)
+        types = self.rddl.domain.types
+        objects = dict(self.rddl.non_fluents.objects)
         self._object_table = dict()
-        for name, value in self._rddl.domain.types:
+        for name, value in self.rddl.domain.types:
             if value == 'object':
                 objs = objects[name]
                 idx = { obj: i for i, obj in enumerate(objs) }
@@ -127,8 +127,8 @@ class Compiler(object):
     def _build_preconditions_table(self):
         self._local_action_preconditions = dict()
         self._global_action_preconditions = []
-        action_fluents = self._rddl.domain.action_fluents
-        for precond in self._rddl.domain.preconds:
+        action_fluents = self.rddl.domain.action_fluents
+        for precond in self.rddl.domain.preconds:
             scope = precond.scope
             action_scope = [action for action in scope if action in action_fluents]
             if len(action_scope) == 1:
@@ -166,7 +166,7 @@ class Compiler(object):
                     else:
                         fluent = val
 
-            with self._graph.as_default():
+            with self.graph.as_default():
                 t = tf.constant(fluent, dtype=dtype, name=name)
                 scope = [None] * len(t.shape)
                 fluent = TensorFluent(t, scope, batch=False)
@@ -176,25 +176,25 @@ class Compiler(object):
         return fluents
 
     def _instantiate_non_fluents(self):
-        non_fluents = self._rddl.domain.non_fluents
-        initializer = self._rddl.non_fluents.init_non_fluent
+        non_fluents = self.rddl.domain.non_fluents
+        initializer = self.rddl.non_fluents.init_non_fluent
         self._non_fluents = self._instantiate_pvariables(non_fluents, self.non_fluent_ordering, initializer)
         return self._non_fluents
 
     def _instantiate_initial_state_fluents(self):
-        state_fluents = self._rddl.domain.state_fluents
-        initializer = self._rddl.instance.init_state
+        state_fluents = self.rddl.domain.state_fluents
+        initializer = self.rddl.instance.init_state
         self._initial_state_fluents = self._instantiate_pvariables(state_fluents, self.state_fluent_ordering, initializer)
         return self._initial_state_fluents
 
     def _instantiate_default_action_fluents(self):
-        action_fluents = self._rddl.domain.action_fluents
+        action_fluents = self.rddl.domain.action_fluents
         self._default_action_fluents = self._instantiate_pvariables(action_fluents, self.action_fluent_ordering)
         return self._default_action_fluents
 
     def _compile_batch_fluents(self, fluents, batch_size):
         batch_fluents = []
-        with self._graph.as_default():
+        with self.graph.as_default():
             for name, fluent in fluents:
                 t = tf.stack([fluent.tensor] * batch_size, name=name)
                 batch_fluents.append(t)
@@ -204,7 +204,7 @@ class Compiler(object):
         etype = expr.etype
         args = expr.args
 
-        with self._graph.as_default():
+        with self.graph.as_default():
 
             if etype[0] == 'number':
                 return TensorFluent.constant(args)

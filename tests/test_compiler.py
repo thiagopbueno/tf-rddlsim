@@ -30,13 +30,13 @@ class TestCompiler(unittest.TestCase):
     def setUp(self):
         self.graph1 = tf.Graph()
         self.compiler1 = Compiler(self.rddl1, self.graph1)
-        self.assertIs(self.compiler1._rddl, self.rddl1)
-        self.assertIs(self.compiler1._graph, self.graph1)
+        self.assertIs(self.compiler1.rddl, self.rddl1)
+        self.assertIs(self.compiler1.graph, self.graph1)
 
         self.graph2 = tf.Graph()
         self.compiler2 = Compiler(self.rddl2, self.graph2)
-        self.assertIs(self.compiler2._rddl, self.rddl2)
-        self.assertIs(self.compiler2._graph, self.graph2)
+        self.assertIs(self.compiler2.rddl, self.rddl2)
+        self.assertIs(self.compiler2.graph, self.graph2)
 
     def test_build_object_table(self):
         self.assertIn('res', self.compiler1.object_table)
