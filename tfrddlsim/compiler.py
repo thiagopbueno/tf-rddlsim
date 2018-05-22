@@ -23,15 +23,15 @@ class Compiler(object):
     def compile_default_action(self, batch_size):
         return self._compile_batch_fluents(self.default_action_fluents, batch_size)
 
-    def compile_cpfs(self, scope):
+    def compile_cpfs(self, scope, batch_size=None):
         next_state_fluents = []
 
         for cpf in self.rddl.domain.intermediate_cpfs:
-            t = self._compile_expression(cpf.expr, scope)
+            t = self._compile_expression(cpf.expr, scope, batch_size)
             scope[cpf.name] = t
 
         for cpf in self.rddl.domain.state_cpfs:
-            t = self._compile_expression(cpf.expr, scope)
+            t = self._compile_expression(cpf.expr, scope, batch_size)
             next_state_fluents.append((cpf.name, t))
 
         key = lambda f: self.next_state_fluent_ordering.index(f[0])
@@ -42,7 +42,10 @@ class Compiler(object):
     def compile_reward(self, scope):
         reward_expr = self.rddl.domain.reward
         t = self._compile_expression(reward_expr, scope)
-        return t
+        tensor = tf.expand_dims(t.tensor, -1)
+        scope = t.scope[:]
+        batch = t.batch
+        return TensorFluent(tensor, scope, batch)
 
     def non_fluents_scope(self):
         return dict(self.non_fluents)
@@ -55,6 +58,13 @@ class Compiler(object):
 
     def next_state_scope(self, next_state_fluents):
         return dict(zip(self.next_state_fluent_ordering, next_state_fluents))
+
+    def transition_scope(self, state, action):
+        scope = {}
+        scope.update(self.non_fluents_scope())
+        scope.update(self.state_scope(state))
+        scope.update(self.action_scope(action))
+        return scope
 
     @property
     def object_table(self):
@@ -216,7 +226,7 @@ class Compiler(object):
                 batch_fluents.append(t)
         return tuple(batch_fluents)
 
-    def _compile_expression(self, expr, scope):
+    def _compile_expression(self, expr, scope, batch_size=None):
         etype = expr.etype
         args = expr.args
 
@@ -241,18 +251,18 @@ class Compiler(object):
                 if etype[1] == 'Normal':
                     mean = self._compile_expression(args[0], scope)
                     variance = self._compile_expression(args[1], scope)
-                    return TensorFluent.Normal(mean, variance)
+                    return TensorFluent.Normal(mean, variance, batch_size)
                 elif etype[1] == 'Uniform':
                     low = self._compile_expression(args[0], scope)
                     high = self._compile_expression(args[1], scope)
-                    return TensorFluent.Uniform(low, high)
+                    return TensorFluent.Uniform(low, high, batch_size)
                 elif etype[1] == 'Exponential':
                     mean = self._compile_expression(args[0], scope)
-                    return TensorFluent.Exponential(mean)
+                    return TensorFluent.Exponential(mean, batch_size)
                 elif etype[1] == 'Gamma':
                     shape = self._compile_expression(args[0], scope)
                     scale = self._compile_expression(args[1], scope)
-                    return TensorFluent.Gamma(shape, scale)
+                    return TensorFluent.Gamma(shape, scale, batch_size)
             elif etype[0] == 'arithmetic':
                 if etype[1] == '+':
                     op1 = self._compile_expression(args[0], scope)

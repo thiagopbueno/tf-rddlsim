@@ -31,44 +31,64 @@ class TensorFluent(object):
         return TensorFluent(t, scope, batch=batch)
 
     @classmethod
-    def Normal(cls, mean, variance):
+    def Normal(cls, mean, variance, batch_size=None):
         if mean.scope != variance.scope:
             raise ValueError('Normal distribution: parameters must have same scope!')
         loc = mean.tensor
         scale = tf.sqrt(variance.tensor)
-        t = tf.distributions.Normal(loc, scale).sample()
-        scope = mean.scope[:]
+        dist = tf.distributions.Normal(loc, scale)
         batch = mean.batch or variance.batch
+        if not batch and batch_size is not None:
+            t = dist.sample(batch_size)
+            batch = True
+        else:
+            t = dist.sample()
+        scope = mean.scope[:]
         return TensorFluent(t, scope, batch=batch)
 
     @classmethod
-    def Uniform(cls, low, high):
+    def Uniform(cls, low, high, batch_size=None):
         if low.scope != high.scope:
             raise ValueError('Uniform distribution: parameters must have same scope!')
         low = low.tensor
         high = high.tensor
-        t = tf.distributions.Uniform(low, high).sample()
-        scope = low.scope
+        dist = tf.distributions.Uniform(low, high)
         batch = low.batch or high.batch
+        if not batch and batch_size is not None:
+            t = dist.sample(batch_size)
+            batch = True
+        else:
+            t = dist.sample()
+        scope = low.scope
         return TensorFluent(t, scope, batch=batch)
 
     @classmethod
-    def Exponential(cls, mean):
+    def Exponential(cls, mean, batch_size=None):
         rate = 1 / mean.tensor
-        t = tf.distributions.Exponential(rate).sample()
-        scope = mean.scope
+        dist = tf.distributions.Exponential(rate)
         batch = mean.batch
+        if not batch and batch_size is not None:
+            t = dist.sample(batch_size)
+            batch = True
+        else:
+            t = dist.sample()
+        scope = mean.scope
         return TensorFluent(t, scope, batch=batch)
 
     @classmethod
-    def Gamma(cls, shape, scale):
+    def Gamma(cls, shape, scale, batch_size=None):
         if shape.scope != scale.scope:
             raise ValueError('Gamma distribution: parameters must have same scope!')
         concentration = shape.tensor
         rate = 1 / scale.tensor
-        t = tf.distributions.Gamma(concentration, rate).sample()
-        scope = shape.scope[:]
+        dist = tf.distributions.Gamma(concentration, rate)
         batch = shape.batch or scale.batch
+        if not batch and batch_size is not None:
+            t = dist.sample(batch_size)
+            batch = True
+        else:
+            t = dist.sample()
+        scope = shape.scope[:]
         return TensorFluent(t, scope, batch=batch)
 
     @classmethod

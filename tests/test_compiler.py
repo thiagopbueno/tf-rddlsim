@@ -359,4 +359,4 @@ class TestCompiler(unittest.TestCase):
             scope.update(next_state_fluents)
             reward = compiler.compile_reward(scope)
             self.assertIsInstance(reward, TensorFluent)
-            self.assertEqual(reward.shape.as_list(), [])
+            self.assertEqual(reward.shape.as_list(), [1])
