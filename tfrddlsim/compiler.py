@@ -197,6 +197,8 @@ class Compiler(object):
         with self.graph.as_default():
             for name, fluent in fluents:
                 t = tf.stack([fluent.tensor] * batch_size, name=name)
+                if t.shape.ndims == 1:
+                    t = tf.expand_dims(t, -1)
                 batch_fluents.append(t)
         return tuple(batch_fluents)
 
