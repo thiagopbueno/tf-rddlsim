@@ -229,6 +229,8 @@ class TestCompiler(unittest.TestCase):
             for shape, name in zip(state_size, state_fluent_ordering):
                 actual = list(shape)
                 expected = initial_state_fluents[name].shape.as_list()
+                if expected == []:
+                    expected = [1]
                 self.assertListEqual(actual, expected)
 
             nf = compiler.non_fluents_scope()
@@ -242,6 +244,8 @@ class TestCompiler(unittest.TestCase):
             for shape, name in zip(state_size, next_state_fluent_ordering):
                 actual = list(shape)
                 expected = next_state_fluents[name].shape.as_list()
+                if expected == []:
+                    expected = [1]
                 self.assertListEqual(actual, expected)
 
     def test_state_scope(self):
