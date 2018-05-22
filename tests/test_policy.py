@@ -40,7 +40,11 @@ class TestDefaultPolicy(unittest.TestCase):
                 for af, (_, t) in zip(action1, default):
                     shape = af.shape.as_list()
                     self.assertEqual(shape[0], batch_size)
-                    self.assertListEqual(shape[1:], t.shape.as_list())
+                    actual_shape = shape[1:]
+                    expected_shape = t.shape.as_list()
+                    if expected_shape == []:
+                        expected_shape = [1]
+                    self.assertListEqual(actual_shape, expected_shape)
 
                 state2 = None
                 action2 = policy(state2)

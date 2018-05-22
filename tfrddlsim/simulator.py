@@ -13,8 +13,12 @@ class SimulationCell(tf.nn.rnn_cell.RNNCell):
         return self._compiler.state_size
 
     @property
+    def action_size(self):
+        return self._compiler.action_size
+
+    @property
     def output_size(self):
-        return 1
+        return (self.state_size, self.action_size, 1)
 
     @property
     def graph(self):
@@ -27,24 +31,26 @@ class SimulationCell(tf.nn.rnn_cell.RNNCell):
 
         action = self._policy(state, input)
 
-        non_fluent_scope = self._compiler.non_fluents_scope()
-        state_scope = self._compiler.state_scope(state)
-        action_scope = self._compiler.action_scope(action)
-
-        transition_scope = {}
-        transition_scope.update(non_fluent_scope)
-        transition_scope.update(state_scope)
-        transition_scope.update(action_scope)
-        next_state = self._compiler.compile_cpfs(transition_scope)
+        transition_scope = self._compiler.transition_scope(state, action)
+        next_state = self._compiler.compile_cpfs(transition_scope, self._batch_size)
 
         next_state_scope = dict(next_state)
         next_state = tuple(fluent.tensor for _, fluent in next_state)
 
         transition_scope.update(next_state_scope)
         reward = self._compiler.compile_reward(transition_scope)
-        output = tf.expand_dims(reward.tensor, [-1])
+        reward = reward.tensor
+
+        output_next_state = self._output(next_state)
+        output_action = self._output(action)
+        output = (output_next_state, output_action, reward)
 
         return (output, next_state)
+
+    @classmethod
+    def _output(cls, tensors):
+        tensor2float = lambda t: t if t.dtype == tf.float32 else tf.cast(t, tf.float32)
+        return tuple(map(tensor2float, tensors))
 
 
 class Simulator(object):
@@ -90,4 +96,8 @@ class Simulator(object):
                                     initial_state=initial_state,
                                     dtype=tf.float32,
                                     scope="trajectory")
-        return outputs
+        return outputs, final_state
+
+    def run(self, trajectory):
+        with tf.Session(graph=self.graph) as sess:
+            return sess.run(trajectory)
