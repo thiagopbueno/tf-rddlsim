@@ -3,9 +3,10 @@ import tensorflow as tf
 
 class SimulationCell(tf.nn.rnn_cell.RNNCell):
 
-    def __init__(self, compiler, policy):
+    def __init__(self, compiler, policy, batch_size):
         self._compiler = compiler
         self._policy = policy
+        self._batch_size = batch_size
 
     @property
     def state_size(self):
@@ -19,8 +20,8 @@ class SimulationCell(tf.nn.rnn_cell.RNNCell):
     def graph(self):
         return self._compiler.graph
 
-    def initial_state(self, batch_size):
-        return self._compiler.compile_initial_state(batch_size)
+    def initial_state(self):
+        return self._compiler.compile_initial_state(self._batch_size)
 
     def __call__(self, input, state, scope=None):
 
@@ -48,12 +49,16 @@ class SimulationCell(tf.nn.rnn_cell.RNNCell):
 
 class Simulator(object):
 
-    def __init__(self, compiler, policy):
-        self._cell = SimulationCell(compiler, policy)
+    def __init__(self, compiler, policy, batch_size):
+        self._cell = SimulationCell(compiler, policy, batch_size)
 
     @property
     def graph(self):
         return self._cell.graph
+
+    @property
+    def batch_size(self):
+        return self._cell._batch_size
 
     @property
     def input_size(self):
@@ -67,18 +72,18 @@ class Simulator(object):
     def output_size(self):
         return self._cell.output_size
 
-    def _timesteps(self, horizon, batch_size):
+    def timesteps(self, horizon):
         start, limit, delta = horizon-1, -1, -1
         timesteps_range = tf.range(start, limit, delta, dtype=tf.float32)
         timesteps_range = tf.expand_dims(timesteps_range, -1)
-        batch_timesteps = tf.stack([timesteps_range] * batch_size)
+        batch_timesteps = tf.stack([timesteps_range] * self.batch_size)
         return batch_timesteps
 
-    def trajectory(self, horizon, batch_size):
-        initial_state = self._cell.initial_state(batch_size)
+    def trajectory(self, horizon):
+        initial_state = self._cell.initial_state()
 
         with self.graph.as_default():
-            inputs = self._timesteps(horizon, batch_size)
+            inputs = self.timesteps(horizon)
             outputs, final_state = tf.nn.dynamic_rnn(
                                     self._cell,
                                     inputs,

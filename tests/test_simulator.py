@@ -30,13 +30,13 @@ class TestSimulationCell(unittest.TestCase):
         self.compiler1 = Compiler(self.rddl1, self.graph1, batch_mode=True)
         self.batch_size1 = 100
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
-        self.cell1 = SimulationCell(self.compiler1, self.policy1)
+        self.cell1 = SimulationCell(self.compiler1, self.policy1, self.batch_size1)
 
         self.graph2 = tf.Graph()
         self.compiler2 = Compiler(self.rddl2, self.graph2, batch_mode=True)
         self.batch_size2 = 100
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
-        self.cell2 = SimulationCell(self.compiler2, self.policy2)
+        self.cell2 = SimulationCell(self.compiler2, self.policy2, self.batch_size2)
 
     def test_state_size(self):
         expected = [((8,),), ((3,), (), (), ())]
@@ -56,7 +56,7 @@ class TestSimulationCell(unittest.TestCase):
         cells = [self.cell1, self.cell2]
         batch_sizes = [self.batch_size1, self.batch_size2]
         for cell, batch_size in zip(cells, batch_sizes):
-            initial_state = cell.initial_state(batch_size)
+            initial_state = cell.initial_state()
             self.assertIsInstance(initial_state, tuple)
             self.assertEqual(len(initial_state), len(cell.state_size))
             for t, shape in zip(initial_state, cell.state_size):
@@ -84,13 +84,13 @@ class TestSimulator(unittest.TestCase):
         self.compiler1 = Compiler(self.rddl1, self.graph1, batch_mode=True)
         self.batch_size1 = 100
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
-        self.simulator1 = Simulator(self.compiler1, self.policy1)
+        self.simulator1 = Simulator(self.compiler1, self.policy1, self.batch_size1)
 
         self.graph2 = tf.Graph()
         self.compiler2 = Compiler(self.rddl2, self.graph2, batch_mode=True)
-        self.batch_size2 = 10
+        self.batch_size2 = 100
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
-        self.simulator2 = Simulator(self.compiler2, self.policy2)
+        self.simulator2 = Simulator(self.compiler2, self.policy2, self.batch_size1)
 
     def test_timesteps(self):
         simulators = [self.simulator1, self.simulator2]
@@ -98,7 +98,7 @@ class TestSimulator(unittest.TestCase):
         for simulator, batch_size in zip(simulators, batch_sizes):
             horizon = 40
             with simulator.graph.as_default():
-                timesteps = simulator._timesteps(horizon, batch_size)
+                timesteps = simulator.timesteps(horizon)
             self.assertIsInstance(timesteps, tf.Tensor)
             self.assertListEqual(timesteps.shape.as_list(), [batch_size, horizon, 1])
             with tf.Session(graph=simulator.graph) as sess:
