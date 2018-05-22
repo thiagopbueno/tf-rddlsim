@@ -111,8 +111,22 @@ class Compiler(object):
 
     @property
     def state_size(self):
-        state_fluents = dict(self.initial_state_fluents)
-        return tuple(state_fluents[name].shape.fluent_shape for name in self.state_fluent_ordering)
+        return self._fluent_size(self.initial_state_fluents, self.state_fluent_ordering)
+
+    @property
+    def action_size(self):
+        return self._fluent_size(self.default_action_fluents, self.action_fluent_ordering)
+
+    @classmethod
+    def _fluent_size(cls, fluents, ordering):
+        fluents = dict(fluents)
+        size = []
+        for name in ordering:
+            fluent_shape = fluents[name].shape.fluent_shape
+            if fluent_shape == ():
+                fluent_shape = (1,)
+            size.append(fluent_shape)
+        return tuple(size)
 
     def _build_object_table(self):
         types = self.rddl.domain.types

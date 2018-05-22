@@ -248,6 +248,18 @@ class TestCompiler(unittest.TestCase):
                     expected = [1]
                 self.assertListEqual(actual, expected)
 
+    def test_action_size(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            action_size = compiler.action_size
+            default_action_fluents = dict(compiler.default_action_fluents)
+            action_fluent_ordering = compiler.action_fluent_ordering
+            self.assertIsInstance(action_size, tuple)
+            for shape in action_size:
+                self.assertIsInstance(shape, tuple)
+            self.assertEqual(len(action_size), len(default_action_fluents))
+            self.assertEqual(len(action_size), len(action_fluent_ordering))
+
     def test_state_scope(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
