@@ -79,17 +79,18 @@ class Simulator(object):
         return self._cell.output_size
 
     def timesteps(self, horizon):
-        start, limit, delta = horizon-1, -1, -1
-        timesteps_range = tf.range(start, limit, delta, dtype=tf.float32)
-        timesteps_range = tf.expand_dims(timesteps_range, -1)
-        batch_timesteps = tf.stack([timesteps_range] * self.batch_size)
-        return batch_timesteps
+        with self.graph.as_default():
+            start, limit, delta = horizon - 1, -1, -1
+            timesteps_range = tf.range(start, limit, delta, dtype=tf.float32)
+            timesteps_range = tf.expand_dims(timesteps_range, -1)
+            batch_timesteps = tf.stack([timesteps_range] * self.batch_size)
+            return batch_timesteps
 
     def trajectory(self, horizon):
         initial_state = self._cell.initial_state()
+        inputs = self.timesteps(horizon)
 
         with self.graph.as_default():
-            inputs = self.timesteps(horizon)
             outputs, _ = tf.nn.dynamic_rnn(
                                 self._cell,
                                 inputs,
@@ -108,7 +109,9 @@ class Simulator(object):
 
         return outputs
 
-    def run(self, trajectory):
+    def run(self, horizon=40):
+        trajectory = self.trajectory(horizon)
+
         with tf.Session(graph=self.graph) as sess:
             states, actions, rewards = sess.run(trajectory)
 
