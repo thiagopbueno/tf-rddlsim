@@ -127,10 +127,27 @@ class Compiler(object):
     def action_size(self):
         return self._fluent_size(self.default_action_fluents, self.action_fluent_ordering)
 
+    @property
+    def state_dtype(self):
+        return self._fluent_dtype(self.initial_state_fluents, self.state_fluent_ordering)
+
+    @property
+    def action_dtype(self):
+        return self._fluent_dtype(self.default_action_fluents, self.action_fluent_ordering)
+
+    @classmethod
+    def _fluent_dtype(cls, fluents, ordering):
+        dtype = []
+        fluents = dict(fluents)
+        for name in ordering:
+            fluent_dtype = fluents[name].dtype
+            dtype.append(fluent_dtype)
+        return tuple(dtype)
+
     @classmethod
     def _fluent_size(cls, fluents, ordering):
-        fluents = dict(fluents)
         size = []
+        fluents = dict(fluents)
         for name in ordering:
             fluent_shape = fluents[name].shape.fluent_shape
             if fluent_shape == ():
