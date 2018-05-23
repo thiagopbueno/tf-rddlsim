@@ -110,7 +110,15 @@ class Simulator(object):
 
     def run(self, trajectory):
         with tf.Session(graph=self.graph) as sess:
-            return sess.run(trajectory)
+            states, actions, rewards = sess.run(trajectory)
+
+        # fluent names
+        state_fluent_ordering = self._cell._compiler.state_fluent_ordering
+        action_fluent_ordering = self._cell._compiler.action_fluent_ordering
+        states = tuple(zip(state_fluent_ordering, states))
+        actions = tuple(zip(action_fluent_ordering, actions))
+
+        return states, actions, rewards
 
     @classmethod
     def _output(cls, tensors, dtypes):

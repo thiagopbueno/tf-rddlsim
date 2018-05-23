@@ -186,9 +186,10 @@ class TestSimulator(unittest.TestCase):
 
     def test_simulation(self):
         horizon = 40
+        compilers = [self.compiler1, self.compiler2]
         simulators = [self.simulator1, self.simulator2]
         batch_sizes = [self.batch_size1, self.batch_size2]
-        for simulator, batch_size in zip(simulators, batch_sizes):
+        for compiler, simulator, batch_size in zip(compilers, simulators, batch_sizes):
             # trajectory
             trajectory = simulator.trajectory(horizon)
             states, actions, rewards = simulator.run(trajectory)
@@ -196,19 +197,33 @@ class TestSimulator(unittest.TestCase):
             # tensor sizes
             state_size, action_size, reward_size = simulator.output_size
 
+            # fluent ordering
+            state_fluent_ordering = compiler.state_fluent_ordering
+            action_fluent_ordering = compiler.action_fluent_ordering
+
             # states
             self.assertIsInstance(states, tuple)
             self.assertEqual(len(states), len(state_size))
-            for s, sz in zip(states, state_size):
-                self.assertIsInstance(s, np.ndarray)
-                self.assertListEqual(list(s.shape), [batch_size, horizon] + list(sz))
+            for name, s, sz in zip(state_fluent_ordering, states, state_size):
+                self.assertIsInstance(s, tuple)
+                self.assertEqual(len(s), 2)
+                var_name, fluent = s
+                self.assertIsInstance(var_name, str)
+                self.assertEqual(var_name, name, s)
+                self.assertIsInstance(fluent, np.ndarray)
+                self.assertListEqual(list(fluent.shape), [batch_size, horizon] + list(sz))
 
             # actions
             self.assertIsInstance(actions, tuple)
             self.assertEqual(len(actions), len(action_size))
-            for a, sz in zip(actions, action_size):
-                self.assertIsInstance(a, np.ndarray)
-                self.assertListEqual(list(a.shape), [batch_size, horizon] + list(sz))
+            for name, a, sz in zip(action_fluent_ordering, actions, action_size):
+                self.assertIsInstance(a, tuple)
+                self.assertEqual(len(a), 2)
+                var_name, fluent = a
+                self.assertIsInstance(var_name, str)
+                self.assertEqual(var_name, name, a)
+                self.assertIsInstance(fluent, np.ndarray)
+                self.assertListEqual(list(fluent.shape), [batch_size, horizon] + list(sz))
 
             # rewards
             self.assertIsInstance(rewards, np.ndarray)
