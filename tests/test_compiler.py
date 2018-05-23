@@ -255,10 +255,36 @@ class TestCompiler(unittest.TestCase):
             default_action_fluents = dict(compiler.default_action_fluents)
             action_fluent_ordering = compiler.action_fluent_ordering
             self.assertIsInstance(action_size, tuple)
-            for shape in action_size:
-                self.assertIsInstance(shape, tuple)
             self.assertEqual(len(action_size), len(default_action_fluents))
             self.assertEqual(len(action_size), len(action_fluent_ordering))
+            for shape in action_size:
+                self.assertIsInstance(shape, tuple)
+
+    def test_state_dtype(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            state_dtype = compiler.state_dtype
+            initial_state_fluents = compiler.initial_state_fluents
+            state_fluent_ordering = compiler.state_fluent_ordering
+            self.assertIsInstance(state_dtype, tuple)
+            self.assertEqual(len(state_dtype), len(initial_state_fluents))
+            self.assertEqual(len(state_dtype), len(state_fluent_ordering))
+            for i, dtype in enumerate(state_dtype):
+                self.assertIsInstance(dtype, tf.DType)
+                self.assertEqual(dtype, initial_state_fluents[i][1].dtype)
+
+    def test_action_dtype(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            action_dtype = compiler.action_dtype
+            default_action_fluents = compiler.default_action_fluents
+            action_fluent_ordering = compiler.action_fluent_ordering
+            self.assertIsInstance(action_dtype, tuple)
+            self.assertEqual(len(action_dtype), len(default_action_fluents))
+            self.assertEqual(len(action_dtype), len(action_fluent_ordering))
+            for i, dtype in enumerate(action_dtype):
+                self.assertIsInstance(dtype, tf.DType)
+                self.assertEqual(dtype, default_action_fluents[i][1].dtype)
 
     def test_state_scope(self):
         compilers = [self.compiler1, self.compiler2]
