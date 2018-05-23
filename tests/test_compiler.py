@@ -211,6 +211,45 @@ class TestCompiler(unittest.TestCase):
             for action_fluent in action_fluent_ordering:
                 self.assertIn(action_fluent, default_action_fluents)
 
+    def test_state_fluent_variables(self):
+        compilers = [self.compiler1, self.compiler2]
+        fluent_variables = [
+            {
+            'rlevel/1': ['rlevel(t1)', 'rlevel(t2)', 'rlevel(t3)', 'rlevel(t4)', 'rlevel(t5)', 'rlevel(t6)', 'rlevel(t7)', 'rlevel(t8)']
+            },
+            {
+                'picTaken/1': ['picTaken(p1)', 'picTaken(p2)', 'picTaken(p3)'],
+                'time/0': ['time'],
+                'xPos/0': ['xPos'],
+                'yPos/0': ['yPos']
+            }
+        ]
+        for compiler, expected_variables in zip(compilers, fluent_variables):
+            fluent_variables = compiler.state_fluent_variables
+            self.assertEqual(len(fluent_variables), len(expected_variables))
+            for name, actual_variables in fluent_variables:
+                self.assertIn(name, expected_variables)
+                self.assertListEqual(actual_variables, expected_variables[name])
+
+    def test_action_fluent_variables(self):
+        compilers = [self.compiler1, self.compiler2]
+        fluent_variables = [
+            {
+                'outflow/1': ['outflow(t1)', 'outflow(t2)', 'outflow(t3)', 'outflow(t4)', 'outflow(t5)', 'outflow(t6)', 'outflow(t7)', 'outflow(t8)']
+            },
+            {
+                'snapPicture/0': ['snapPicture'],
+                'xMove/0': ['xMove'],
+                'yMove/0': ['yMove']
+            }
+        ]
+        for compiler, expected_variables in zip(compilers, fluent_variables):
+            fluent_variables = compiler.action_fluent_variables
+            self.assertEqual(len(fluent_variables), len(expected_variables))
+            for name, actual_variables in fluent_variables:
+                self.assertIn(name, expected_variables)
+                self.assertListEqual(actual_variables, expected_variables[name])
+
     def test_state_size(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
