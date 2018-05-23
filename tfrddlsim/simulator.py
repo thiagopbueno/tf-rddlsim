@@ -90,14 +90,34 @@ class Simulator(object):
 
         with self.graph.as_default():
             inputs = self.timesteps(horizon)
-            outputs, final_state = tf.nn.dynamic_rnn(
-                                    self._cell,
-                                    inputs,
-                                    initial_state=initial_state,
-                                    dtype=tf.float32,
-                                    scope="trajectory")
-        return outputs, final_state
+            outputs, _ = tf.nn.dynamic_rnn(
+                                self._cell,
+                                inputs,
+                                initial_state=initial_state,
+                                dtype=tf.float32,
+                                scope="trajectory")
+            states, actions, rewards = outputs
+
+            # fluent types
+            state_dtype = self._cell._compiler.state_dtype
+            states = self._output(states, state_dtype)
+            action_dtype = self._cell._compiler.action_dtype
+            actions = self._output(actions, action_dtype)
+
+            outputs = (states, actions, rewards)
+
+        return outputs
 
     def run(self, trajectory):
         with tf.Session(graph=self.graph) as sess:
             return sess.run(trajectory)
+
+    @classmethod
+    def _output(cls, tensors, dtypes):
+        outputs = []
+        for t, dtype in zip(tensors, dtypes):
+            t = t[0]
+            if t.dtype != dtype:
+                t = tf.cast(t, dtype)
+            outputs.append(t)
+        return tuple(outputs)

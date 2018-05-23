@@ -150,29 +150,35 @@ class TestSimulator(unittest.TestCase):
 
     def test_trajectory(self):
         horizon = 40
+        compilers = [self.compiler1, self.compiler2]
         simulators = [self.simulator1, self.simulator2]
         batch_sizes = [self.batch_size1, self.batch_size2]
-        for simulator, batch_size in zip(simulators, batch_sizes):
+        for compiler, simulator, batch_size in zip(compilers, simulators, batch_sizes):
             # trajectory
-            outputs, final_state = simulator.trajectory(horizon)
-            states, actions, rewards = outputs
+            states, actions, rewards = simulator.trajectory(horizon)
+
+            # tensor sizes
             state_size, action_size, reward_size = simulator.output_size
+
+            # tensor dtypes
+            state_dtype = compiler.state_dtype
+            action_dtype = compiler.action_dtype
 
             # states
             self.assertIsInstance(states, tuple)
             self.assertEqual(len(states), len(state_size))
-            for s, sz in zip(states, state_size):
-                s = s[0]
+            for s, sz, dtype in zip(states, state_size, state_dtype):
                 self.assertIsInstance(s, tf.Tensor)
-                self.assertListEqual(s.shape.as_list(), [batch_size, horizon] + list(sz))
+                self.assertListEqual(s.shape.as_list(), [batch_size, horizon] + list(sz), '{}'.format(s))
+                self.assertEqual(s.dtype, dtype, '{}.dtype != {}'.format(s, dtype))
 
             # actions
             self.assertIsInstance(actions, tuple)
             self.assertEqual(len(actions), len(action_size))
-            for a, sz in zip(actions, action_size):
-                a = a[0]
+            for a, sz, dtype in zip(actions, action_size, action_dtype):
                 self.assertIsInstance(a, tf.Tensor)
                 self.assertListEqual(a.shape.as_list(), [batch_size, horizon] + list(sz))
+                self.assertEqual(a.dtype, dtype)
 
             # rewards
             self.assertIsInstance(rewards, tf.Tensor)
@@ -183,15 +189,17 @@ class TestSimulator(unittest.TestCase):
         simulators = [self.simulator1, self.simulator2]
         batch_sizes = [self.batch_size1, self.batch_size2]
         for simulator, batch_size in zip(simulators, batch_sizes):
-            trajectory, final_state = simulator.trajectory(horizon)
+            # trajectory
+            trajectory = simulator.trajectory(horizon)
             states, actions, rewards = simulator.run(trajectory)
+
+            # tensor sizes
             state_size, action_size, reward_size = simulator.output_size
 
             # states
             self.assertIsInstance(states, tuple)
             self.assertEqual(len(states), len(state_size))
             for s, sz in zip(states, state_size):
-                s = s[0]
                 self.assertIsInstance(s, np.ndarray)
                 self.assertListEqual(list(s.shape), [batch_size, horizon] + list(sz))
 
@@ -199,7 +207,6 @@ class TestSimulator(unittest.TestCase):
             self.assertIsInstance(actions, tuple)
             self.assertEqual(len(actions), len(action_size))
             for a, sz in zip(actions, action_size):
-                a = a[0]
                 self.assertIsInstance(a, np.ndarray)
                 self.assertListEqual(list(a.shape), [batch_size, horizon] + list(sz))
 
