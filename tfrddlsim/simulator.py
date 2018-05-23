@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 
 
@@ -115,11 +116,16 @@ class Simulator(object):
         with tf.Session(graph=self.graph) as sess:
             states, actions, rewards = sess.run(trajectory)
 
-        # fluent names
+        # states
         state_fluent_ordering = self._cell._compiler.state_fluent_ordering
-        action_fluent_ordering = self._cell._compiler.action_fluent_ordering
         states = tuple(zip(state_fluent_ordering, states))
+
+        # actions
+        action_fluent_ordering = self._cell._compiler.action_fluent_ordering
         actions = tuple(zip(action_fluent_ordering, actions))
+
+        # rewards
+        rewards = np.squeeze(rewards)
 
         return states, actions, rewards
 

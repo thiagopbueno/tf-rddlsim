@@ -226,4 +226,4 @@ class TestSimulator(unittest.TestCase):
 
             # rewards
             self.assertIsInstance(rewards, np.ndarray)
-            self.assertListEqual(list(rewards.shape), [batch_size, horizon, reward_size])
+            self.assertListEqual(list(rewards.shape), [batch_size, horizon])
