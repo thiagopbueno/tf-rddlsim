@@ -8,6 +8,7 @@ class PVariable(object):
         self.default = default
         self.level = level
 
+    @property
     def arity(self):
         return len(self.param_types) if self.param_types is not None else 0
 
@@ -24,4 +25,7 @@ class PVariable(object):
         return self.fluent_type == 'interm-fluent'
 
     def __str__(self):
-        return '{}/{}'.format(self.name, self.arity())
+        return '{}/{}'.format(self.name, self.arity)
+
+    def __repr__(self):
+        return self.name if self.arity == 0 else '{}({})'.format(self.name, ','.join(self.param_types))

@@ -1,5 +1,6 @@
 from tfrddlsim.fluent import TensorFluent
 
+import itertools
 import numpy as np
 import tensorflow as tf
 
@@ -135,6 +136,36 @@ class Compiler(object):
     def action_dtype(self):
         return self._fluent_dtype(self.default_action_fluents, self.action_fluent_ordering)
 
+    @property
+    def state_fluent_variables(self):
+        fluents = self.rddl.domain.state_fluents
+        ordering = self.state_fluent_ordering
+        return self._fluent_params(fluents, ordering)
+
+    @property
+    def action_fluent_variables(self):
+        fluents = self.rddl.domain.action_fluents
+        ordering = self.action_fluent_ordering
+        return self._fluent_params(fluents, ordering)
+
+    def _fluent_params(self, fluents, ordering):
+        variables = []
+        for fluent_id in ordering:
+            fluent = fluents[fluent_id]
+            param_types = fluent.param_types
+            objects = ()
+            names = []
+            if param_types is None:
+                names = [fluent.name]
+            else:
+                objects = tuple(self.object_table[ptype]['objects'] for ptype in param_types)
+                for values in itertools.product(*objects):
+                    values = ','.join(values)
+                    var_name = '{}({})'.format(fluent.name, values)
+                    names.append(var_name)
+            variables.append((fluent_id, names))
+        return tuple(variables)
+
     @classmethod
     def _fluent_dtype(cls, fluents, ordering):
         dtype = []
@@ -163,7 +194,11 @@ class Compiler(object):
             if value == 'object':
                 objs = objects[name]
                 idx = { obj: i for i, obj in enumerate(objs) }
-                self._object_table[name] = { 'size': len(objs), 'idx': idx }
+                self._object_table[name] = {
+                    'size': len(objs),
+                    'idx': idx,
+                    'objects': objs
+                }
 
     def _build_preconditions_table(self):
         self._local_action_preconditions = dict()
