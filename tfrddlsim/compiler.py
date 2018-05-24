@@ -48,6 +48,29 @@ class Compiler(object):
         batch = t.batch
         return TensorFluent(tensor, scope, batch)
 
+    def compile_action_bound_constraints(self, state):
+        scope = self.action_precondition_scope(state)
+
+        lower_bounds = self.action_lower_bound_constraints
+        upper_bounds = self.action_upper_bound_constraints
+
+        bounds = {}
+        for name in self.action_fluent_ordering:
+
+            lower_expr = lower_bounds.get(name)
+            lower = None
+            if lower_expr is not None:
+                lower = self._compile_expression(lower_expr, scope)
+
+            upper_expr = upper_bounds.get(name)
+            upper = None
+            if upper_expr is not None:
+                upper = self._compile_expression(upper_expr, scope)
+
+            bounds[name] = (lower, upper)
+
+        return bounds
+
     def non_fluents_scope(self):
         return dict(self.non_fluents)
 
@@ -65,6 +88,12 @@ class Compiler(object):
         scope.update(self.non_fluents_scope())
         scope.update(self.state_scope(state))
         scope.update(self.action_scope(action))
+        return scope
+
+    def action_precondition_scope(self, state):
+        scope = {}
+        scope.update(self.non_fluents_scope())
+        scope.update(self.state_scope(state))
         return scope
 
     @property
@@ -102,6 +131,18 @@ class Compiler(object):
         if self.__dict__.get('_global_action_preconditions') is None:
             self._build_preconditions_table()
         return self._global_action_preconditions
+
+    @property
+    def action_lower_bound_constraints(self):
+        if self.__dict__.get('_action_lower_bound_constraints') is None:
+            self._build_action_bound_constraints_table()
+        return self._action_lower_bound_constraints
+
+    @property
+    def action_upper_bound_constraints(self):
+        if self.__dict__.get('_action_upper_bound_constraints') is None:
+            self._build_action_bound_constraints_table()
+        return self._action_upper_bound_constraints
 
     @property
     def non_fluent_ordering(self):
@@ -213,6 +254,54 @@ class Compiler(object):
                 self._local_action_preconditions[name].append(precond)
             else:
                 self._global_action_preconditions.append(precond)
+
+    def _build_action_bound_constraints_table(self):
+        self._action_lower_bound_constraints = {}
+        self._action_upper_bound_constraints = {}
+
+        for name, preconds in self.local_action_preconditions.items():
+
+            for precond in preconds:
+                expr_type = precond.etype
+                expr_args = precond.args
+
+                if expr_type == ('aggregation', 'forall'):
+
+                    inner_expr = expr_args[1]
+                    if inner_expr.etype[0] == 'relational':
+
+                        # lower bound
+                        bound = self._extract_lower_bound(name, inner_expr)
+                        if bound is not None:
+                            self._action_lower_bound_constraints[name] = bound
+                            next
+
+                        # upper bound
+                        bound = self._extract_upper_bound(name, inner_expr)
+                        if bound is not None:
+                            self._action_upper_bound_constraints[name] = bound
+
+    def _extract_lower_bound(self, name, expr):
+        etype = expr.etype
+        args = expr.args
+        if etype[1] in ['<=', '<']:
+            if args[1].is_pvariable_expression() and args[1].name == name:
+                return args[0]
+        elif etype[1] in ['>=', '>']:
+            if args[0].is_pvariable_expression() and args[0].name == name:
+                return args[1]
+        return None
+
+    def _extract_upper_bound(self, name, expr):
+        etype = expr.etype
+        args = expr.args
+        if etype[1] in ['<=', '<']:
+            if args[0].is_pvariable_expression() and args[0].name == name:
+                return args[1]
+        elif etype[1] in ['>=', '>']:
+            if args[1].is_pvariable_expression() and args[1].name == name:
+                return args[0]
+        return None
 
     def _instantiate_pvariables(self, pvariables, ordering, initializer=None):
         if initializer is not None:
