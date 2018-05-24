@@ -59,6 +59,42 @@ class TestCompiler(unittest.TestCase):
         self.assertIsInstance(global_preconds, list)
         self.assertEqual(len(global_preconds), 0)
 
+    def test_lower_bound_constraints(self):
+        lower_bounds = self.compiler1.action_lower_bound_constraints
+        self.assertIsInstance(lower_bounds, dict)
+        self.assertIn('outflow/1', lower_bounds)
+        lower = lower_bounds['outflow/1']
+        self.assertIsInstance(lower, Expression)
+        self.assertTrue(lower.is_number_expression())
+        self.assertEqual(lower.value, 0)
+
+    def test_upper_bound_constraints(self):
+        upper_bounds = self.compiler1.action_upper_bound_constraints
+        self.assertIsInstance(upper_bounds, dict)
+        self.assertIn('outflow/1', upper_bounds)
+        upper = upper_bounds['outflow/1']
+        self.assertIsInstance(upper, Expression)
+        self.assertTrue(upper.is_pvariable_expression())
+        self.assertEqual(upper.name, 'rlevel/1')
+
+    def test_compile_action_bound_constraints(self):
+        batch_size = 1000
+        self.compiler1.batch_mode_on()
+        initial_state = self.compiler1.compile_initial_state(batch_size)
+        default_action_fluents = self.compiler1.compile_default_action(batch_size)
+        bounds = self.compiler1.compile_action_bound_constraints(initial_state)
+        self.assertIsInstance(bounds, dict)
+        self.assertIn('outflow/1', bounds)
+        self.assertIsInstance(bounds['outflow/1'], tuple)
+        self.assertEqual(len(bounds['outflow/1']), 2)
+        lower, upper = bounds['outflow/1']
+        self.assertIsInstance(lower, TensorFluent)
+        self.assertListEqual(lower.shape.as_list(), [])
+        self.assertEqual(lower.dtype, tf.float32)
+        self.assertIsInstance(upper, TensorFluent)
+        self.assertEqual(upper.dtype, tf.float32)
+        self.assertListEqual(upper.shape.as_list(), [batch_size, 8])
+
     def test_instantiate_non_fluents(self):
         nf = dict(self.compiler1.non_fluents)
 
