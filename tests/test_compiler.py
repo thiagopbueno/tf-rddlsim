@@ -77,6 +77,36 @@ class TestCompiler(unittest.TestCase):
         self.assertTrue(upper.is_pvariable_expression())
         self.assertEqual(upper.name, 'rlevel/1')
 
+    def test_compile_action_preconditions(self):
+        batch_size = 1000
+        compilers = [self.compiler1, self.compiler2]
+        expected_preconds = [2, 1]
+        for compiler, expected in zip(compilers, expected_preconds):
+            compiler.batch_mode_on()
+            state = compiler.compile_initial_state(batch_size)
+            action = compiler.compile_default_action(batch_size)
+            preconds = compiler.compile_action_preconditions(state, action)
+            self.assertIsInstance(preconds, list)
+            self.assertEqual(len(preconds), expected)
+            for p in preconds:
+                self.assertIsInstance(p, TensorFluent)
+                self.assertEqual(p.dtype, tf.bool)
+                self.assertEqual(p.shape.batch_size, batch_size)
+                self.assertTrue(p.shape.batch)
+                self.assertTupleEqual(p.shape.fluent_shape, (1,))
+
+    def test_compile_action_preconditions_checking(self):
+        batch_size = 1000
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            compiler.batch_mode_on()
+            state = compiler.compile_initial_state(batch_size)
+            action = compiler.compile_default_action(batch_size)
+            checking = compiler.compile_action_preconditions_checking(state, action)
+            self.assertIsInstance(checking, tf.Tensor)
+            self.assertEqual(checking.dtype, tf.bool)
+            self.assertListEqual(checking.shape.as_list(), [batch_size])
+
     def test_compile_action_bound_constraints(self):
         batch_size = 1000
         self.compiler1.batch_mode_on()
