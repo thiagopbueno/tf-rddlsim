@@ -44,9 +44,25 @@ class Compiler(object):
         reward_expr = self.rddl.domain.reward
         t = self._compile_expression(reward_expr, scope)
         tensor = tf.expand_dims(t.tensor, -1)
-        scope = t.scope[:]
-        batch = t.batch
-        return TensorFluent(tensor, scope, batch)
+        return TensorFluent(tensor, t.scope[:], t.batch)
+
+    def compile_action_preconditions(self, state, action):
+        scope = self.action_precondition_scope(state, action)
+        preconds = []
+        for p in self.action_preconditions:
+            t = self._compile_expression(p, scope)
+            tensor = t.tensor
+            if t.shape.fluent_shape == ():
+                tensor = tf.expand_dims(tensor, -1)
+            fluent = TensorFluent(tensor, t.scope[:], t.batch)
+            preconds.append(fluent)
+        return preconds
+
+    def compile_action_preconditions_checking(self, state, action):
+        preconds = self.compile_action_preconditions(state, action)
+        all_preconds = tf.concat([p.tensor for p in preconds], axis=1)
+        checking = tf.reduce_all(all_preconds, axis=1)
+        return checking
 
     def compile_action_bound_constraints(self, state):
         scope = self.action_precondition_scope(state)
@@ -90,10 +106,12 @@ class Compiler(object):
         scope.update(self.action_scope(action))
         return scope
 
-    def action_precondition_scope(self, state):
+    def action_precondition_scope(self, state, action=None):
         scope = {}
         scope.update(self.non_fluents_scope())
         scope.update(self.state_scope(state))
+        if action is not None:
+            scope.update(self.action_scope(action))
         return scope
 
     @property
@@ -119,6 +137,10 @@ class Compiler(object):
         if self.__dict__.get('_default_action_fluents') is None:
             self._instantiate_default_action_fluents()
         return self._default_action_fluents
+
+    @property
+    def action_preconditions(self):
+        return self.rddl.domain.preconds
 
     @property
     def local_action_preconditions(self):
