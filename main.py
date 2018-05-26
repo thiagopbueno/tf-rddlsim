@@ -1,6 +1,6 @@
 from tfrddlsim.parser     import RDDLParser
 from tfrddlsim.compiler   import Compiler
-from tfrddlsim.policy     import DefaultPolicy
+from tfrddlsim.policy     import DefaultPolicy, RandomPolicy
 from tfrddlsim.simulator  import Simulator
 from tfrddlsim.visualizer import BasicVisualizer
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # run simulations
     horizon = 40
     batch_size = 75
-    policy = DefaultPolicy(compiler, batch_size)
+    policy = RandomPolicy(compiler, batch_size)
     simulator = Simulator(compiler, policy, batch_size)
     trajectories = simulator.run(horizon)
 

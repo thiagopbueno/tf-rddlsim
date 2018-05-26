@@ -3,6 +3,7 @@ from tfrddlsim.parser import RDDLParser
 from tfrddlsim.compiler import Compiler
 from tfrddlsim.policy import DefaultPolicy, RandomPolicy
 
+import numpy as np
 import tensorflow as tf
 
 import unittest
@@ -73,14 +74,15 @@ class TestRandomPolicy(unittest.TestCase):
     def test_random_policy(self):
         batch_size = 1000
 
-        for compiler in [self.compiler1, self.compiler2]:
+        compilers = [self.compiler1, self.compiler2]
+        for i, compiler in enumerate(compilers):
 
             with compiler.graph.as_default():
 
                 policy = RandomPolicy(compiler, batch_size)
 
                 state = compiler.compile_initial_state(batch_size)
-                action = policy(state)
+                action, n, checking = policy._sample_actions(state)
 
                 action_size = compiler.action_size
                 action_dtype = compiler.action_dtype
@@ -95,3 +97,27 @@ class TestRandomPolicy(unittest.TestCase):
                     self.assertEqual(fluent.dtype, dtype)
                     self.assertEqual(fluent.shape, default.shape)
                     self.assertEqual(fluent.dtype, default.dtype)
+
+    def test_random_policy_preconditions_checking(self):
+        batch_size = 1000
+
+        compilers = [self.compiler1, self.compiler2]
+        for i, compiler in enumerate(compilers):
+
+            with compiler.graph.as_default():
+
+                policy = RandomPolicy(compiler, batch_size)
+
+                state = compiler.compile_initial_state(batch_size)
+                action, n, checking = policy._sample_actions(state)
+
+                with tf.Session() as sess:
+                    n_, action_, checking_  = sess.run([n, action, checking])
+                    self.assertTrue(np.all(checking_))
+                    if i == 0: # reservoir: all preconditions are bound constraints
+                        self.assertEqual(n_, 0)
+                    elif i == 1: # mars rover: xMove and yMove no greater than 5.0
+                        xMove, yMove = action_[1:]
+                        for dx, dy in zip(xMove.flatten(), yMove.flatten()):
+                            self.assertLessEqual(np.abs(dx), RandomPolicy.MAX_REAL_VALUE)
+                            self.assertGreaterEqual(np.abs(dy), -RandomPolicy.MAX_REAL_VALUE)
