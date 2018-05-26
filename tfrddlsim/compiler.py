@@ -513,12 +513,20 @@ class Compiler(object):
                     false_case = self._compile_expression(args[2], scope)
                     return TensorFluent.if_then_else(condition, true_case, false_case)
             elif etype[0] == 'aggregation':
+                if etype[1] not in ['sum', 'prod', 'exists', 'forall']:
+                    raise ValueError('Unkown aggregation function {}.'.format(etype[1]))
+                typed_var_list = args[:-1]
+                vars_list = [var for _, (var, _) in typed_var_list]
+                expr = args[-1]
+                x = self._compile_expression(expr, scope)
                 if etype[1] == 'sum':
-                    typed_var_list = args[:-1]
-                    vars_list = [var for _, (var, _) in typed_var_list]
-                    expr = args[-1]
-                    op = self._compile_expression(expr, scope)
-                    return op.sum(vars_list=vars_list)
+                    return x.sum(vars_list=vars_list)
+                elif etype[1] == 'prod':
+                    return x.prod(vars_list=vars_list)
+                elif etype[1] == 'exists':
+                    return x.exists(vars_list=vars_list)
+                elif etype[1] == 'forall':
+                    return x.forall(vars_list=vars_list)
 
     @classmethod
     def _range_type_to_dtype(cls, range_type):

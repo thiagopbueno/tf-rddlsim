@@ -1,6 +1,3 @@
-import pprint
-
-
 class Expression(object):
 
     def __init__(self, expr):
@@ -83,6 +80,9 @@ class Expression(object):
     @classmethod
     def __expr_str(cls, expr, level):
         ident = ' ' * level * 4
+
+        if isinstance(expr, tuple):
+            return '{}{}'.format(ident, str(expr))
 
         if expr.etype[0] in ['pvar', 'number']:
             return '{}Expression(etype={}, args={})'.format(ident, expr.etype, expr.args)

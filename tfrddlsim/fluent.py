@@ -208,6 +208,26 @@ class TensorFluent(object):
         batch = x.batch
         return TensorFluent(t, scope, batch=batch)
 
+    @classmethod
+    def _aggregation_op(cls, op, x, vars_list=None):
+        axis = []
+        for var in vars_list:
+            if var in x.scope:
+                ax = x.scope.index(var)
+                if x.batch:
+                    ax += 1
+                axis.append(ax)
+        t = op(x.tensor, axis=axis)
+
+        scope = []
+        for var in x.scope:
+            if var not in vars_list:
+                scope.append(var)
+
+        batch = x.batch
+
+        return TensorFluent(t, scope, batch=batch)
+
     def cast(self, dtype):
         t = self.tensor if self.tensor.dtype == dtype else tf.cast(self.tensor, dtype)
         scope = self.scope[:]
@@ -227,23 +247,13 @@ class TensorFluent(object):
         return TensorFluent(t, scope, batch=batch)
 
     def sum(self, vars_list=None):
-        axis = []
-        for var in vars_list:
-            if var in self.scope:
-                ax = self.scope.index(var)
-                if self.batch:
-                    ax += 1
-                axis.append(ax)
-        t = tf.reduce_sum(self.tensor, axis=axis)
+        return self._aggregation_op(tf.reduce_sum, self, vars_list)
 
-        scope = []
-        for var in self.scope:
-            if var not in vars_list:
-                scope.append(var)
+    def prod(self, vars_list=None):
+        return self._aggregation_op(tf.reduce_prod, self, vars_list)
 
-        batch = self.batch
-
-        return TensorFluent(t, scope, batch=batch)
+    def forall(self, vars_list=None):
+        return self._aggregation_op(tf.reduce_all, self, vars_list)
 
     def __add__(self, other):
         return self._binary_op(self, other, tf.add, tf.float32)
@@ -288,4 +298,4 @@ class TensorFluent(object):
         return self._binary_op(self, other, tf.not_equal, tf.float32)
 
     def __str__(self):
-        return 'TensorFluent("{}", {}, {})'.format(self.name, self.scope, self.shape)
+        return 'TensorFluent("{}", dtype={}, {}, {})'.format(self.name, repr(self.dtype), self.scope, self.shape)
