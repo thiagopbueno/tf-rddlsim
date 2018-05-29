@@ -35,6 +35,7 @@ class Compiler(object):
         for cpf in self.rddl.domain.intermediate_cpfs:
             t = self._compile_expression(cpf.expr, scope, batch_size)
             interm_fluents.append((cpf.name, t))
+            scope[cpf.name] = t
         return interm_fluents
 
     def compile_state_cpfs(self, scope, batch_size=None):
