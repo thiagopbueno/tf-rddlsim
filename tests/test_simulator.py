@@ -46,13 +46,22 @@ class TestSimulationCell(unittest.TestCase):
             self.assertIsInstance(state_size, tuple)
             self.assertTupleEqual(state_size, sz)
 
+    def test_interm_size(self):
+        expected = [((8,), (8,), (8,)), ()]
+        cells = [self.cell1, self.cell2]
+        for cell, sz in zip(cells, expected):
+            interm_size = cell.interm_size
+            self.assertIsInstance(interm_size, tuple)
+            self.assertTupleEqual(interm_size, sz)
+
     def test_output_size(self):
         cells = [self.cell1, self.cell2]
         for cell in cells:
             output_size = cell.output_size
             state_size = cell.state_size
+            interm_size = cell.interm_size
             action_size = cell.action_size
-            self.assertEqual(output_size, (state_size, action_size, 1))
+            self.assertEqual(output_size, (state_size, action_size, interm_size, 1))
 
     def test_initial_state(self):
         cells = [self.cell1, self.cell2]
@@ -84,8 +93,13 @@ class TestSimulationCell(unittest.TestCase):
 
                 # simulation step
                 output, next_state = cell(timestep, initial_state)
-                next_state, action, reward = output
-                state_size, action_size, reward_size = cell.output_size
+                self.assertIsInstance(output, tuple)
+                self.assertEqual(len(output), 4)
+
+                next_state, action, interm, reward = output
+                state_size, action_size, interm_size, reward_size = cell.output_size
+
+                # interm_state
 
                 # next_state
                 self.assertIsInstance(next_state, tuple)
@@ -155,13 +169,17 @@ class TestSimulator(unittest.TestCase):
         batch_sizes = [self.batch_size1, self.batch_size2]
         for compiler, simulator, batch_size in zip(compilers, simulators, batch_sizes):
             # trajectory
-            states, actions, rewards = simulator.trajectory(horizon)
+            trajectory = simulator.trajectory(horizon)
+            self.assertIsInstance(trajectory, tuple)
+            self.assertEqual(len(trajectory), 4)
+            states, actions, interms, rewards = trajectory
 
             # tensor sizes
-            state_size, action_size, reward_size = simulator.output_size
+            state_size, action_size, interm_size, reward_size = simulator.output_size
 
             # tensor dtypes
             state_dtype = compiler.state_dtype
+            interm_dtype = compiler.interm_dtype
             action_dtype = compiler.action_dtype
 
             # states
@@ -171,6 +189,15 @@ class TestSimulator(unittest.TestCase):
                 self.assertIsInstance(s, tf.Tensor)
                 self.assertListEqual(s.shape.as_list(), [batch_size, horizon] + list(sz), '{}'.format(s))
                 self.assertEqual(s.dtype, dtype, '{}.dtype != {}'.format(s, dtype))
+
+            # interms
+            self.assertIsInstance(interms, tuple)
+            self.assertEqual(len(interms), len(interm_size))
+            for s, sz, dtype in zip(interms, interm_size, interm_dtype):
+                self.assertIsInstance(s, tf.Tensor)
+                self.assertListEqual(s.shape.as_list(), [batch_size, horizon] + list(sz), '{}'.format(s))
+                self.assertEqual(s.dtype, dtype, '{}.dtype != {}'.format(s, dtype))
+
 
             # actions
             self.assertIsInstance(actions, tuple)
@@ -191,10 +218,10 @@ class TestSimulator(unittest.TestCase):
         batch_sizes = [self.batch_size1, self.batch_size2]
         for compiler, simulator, batch_size in zip(compilers, simulators, batch_sizes):
             # trajectory
-            states, actions, rewards = simulator.run(horizon)
+            states, actions, interms, rewards = simulator.run(horizon)
 
             # tensor sizes
-            state_size, action_size, reward_size = simulator.output_size
+            state_size, action_size, interm_size, reward_size = simulator.output_size
 
             # fluent ordering
             state_fluent_ordering = compiler.state_fluent_ordering

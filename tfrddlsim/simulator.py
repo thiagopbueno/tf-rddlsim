@@ -18,8 +18,12 @@ class SimulationCell(tf.nn.rnn_cell.RNNCell):
         return self._compiler.action_size
 
     @property
+    def interm_size(self):
+        return self._compiler.interm_size
+
+    @property
     def output_size(self):
-        return (self.state_size, self.action_size, 1)
+        return (self.state_size, self.action_size, self.interm_size, 1)
 
     @property
     def graph(self):
@@ -29,22 +33,23 @@ class SimulationCell(tf.nn.rnn_cell.RNNCell):
         return self._compiler.compile_initial_state(self._batch_size)
 
     def __call__(self, input, state, scope=None):
-
         action = self._policy(state, input)
 
-        transition_scope = self._compiler.transition_scope(state, action)
-        next_state = self._compiler.compile_cpfs(transition_scope, self._batch_size)
+        scope = self._compiler.transition_scope(state, action)
+        interm_fluents, next_state_fluents = self._compiler.compile_cpfs(scope, self._batch_size)
 
-        next_state_scope = dict(next_state)
-        next_state = tuple(fluent.tensor for _, fluent in next_state)
+        intermediate_state = tuple(fluent.tensor for _, fluent in interm_fluents)
+        next_state = tuple(fluent.tensor for _, fluent in next_state_fluents)
 
-        transition_scope.update(next_state_scope)
-        reward = self._compiler.compile_reward(transition_scope)
+        next_state_scope = dict(next_state_fluents)
+        scope.update(next_state_scope)
+        reward = self._compiler.compile_reward(scope)
         reward = reward.tensor
 
         output_next_state = self._output(next_state)
+        output_interm_state = self._output(intermediate_state)
         output_action = self._output(action)
-        output = (output_next_state, output_action, reward)
+        output = (output_next_state, output_action, output_interm_state, reward)
 
         return (output, next_state)
 
@@ -98,15 +103,17 @@ class Simulator(object):
                                 initial_state=initial_state,
                                 dtype=tf.float32,
                                 scope="trajectory")
-            states, actions, rewards = outputs
+            states, actions, interms, rewards = outputs
 
             # fluent types
             state_dtype = self._cell._compiler.state_dtype
             states = self._output(states, state_dtype)
+            interm_dtype = self._cell._compiler.interm_dtype
+            interms = self._output(interms, interm_dtype)
             action_dtype = self._cell._compiler.action_dtype
             actions = self._output(actions, action_dtype)
 
-            outputs = (states, actions, rewards)
+            outputs = (states, actions, interms, rewards)
 
         return outputs
 
@@ -114,7 +121,7 @@ class Simulator(object):
         trajectory = self.trajectory(horizon)
 
         with tf.Session(graph=self.graph) as sess:
-            states, actions, rewards = sess.run(trajectory)
+            states, actions, interms, rewards = sess.run(trajectory)
 
         # states
         state_fluent_ordering = self._cell._compiler.state_fluent_ordering
@@ -127,7 +134,7 @@ class Simulator(object):
         # rewards
         rewards = np.squeeze(rewards)
 
-        return states, actions, rewards
+        return states, actions, interms, rewards
 
     @classmethod
     def _output(cls, tensors, dtypes):
