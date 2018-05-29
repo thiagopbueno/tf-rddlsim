@@ -174,9 +174,9 @@ class TensorFluent(object):
         s1 = x.scope.as_list()
         s2 = y.scope.as_list()
         scope, perm1, perm2 = TensorFluentScope.broadcast(s1, s2)
-        if x.batch:
+        if x.batch and perm1 != []:
             perm1 = [0] + [p+1 for p in perm1]
-        if y.batch:
+        if y.batch and perm2 != []:
             perm2 = [0] + [p+1 for p in perm2]
         x = x.transpose(perm1)
         y = y.transpose(perm2)
@@ -241,7 +241,7 @@ class TensorFluent(object):
         return TensorFluent(t, scope, batch=batch)
 
     def transpose(self, perm=None):
-        t = tf.transpose(self.tensor, perm) if perm is None else self.tensor
+        t = tf.transpose(self.tensor, perm) if perm != [] else self.tensor
         scope = self.scope[:]
         batch = self.batch
         return TensorFluent(t, scope, batch=batch)
