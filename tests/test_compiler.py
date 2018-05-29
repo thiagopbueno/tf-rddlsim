@@ -275,7 +275,7 @@ class TestCompiler(unittest.TestCase):
             []
         ]
         for compiler, expected_ordering in zip(compilers, expected):
-            interm_fluent_ordering = compiler.intermediate_fluent_ordering
+            interm_fluent_ordering = compiler.interm_fluent_ordering
             self.assertListEqual(interm_fluent_ordering, expected_ordering)
 
     def test_action_fluent_ordering(self):
@@ -397,7 +397,7 @@ class TestCompiler(unittest.TestCase):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
             interm_size = compiler.interm_size
-            interm_ordering = compiler.intermediate_fluent_ordering
+            interm_ordering = compiler.interm_fluent_ordering
             self.assertIsInstance(interm_size, tuple)
             self.assertEqual(len(interm_size), len(interm_ordering))
             for shape in interm_size:
@@ -420,7 +420,7 @@ class TestCompiler(unittest.TestCase):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
             interm_dtype = compiler.interm_dtype
-            interm_ordering = compiler.intermediate_fluent_ordering
+            interm_ordering = compiler.interm_fluent_ordering
             self.assertIsInstance(interm_dtype, tuple)
             self.assertEqual(len(interm_dtype), len(interm_ordering))
             for i, dtype in enumerate(interm_dtype):

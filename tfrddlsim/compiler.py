@@ -191,7 +191,7 @@ class Compiler(object):
         return [cpf.name for cpf in sorted(self.rddl.domain.state_cpfs, key=key)]
 
     @property
-    def intermediate_fluent_ordering(self):
+    def interm_fluent_ordering(self):
         interm_fluents = self.rddl.domain.intermediate_fluents.values()
         key = lambda pvar: (pvar.level, pvar.name)
         return [str(pvar) for pvar in sorted(interm_fluents, key=key)]
@@ -208,7 +208,7 @@ class Compiler(object):
     def interm_size(self):
         interm_fluents = self.rddl.domain.intermediate_fluents
         shapes = []
-        for name in self.intermediate_fluent_ordering:
+        for name in self.interm_fluent_ordering:
             fluent = interm_fluents[name]
             shape = self._param_types_to_shape(fluent.param_types)
             shapes.append(shape)
@@ -226,7 +226,7 @@ class Compiler(object):
     def interm_dtype(self):
         interm_fluents = self.rddl.domain.intermediate_fluents
         dtypes = []
-        for name in self.intermediate_fluent_ordering:
+        for name in self.interm_fluent_ordering:
             fluent = interm_fluents[name]
             dtype = self._range_type_to_dtype(fluent.range)
             dtypes.append(dtype)
@@ -241,7 +241,7 @@ class Compiler(object):
     @property
     def interm_fluent_variables(self):
         fluents = self.rddl.domain.intermediate_fluents
-        ordering = self.intermediate_fluent_ordering
+        ordering = self.interm_fluent_ordering
         return self._fluent_params(fluents, ordering)
 
     @property
