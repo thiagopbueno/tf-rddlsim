@@ -45,7 +45,7 @@ class Domain(object):
     def intermediate_cpfs(self):
         _, cpfs = self.cpfs
         interm_cpfs = (cpf for cpf in cpfs if cpf.name in self.intermediate_fluents)
-        interm_cpfs = sorted(interm_cpfs, key=lambda cpf: self.intermediate_fluents[cpf.name].level)
+        interm_cpfs = sorted(interm_cpfs, key=lambda cpf: (self.intermediate_fluents[cpf.name].level, cpf.name))
         return interm_cpfs
 
     @property

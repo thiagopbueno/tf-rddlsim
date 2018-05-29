@@ -25,19 +25,25 @@ class Compiler(object):
         return self._compile_batch_fluents(self.default_action_fluents, batch_size)
 
     def compile_cpfs(self, scope, batch_size=None):
-        next_state_fluents = []
+        interm_fluents = self.compile_intermediate_cpfs(scope, batch_size)
+        scope.update(dict(interm_fluents))
+        next_state_fluents = self.compile_state_cpfs(scope, batch_size)
+        return interm_fluents, next_state_fluents
 
+    def compile_intermediate_cpfs(self, scope, batch_size=None):
+        interm_fluents = []
         for cpf in self.rddl.domain.intermediate_cpfs:
             t = self._compile_expression(cpf.expr, scope, batch_size)
-            scope[cpf.name] = t
+            interm_fluents.append((cpf.name, t))
+        return interm_fluents
 
+    def compile_state_cpfs(self, scope, batch_size=None):
+        next_state_fluents = []
         for cpf in self.rddl.domain.state_cpfs:
             t = self._compile_expression(cpf.expr, scope, batch_size)
             next_state_fluents.append((cpf.name, t))
-
         key = lambda f: self.next_state_fluent_ordering.index(f[0])
         next_state_fluents = sorted(next_state_fluents, key=key)
-
         return next_state_fluents
 
     def compile_reward(self, scope):
@@ -184,12 +190,28 @@ class Compiler(object):
         return [cpf.name for cpf in sorted(self.rddl.domain.state_cpfs, key=key)]
 
     @property
+    def intermediate_fluent_ordering(self):
+        interm_fluents = self.rddl.domain.intermediate_fluents.values()
+        key = lambda pvar: (pvar.level, pvar.name)
+        return [str(pvar) for pvar in sorted(interm_fluents, key=key)]
+
+    @property
     def state_size(self):
         return self._fluent_size(self.initial_state_fluents, self.state_fluent_ordering)
 
     @property
     def action_size(self):
         return self._fluent_size(self.default_action_fluents, self.action_fluent_ordering)
+
+    @property
+    def interm_size(self):
+        interm_fluents = self.rddl.domain.intermediate_fluents
+        shapes = []
+        for name in self.intermediate_fluent_ordering:
+            fluent = interm_fluents[name]
+            shape = self._param_types_to_shape(fluent.param_types)
+            shapes.append(shape)
+        return tuple(shapes)
 
     @property
     def state_dtype(self):
@@ -200,9 +222,25 @@ class Compiler(object):
         return self._fluent_dtype(self.default_action_fluents, self.action_fluent_ordering)
 
     @property
+    def interm_dtype(self):
+        interm_fluents = self.rddl.domain.intermediate_fluents
+        dtypes = []
+        for name in self.intermediate_fluent_ordering:
+            fluent = interm_fluents[name]
+            dtype = self._range_type_to_dtype(fluent.range)
+            dtypes.append(dtype)
+        return tuple(dtypes)
+
+    @property
     def state_fluent_variables(self):
         fluents = self.rddl.domain.state_fluents
         ordering = self.state_fluent_ordering
+        return self._fluent_params(fluents, ordering)
+
+    @property
+    def interm_fluent_variables(self):
+        fluents = self.rddl.domain.intermediate_fluents
+        ordering = self.intermediate_fluent_ordering
         return self._fluent_params(fluents, ordering)
 
     @property
