@@ -63,6 +63,7 @@ class Simulator(object):
 
     def __init__(self, compiler, policy, batch_size):
         self._cell = SimulationCell(compiler, policy, batch_size)
+        self._non_fluents = [fluent.tensor for _, fluent in compiler.non_fluents]
 
     @property
     def graph(self):
@@ -121,11 +122,20 @@ class Simulator(object):
         trajectory = self.trajectory(horizon)
 
         with tf.Session(graph=self.graph) as sess:
+            non_fluents = sess.run(self._non_fluents)
             states, actions, interms, rewards = sess.run(trajectory)
+
+        # non-fluents
+        non_fluent_ordering = self._cell._compiler.non_fluent_ordering
+        non_fluents = tuple(zip(non_fluent_ordering, non_fluents))
 
         # states
         state_fluent_ordering = self._cell._compiler.state_fluent_ordering
         states = tuple(zip(state_fluent_ordering, states))
+
+        # interms
+        interm_fluent_ordering = self._cell._compiler.interm_fluent_ordering
+        interms = tuple(zip(interm_fluent_ordering, interms))
 
         # actions
         action_fluent_ordering = self._cell._compiler.action_fluent_ordering
@@ -134,7 +144,7 @@ class Simulator(object):
         # rewards
         rewards = np.squeeze(rewards)
 
-        return states, actions, interms, rewards
+        return non_fluents, states, actions, interms, rewards
 
     @classmethod
     def _output(cls, tensors, dtypes):

@@ -218,7 +218,7 @@ class TestSimulator(unittest.TestCase):
         batch_sizes = [self.batch_size1, self.batch_size2]
         for compiler, simulator, batch_size in zip(compilers, simulators, batch_sizes):
             # trajectory
-            states, actions, interms, rewards = simulator.run(horizon)
+            non_fluents, states, actions, interms, rewards = simulator.run(horizon)
 
             # tensor sizes
             state_size, action_size, interm_size, reward_size = simulator.output_size
