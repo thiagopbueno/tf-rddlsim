@@ -233,6 +233,12 @@ class Compiler(object):
         return tuple(dtypes)
 
     @property
+    def non_fluent_variables(self):
+        fluents = self.rddl.domain.non_fluents
+        ordering = self.non_fluent_ordering
+        return self._fluent_params(fluents, ordering)
+
+    @property
     def state_fluent_variables(self):
         fluents = self.rddl.domain.state_fluents
         ordering = self.state_fluent_ordering
