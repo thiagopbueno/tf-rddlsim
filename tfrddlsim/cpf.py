@@ -11,5 +11,5 @@ class CPF(object):
         return Expression._pvar_to_name(self.pvar[1])
 
     def __repr__(self):
-        cpf = '{} = {};'.format(str(self.pvar), str(self.expr))
+        cpf = '{} =\n{};'.format(str(self.pvar), str(self.expr))
         return cpf

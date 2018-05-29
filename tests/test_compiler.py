@@ -268,6 +268,16 @@ class TestCompiler(unittest.TestCase):
                 self.assertEqual(RDDL.rename_state_fluent(current_fluent), next_fluent)
                 self.assertEqual(RDDL.rename_next_state_fluent(next_fluent), current_fluent)
 
+    def test_interm_fluent_ordering(self):
+        compilers = [self.compiler1, self.compiler2]
+        expected = [
+            ['evaporated/1', 'overflow/1', 'rainfall/1'],
+            []
+        ]
+        for compiler, expected_ordering in zip(compilers, expected):
+            interm_fluent_ordering = compiler.intermediate_fluent_ordering
+            self.assertListEqual(interm_fluent_ordering, expected_ordering)
+
     def test_action_fluent_ordering(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
@@ -292,6 +302,23 @@ class TestCompiler(unittest.TestCase):
         ]
         for compiler, expected_variables in zip(compilers, fluent_variables):
             fluent_variables = compiler.state_fluent_variables
+            self.assertEqual(len(fluent_variables), len(expected_variables))
+            for name, actual_variables in fluent_variables:
+                self.assertIn(name, expected_variables)
+                self.assertListEqual(actual_variables, expected_variables[name])
+
+    def test_interm_fluent_variables(self):
+        compilers = [self.compiler1, self.compiler2]
+        fluent_variables = [
+            {
+            'evaporated/1': ['evaporated(t1)', 'evaporated(t2)', 'evaporated(t3)', 'evaporated(t4)', 'evaporated(t5)', 'evaporated(t6)', 'evaporated(t7)', 'evaporated(t8)'],
+            'rainfall/1': ['rainfall(t1)', 'rainfall(t2)', 'rainfall(t3)', 'rainfall(t4)', 'rainfall(t5)', 'rainfall(t6)', 'rainfall(t7)', 'rainfall(t8)'],
+            'overflow/1': ['overflow(t1)', 'overflow(t2)', 'overflow(t3)', 'overflow(t4)', 'overflow(t5)', 'overflow(t6)', 'overflow(t7)', 'overflow(t8)']
+            },
+            {}
+        ]
+        for compiler, expected_variables in zip(compilers, fluent_variables):
+            fluent_variables = compiler.interm_fluent_variables
             self.assertEqual(len(fluent_variables), len(expected_variables))
             for name, actual_variables in fluent_variables:
                 self.assertIn(name, expected_variables)
@@ -345,7 +372,8 @@ class TestCompiler(unittest.TestCase):
             scope.update(nf)
             scope.update(sf)
             scope.update(af)
-            next_state_fluents = dict(compiler.compile_cpfs(scope))
+            interm_fluents, next_state_fluents = compiler.compile_cpfs(scope)
+            next_state_fluents = dict(next_state_fluents)
             for shape, name in zip(state_size, next_state_fluent_ordering):
                 actual = list(shape)
                 expected = next_state_fluents[name].shape.as_list()
@@ -365,6 +393,16 @@ class TestCompiler(unittest.TestCase):
             for shape in action_size:
                 self.assertIsInstance(shape, tuple)
 
+    def test_interm_size(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            interm_size = compiler.interm_size
+            interm_ordering = compiler.intermediate_fluent_ordering
+            self.assertIsInstance(interm_size, tuple)
+            self.assertEqual(len(interm_size), len(interm_ordering))
+            for shape in interm_size:
+                self.assertIsInstance(shape, tuple)
+
     def test_state_dtype(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
@@ -377,6 +415,16 @@ class TestCompiler(unittest.TestCase):
             for i, dtype in enumerate(state_dtype):
                 self.assertIsInstance(dtype, tf.DType)
                 self.assertEqual(dtype, initial_state_fluents[i][1].dtype)
+
+    def test_interm_dtype(self):
+        compilers = [self.compiler1, self.compiler2]
+        for compiler in compilers:
+            interm_dtype = compiler.interm_dtype
+            interm_ordering = compiler.intermediate_fluent_ordering
+            self.assertIsInstance(interm_dtype, tuple)
+            self.assertEqual(len(interm_dtype), len(interm_ordering))
+            for i, dtype in enumerate(interm_dtype):
+                self.assertIsInstance(dtype, tf.DType)
 
     def test_action_dtype(self):
         compilers = [self.compiler1, self.compiler2]
@@ -455,16 +503,40 @@ class TestCompiler(unittest.TestCase):
 
     def test_compile_cpfs(self):
         compilers = [self.compiler1, self.compiler2]
+        expected = [
+            (['evaporated/1', 'overflow/1', 'rainfall/1'], ["rlevel'/1"]),
+            ([], ["picTaken'/1", "time'/0", "xPos'/0", "yPos'/0"]),
+        ]
+        for compiler, (expected_interm, expected_state) in zip(compilers, expected):
+            nf = compiler.non_fluents_scope()
+            sf = dict(compiler.initial_state_fluents)
+            af = dict(compiler.default_action_fluents)
+            scope = { **nf, **sf, **af }
+
+            interm_fluents, next_state_fluents = compiler.compile_cpfs(scope)
+
+            self.assertIsInstance(interm_fluents, list)
+            self.assertEqual(len(interm_fluents), len(expected_interm))
+            for fluent, expected_fluent in zip(interm_fluents, expected_interm):
+                self.assertEqual(fluent[0], expected_fluent)
+
+            self.assertIsInstance(next_state_fluents, list)
+            self.assertEqual(len(next_state_fluents), len(expected_state))
+            for fluent, expected_fluent in zip(next_state_fluents, expected_state):
+                self.assertEqual(fluent[0], expected_fluent)
+
+    def test_compile_state_cpfs(self):
+        compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
             nf = compiler.non_fluents_scope()
             sf = dict(compiler.initial_state_fluents)
             af = dict(compiler.default_action_fluents)
-            scope = {}
-            scope.update(nf)
-            scope.update(sf)
-            scope.update(af)
+            scope = { **nf, **sf, **af }
 
-            next_state_fluents = compiler.compile_cpfs(scope)
+            interm_fluents = compiler.compile_intermediate_cpfs(scope)
+            scope.update(dict(interm_fluents))
+            next_state_fluents = compiler.compile_state_cpfs(scope)
+
             self.assertIsInstance(next_state_fluents, list)
             for cpf in next_state_fluents:
                 self.assertIsInstance(cpf, tuple)
@@ -476,18 +548,36 @@ class TestCompiler(unittest.TestCase):
                 self.assertIn(next_fluent, next_state_fluents)
                 self.assertIsInstance(next_state_fluents[next_fluent], TensorFluent)
 
+    def test_compile_intermediate_cpfs(self):
+        compilers = [self.compiler1, self.compiler2]
+        expected = [
+            ['evaporated/1', 'overflow/1', 'rainfall/1'],
+            []
+        ]
+        for compiler, fluents in zip(compilers, expected):
+            nf = compiler.non_fluents_scope()
+            sf = dict(compiler.initial_state_fluents)
+            af = dict(compiler.default_action_fluents)
+            scope = { **nf, **sf, **af }
+            interm_fluents = compiler.compile_intermediate_cpfs(scope)
+            self.assertIsInstance(interm_fluents, list)
+            self.assertEqual(len(interm_fluents), len(fluents))
+            for actual, expected in zip(interm_fluents, fluents):
+                self.assertIsInstance(actual, tuple)
+                self.assertEqual(len(actual), 2)
+                self.assertIsInstance(actual[0], str)
+                self.assertIsInstance(actual[1], TensorFluent)
+                self.assertEqual(actual[0], expected)
+
     def test_compile_reward(self):
         compilers = [self.compiler1, self.compiler2]
         for compiler in compilers:
             nf = compiler.non_fluents_scope()
             sf = dict(compiler.initial_state_fluents)
             af = dict(compiler.default_action_fluents)
-            scope = {}
-            scope.update(nf)
-            scope.update(sf)
-            scope.update(af)
-            next_state_fluents = dict(compiler.compile_cpfs(scope))
-            scope.update(next_state_fluents)
+            scope = { **nf, **sf, **af }
+            interm_fluents, next_state_fluents = compiler.compile_cpfs(scope)
+            scope.update(dict(next_state_fluents))
             reward = compiler.compile_reward(scope)
             self.assertIsInstance(reward, TensorFluent)
             self.assertEqual(reward.shape.as_list(), [1])
