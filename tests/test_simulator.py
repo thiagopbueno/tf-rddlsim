@@ -47,7 +47,7 @@ class TestSimulationCell(unittest.TestCase):
             self.assertTupleEqual(state_size, sz)
 
     def test_interm_size(self):
-        expected = [((8,), (8,), (8,)), ()]
+        expected = [((8,), (8,), (8,), (8,)), ()]
         cells = [self.cell1, self.cell2]
         for cell, sz in zip(cells, expected):
             interm_size = cell.interm_size
