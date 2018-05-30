@@ -100,7 +100,8 @@ class TestDomain(unittest.TestCase):
             {
                 'evaporated/1',
                 'rainfall/1',
-                'overflow/1'
+                'overflow/1',
+                'inflow/1'
             },
             {}
         ]

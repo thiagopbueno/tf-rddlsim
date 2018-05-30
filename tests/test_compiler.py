@@ -271,7 +271,7 @@ class TestCompiler(unittest.TestCase):
     def test_interm_fluent_ordering(self):
         compilers = [self.compiler1, self.compiler2]
         expected = [
-            ['evaporated/1', 'overflow/1', 'rainfall/1'],
+            ['evaporated/1', 'overflow/1', 'rainfall/1', 'inflow/1'],
             []
         ]
         for compiler, expected_ordering in zip(compilers, expected):
@@ -313,7 +313,8 @@ class TestCompiler(unittest.TestCase):
             {
             'evaporated/1': ['evaporated(t1)', 'evaporated(t2)', 'evaporated(t3)', 'evaporated(t4)', 'evaporated(t5)', 'evaporated(t6)', 'evaporated(t7)', 'evaporated(t8)'],
             'rainfall/1': ['rainfall(t1)', 'rainfall(t2)', 'rainfall(t3)', 'rainfall(t4)', 'rainfall(t5)', 'rainfall(t6)', 'rainfall(t7)', 'rainfall(t8)'],
-            'overflow/1': ['overflow(t1)', 'overflow(t2)', 'overflow(t3)', 'overflow(t4)', 'overflow(t5)', 'overflow(t6)', 'overflow(t7)', 'overflow(t8)']
+            'overflow/1': ['overflow(t1)', 'overflow(t2)', 'overflow(t3)', 'overflow(t4)', 'overflow(t5)', 'overflow(t6)', 'overflow(t7)', 'overflow(t8)'],
+            'inflow/1': ['inflow(t1)', 'inflow(t2)', 'inflow(t3)', 'inflow(t4)', 'inflow(t5)', 'inflow(t6)', 'inflow(t7)', 'inflow(t8)']
             },
             {}
         ]
@@ -463,6 +464,7 @@ class TestCompiler(unittest.TestCase):
             'rainfall/1':   { 'shape': [8,], 'dtype': tf.float32, 'scope': ['?r'] },
             'evaporated/1': { 'shape': [8,], 'dtype': tf.float32, 'scope': ['?r'] },
             'overflow/1':   { 'shape': [8,], 'dtype': tf.float32, 'scope': ['?r'] },
+            'inflow/1':     { 'shape': [8,], 'dtype': tf.float32, 'scope': ['?r'] },
             "rlevel'/1":    { 'shape': [8,], 'dtype': tf.float32, 'scope': ['?r'] },
 
             # rddl2: MARS ROVER ===================================================
@@ -504,7 +506,7 @@ class TestCompiler(unittest.TestCase):
     def test_compile_cpfs(self):
         compilers = [self.compiler1, self.compiler2]
         expected = [
-            (['evaporated/1', 'overflow/1', 'rainfall/1'], ["rlevel'/1"]),
+            (['evaporated/1', 'overflow/1', 'rainfall/1', 'inflow/1'], ["rlevel'/1"]),
             ([], ["picTaken'/1", "time'/0", "xPos'/0", "yPos'/0"]),
         ]
         for compiler, (expected_interm, expected_state) in zip(compilers, expected):
@@ -551,7 +553,7 @@ class TestCompiler(unittest.TestCase):
     def test_compile_intermediate_cpfs(self):
         compilers = [self.compiler1, self.compiler2]
         expected = [
-            ['evaporated/1', 'overflow/1', 'rainfall/1'],
+            ['evaporated/1', 'overflow/1', 'rainfall/1', 'inflow/1'],
             []
         ]
         for compiler, fluents in zip(compilers, expected):
