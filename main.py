@@ -1,11 +1,6 @@
-from tfrddlsim.parser     import RDDLParser
-from tfrddlsim.compiler   import Compiler
-from tfrddlsim.policy     import DefaultPolicy, RandomPolicy
-from tfrddlsim.simulator  import Simulator
-from tfrddlsim.visualizer import BasicVisualizer
-
-
 import argparse
+import numpy as np
+import time
 
 
 def parse_args():
@@ -28,7 +23,11 @@ def parse_args():
         type=int, default=75,
         help='number of trajectories in a batch (default=75)'
     )
-    parser.add_argument('-v', '--verbose', help='verbosity mode')
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='verbosity mode'
+    )
     return parser.parse_args()
 
 
@@ -37,7 +36,20 @@ def read_file(path):
         return f.read()
 
 
+def print_simulation_parameters(args):
+    print('*********************************************************')
+    print(' RDDL domain = {}'.format(args.rddl))
+    print('*********************************************************')
+    print('>> policy = {}'.format(args.policy))
+    print('>> horizon = {}'.format(args.horizon))
+    print('>> batch_size = {}'.format(args.batch_size))
+    print()
+
+
 def compile(rddl):
+    from tfrddlsim.parser import RDDLParser
+    from tfrddlsim.compiler import Compiler
+
     # parse RDDL
     parser = RDDLParser()
     parser.build()
@@ -48,24 +60,53 @@ def compile(rddl):
 
 
 def get_policy(compiler, policy_type, batch_size):
+    from tfrddlsim.policy import DefaultPolicy, RandomPolicy
     policy = RandomPolicy if policy_type == 'random' else DefaultPolicy
     return policy(compiler, batch_size)
 
 
 def simulate(compiler, policy, horizon, batch_size):
+    from tfrddlsim.simulator import Simulator
+    start = time.time()
     simulator = Simulator(compiler, policy, batch_size)
-    return simulator.run(horizon)
+    trajectories = simulator.run(horizon)
+    uptime = time.time() - start
+    return uptime, trajectories
 
 
-def display(compiler, trajectories, verbose):
+def performance_stats(trajectories):
+    _, _, _, _, rewards = trajectories
+    totals = np.sum(rewards, axis=1)
+    stats = {
+        'totals': totals,
+        'avg': np.mean(totals),
+        'stddev': np.std(totals)
+    }
+    return stats
+
+
+def display(compiler, stats, trajectories, verbose):
+    from tfrddlsim.visualizer import BasicVisualizer
     viz = BasicVisualizer(compiler, verbose)
-    viz.render(trajectories)
+    viz.render(stats, trajectories)
+
+
+def time_stats(uptime, horizon, batch_size):
+    time_per_batch = uptime / batch_size
+    time_per_step = uptime / horizon
+    print('*********************************************************')
+    print(' TIME STATS:')
+    print('*********************************************************')
+    print('>> Simulation done in {:.6f} sec.'.format(uptime))
+    print('>> Time per batch = {:.6f} sec.'.format(time_per_batch))
+    print('>> Time per step  = {:.6f} sec.'.format(time_per_step))
 
 
 if __name__ == '__main__':
 
     # parser CLI arguments
     args = parse_args()
+    print_simulation_parameters(args)
 
     # read RDDL file
     rddl = read_file(args.rddl)
@@ -77,7 +118,13 @@ if __name__ == '__main__':
     policy = get_policy(rddl2tf, args.policy, args.batch_size)
 
     # run simulations
-    trajectories = simulate(rddl2tf, policy, args.horizon, args.batch_size)
+    uptime, trajectories = simulate(rddl2tf, policy, args.horizon, args.batch_size)
+
+    # overall performance
+    stats = performance_stats(trajectories)
 
     # visualize trajectories
-    display(rddl2tf, trajectories, args.verbose)
+    display(rddl2tf, stats, trajectories, args.verbose)
+
+    # stats
+    time_stats(uptime, args.horizon, args.batch_size)

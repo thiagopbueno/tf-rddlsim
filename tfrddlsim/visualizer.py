@@ -4,7 +4,7 @@ import numpy as np
 
 class Visualizer(metaclass=abc.ABCMeta):
 
-    def __init__(self, compiler, verbose=0):
+    def __init__(self, compiler, verbose):
         self.compiler = compiler
         self.verbose = verbose
 
@@ -15,12 +15,25 @@ class Visualizer(metaclass=abc.ABCMeta):
 
 class BasicVisualizer(Visualizer):
 
-    def __init__(self, compiler, verbose=0):
+    def __init__(self, compiler, verbose):
         super().__init__(compiler, verbose)
 
-    def render(self, trajectories, batch=None):
-        non_fluents, states, actions, interms, rewards = trajectories
-        if batch is None:
+    def render(self, stats, trajectories, batch=None):
+        self._render_trajectories(trajectories)
+        self._render_performance(stats)
+
+    def _render_performance(self, stats):
+        print('*********************************************************')
+        print(' PERFORMANCE STATS')
+        print('*********************************************************')
+        print('>> Average total reward = {:.6f}'.format(stats['avg']))
+        print('>> Stddev  total reward = {:.6f}'.format(stats['stddev']))
+        print('>> Total reward = {}'.format(list(stats['totals'])))
+        print()
+
+    def _render_trajectories(self, trajectories):
+        if self.verbose:
+            non_fluents, states, actions, interms, rewards = trajectories
             states = [(s[0], s[1][0]) for s in states]
             interms = [(f[0], f[1][0]) for f in interms]
             actions = [(a[0], a[1][0]) for a in actions]
