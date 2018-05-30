@@ -44,7 +44,8 @@ domain reservoir {
 		evaporated(res): {interm-fluent, real, level=1}; // How much evaporates from res in this time step?
 		rainfall(res):   {interm-fluent, real, level=1}; // How much rainfall is there in this time step?
 		overflow(res):   {interm-fluent, real, level=1}; // Is there any excess overflow (over the rim)?
-		
+		inflow(res):     {interm-fluent, real, level=2}; // How much res receives from upstream reservoirs?
+
 		// State fluents
 		rlevel(res): {state-fluent, real, default = 50.0 }; // Reservoir level for res
 		
@@ -64,8 +65,9 @@ domain reservoir {
 		// Consider MAX_RES_CAP=100, rlevel=90, outflow=4, then the excess overflow is 0 units
 		overflow(?r) = max[0, rlevel(?r) - outflow(?r) - MAX_RES_CAP(?r)]; 
 
-		rlevel'(?r) = rlevel(?r) + rainfall(?r) - evaporated(?r) - outflow(?r) - overflow(?r)
-		              + sum_{?up : res} [DOWNSTREAM(?up,?r)*(outflow(?up) + overflow(?up))];
+		inflow(?r) = sum_{?up : res} [DOWNSTREAM(?up,?r)*(outflow(?up) + overflow(?up))];
+
+		rlevel'(?r) = max[0.0, rlevel(?r) + rainfall(?r) - evaporated(?r) - outflow(?r) - overflow(?r) + inflow(?r)];
 	};
 	
 	reward = sum_{?r: res} [if (rlevel'(?r)>=LOWER_BOUND(?r) ^ (rlevel'(?r)<=UPPER_BOUND(?r)))

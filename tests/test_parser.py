@@ -21,7 +21,7 @@ class TestRDDLlex(unittest.TestCase):
     def test_newlines(self):
         self.lexer.input(RESERVOIR)
         for _ in self.lexer(): pass
-        self.assertEqual(self.lexer._lexer.lineno, 145)
+        self.assertEqual(self.lexer._lexer.lineno, 147)
 
     def test_identifiers(self):
         self.lexer.input(RESERVOIR)
