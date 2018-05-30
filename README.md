@@ -4,27 +4,35 @@ RDDL2TensorFlow compiler and MDP simulator in Python3.
 
 # Usage
 
+```bash
+$ python3 main.py rddl/Reservoir.rddl
+```
+
 ```python
 # read RDDL file
 filename = sys.argv[1]
 with open(filename, 'r') as f:
     rddl = f.read()
 
-# build parser
+# parse RDDL
 parser = RDDLParser()
 parser.build()
-
-# parse RDDL
 rddl = parser.parse(rddl)
-domain = rddl.domain
-non_fluents = rddl.non_fluents
-instance = rddl.instance
 
 # compile RDDL to TensorFlow
-# TODO
+graph = tf.Graph()
+compiler = Compiler(rddl, graph, batch_mode=True)
 
-# simulate TensorFlow model
-# TODO
+# run simulations
+horizon = 40
+batch_size = 75
+policy = DefaultPolicy(compiler, batch_size)
+simulator = Simulator(compiler, policy, batch_size)
+trajectories = simulator.run(horizon)
+
+# visualize trajectories
+viz = BasicVisualizer(compiler, verbose=2)
+viz.render(trajectories)
 ```
 
 # License
