@@ -26,14 +26,12 @@ class TestSimulationCell(unittest.TestCase):
             cls.rddl2 = parser.parse(MARS_ROVER)
 
     def setUp(self):
-        self.graph1 = tf.Graph()
-        self.compiler1 = Compiler(self.rddl1, self.graph1, batch_mode=True)
+        self.compiler1 = Compiler(self.rddl1, batch_mode=True)
         self.batch_size1 = 100
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
         self.cell1 = SimulationCell(self.compiler1, self.policy1, self.batch_size1)
 
-        self.graph2 = tf.Graph()
-        self.compiler2 = Compiler(self.rddl2, self.graph2, batch_mode=True)
+        self.compiler2 = Compiler(self.rddl2, batch_mode=True)
         self.batch_size2 = 100
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
         self.cell2 = SimulationCell(self.compiler2, self.policy2, self.batch_size2)
@@ -136,14 +134,12 @@ class TestSimulator(unittest.TestCase):
             cls.rddl2 = parser.parse(MARS_ROVER)
 
     def setUp(self):
-        self.graph1 = tf.Graph()
-        self.compiler1 = Compiler(self.rddl1, self.graph1, batch_mode=True)
+        self.compiler1 = Compiler(self.rddl1, batch_mode=True)
         self.batch_size1 = 100
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
         self.simulator1 = Simulator(self.compiler1, self.policy1, self.batch_size1)
 
-        self.graph2 = tf.Graph()
-        self.compiler2 = Compiler(self.rddl2, self.graph2, batch_mode=True)
+        self.compiler2 = Compiler(self.rddl2, batch_mode=True)
         self.batch_size2 = 100
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
         self.simulator2 = Simulator(self.compiler2, self.policy2, self.batch_size1)

@@ -19,14 +19,12 @@ class TestDefaultPolicy(unittest.TestCase):
         with open('rddl/Reservoir.rddl', mode='r') as file:
             RESERVOIR = file.read()
             cls.rddl1 = parser.parse(RESERVOIR)
-            cls.graph1 = tf.Graph()
-            cls.compiler1 = Compiler(cls.rddl1, cls.graph1)
+            cls.compiler1 = Compiler(cls.rddl1)
 
         with open('rddl/Mars_Rover.rddl', mode='r') as file:
             MARS_ROVER = file.read()
             cls.rddl2 = parser.parse(MARS_ROVER)
-            cls.graph2 = tf.Graph()
-            cls.compiler2 = Compiler(cls.rddl2, cls.graph2)
+            cls.compiler2 = Compiler(cls.rddl2)
 
     def test_default_policy(self):
         for compiler in [self.compiler1, self.compiler2]:
@@ -62,14 +60,12 @@ class TestRandomPolicy(unittest.TestCase):
         with open('rddl/Reservoir.rddl', mode='r') as file:
             RESERVOIR = file.read()
             cls.rddl1 = parser.parse(RESERVOIR)
-            cls.graph1 = tf.Graph()
-            cls.compiler1 = Compiler(cls.rddl1, cls.graph1, batch_mode=True)
+            cls.compiler1 = Compiler(cls.rddl1, batch_mode=True)
 
         with open('rddl/Mars_Rover.rddl', mode='r') as file:
             MARS_ROVER = file.read()
             cls.rddl2 = parser.parse(MARS_ROVER)
-            cls.graph2 = tf.Graph()
-            cls.compiler2 = Compiler(cls.rddl2, cls.graph2, batch_mode=True)
+            cls.compiler2 = Compiler(cls.rddl2, batch_mode=True)
 
     def test_random_policy(self):
         batch_size = 1000

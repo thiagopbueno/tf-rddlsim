@@ -6,7 +6,6 @@ from tfrddlsim.visualizer import BasicVisualizer
 
 
 import argparse
-import tensorflow as tf
 
 
 def parse_args():
@@ -45,8 +44,7 @@ def compile(rddl):
     rddl = parser.parse(rddl)
 
     # build RDDL2TensorFlow compiler
-    graph = tf.Graph()
-    return Compiler(rddl, graph, batch_mode=True)
+    return Compiler(rddl, batch_mode=True)
 
 
 def get_policy(compiler, policy_type, batch_size):

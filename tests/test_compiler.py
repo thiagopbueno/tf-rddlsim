@@ -28,15 +28,10 @@ class TestCompiler(unittest.TestCase):
         cls.rddl2 = parser.parse(MARS_ROVER)
 
     def setUp(self):
-        self.graph1 = tf.Graph()
-        self.compiler1 = Compiler(self.rddl1, self.graph1)
+        self.compiler1 = Compiler(self.rddl1)
         self.assertIs(self.compiler1.rddl, self.rddl1)
-        self.assertIs(self.compiler1.graph, self.graph1)
-
-        self.graph2 = tf.Graph()
-        self.compiler2 = Compiler(self.rddl2, self.graph2)
+        self.compiler2 = Compiler(self.rddl2)
         self.assertIs(self.compiler2.rddl, self.rddl2)
-        self.assertIs(self.compiler2.graph, self.graph2)
 
     def test_build_object_table(self):
         self.assertIn('res', self.compiler1.object_table)
@@ -172,7 +167,7 @@ class TestCompiler(unittest.TestCase):
             'LOW_PENALTY/1': [-5., -5., -5., -5., -5., -5., -5., -5.],
             'HIGH_PENALTY/1': [-10., -10., -10., -10., -10., -10., -10., -10.]
         }
-        with tf.Session(graph=self.graph1) as sess:
+        with tf.Session(graph=self.compiler1.graph) as sess:
             for name, fluent in nf.items():
                 value = sess.run(fluent.tensor)
                 list1 = list(value.flatten())
@@ -200,7 +195,7 @@ class TestCompiler(unittest.TestCase):
         expected_initializers = {
             'rlevel/1': [75., 50., 50., 50., 50., 50., 50., 50.]
         }
-        with tf.Session(graph=self.graph1) as sess:
+        with tf.Session(graph=self.compiler1.graph) as sess:
             for name, fluent in sf.items():
                 value = sess.run(fluent.tensor)
                 list1 = list(value.flatten())
@@ -235,7 +230,7 @@ class TestCompiler(unittest.TestCase):
         expected_initializers = {
             'outflow/1': [0., 0., 0., 0., 0., 0., 0., 0.]
         }
-        with tf.Session(graph=self.graph1) as sess:
+        with tf.Session(graph=self.compiler1.graph) as sess:
             for name, fluent in af.items():
                 value = sess.run(fluent.tensor)
                 list1 = list(value.flatten())

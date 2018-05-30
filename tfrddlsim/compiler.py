@@ -7,10 +7,10 @@ import tensorflow as tf
 
 class Compiler(object):
 
-    def __init__(self, rddl, graph, batch_mode=False):
+    def __init__(self, rddl, batch_mode=False):
         self.rddl = rddl
-        self.graph = graph
         self.batch_mode = batch_mode
+        self.graph = tf.Graph()
 
     def batch_mode_on(self):
         self.batch_mode = True
