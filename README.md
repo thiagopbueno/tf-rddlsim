@@ -2,16 +2,21 @@
 
 RDDL2TensorFlow compiler and trajectory simulator in Python3.
 
+# Quickstart
+
+```text
+$ pip3 install tfrddlsim
+```
 
 # Usage
 
 tf-rddlsim can be used as a standalone script or programmatically.
 
 
-### Standalone mode
+### Script mode
 
 ```text
-$ python3 main.py --help
+$ tfrddlsim main.py --help
 
 usage: main.py [-h] [--policy {random,default}] [-hr HORIZON] [-b BATCH_SIZE]
                [-v]
@@ -72,7 +77,7 @@ The RDDL2TensorFlow compiler translates an AST representing a RDDL file into a c
 
 Each RDDL fluent is compiled to a ``tfrddlsim.TensorFluent`` after instantiation.
 
-A ``tfrddlsim.TensorFluent`` object wraps a ``tf.Tensor`` object. The arity and the number of objects corresponding to the type of each parameter of a fluent are reflected in a ``tfrddlsim.TensorFluentShape`` object (i.e., the rank of a ``tfrddlsim.TensorFluent`` is identified to the fluent arity and the size of its dimensions to the number of objects for each type). Also, a ``tfrddlsim.TensorFluentShape`` manages batch sizes when evaluating operations in batch mode.
+A ``tfrddlsim.TensorFluent`` object wraps a ``tf.Tensor`` object. The arity and the number of objects corresponding to the type of each parameter of a fluent are reflected in a ``tfrddlsim.TensorFluentShape`` object (the rank of a ``tfrddlsim.TensorFluent`` corresponds to the fluent arity and the size of its dimensions corresponds to the number of objects of each type). Also, a ``tfrddlsim.TensorFluentShape`` manages batch sizes when evaluating operations in batch mode.
 
 Additionally, a ``tfrddlsim.TensorFluent``keeps information about the ordering of the fluent parameters in a ``tfrddlsim.TensorScope`` object.
 
