@@ -14,39 +14,115 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
+from tfrddlsim.rddl import RDDL
+from tfrddlsim.pvariable import PVariable
+from tfrddlsim.expr import Expression
 from tfrddlsim.fluent import TensorFluent
 
 import itertools
 import numpy as np
 import tensorflow as tf
 
+from typing import Dict, List, Optional, Sequence, Tuple, Union
+
+CPFPair = Tuple[str, TensorFluent]
+FluentList = List[Tuple[str, TensorFluent]]
+Bounds = Tuple[Optional[TensorFluent], Optional[TensorFluent]]
+ObjectStruct = Dict[str, Union[int, Dict[str, int], List[str]]]
+ObjectTable = Dict[str, ObjectStruct]
+FluentParamsList = Sequence[Tuple[str, List[str]]]
+Value = Union[bool, int, float]
+ArgsList = Optional[List[str]]
+InitializerPair = Tuple[Tuple[str, ArgsList], Value]
+InitializerList = List[InitializerPair]
+
 
 class Compiler(object):
+    '''RDDL2TensorFlow compiler.
 
-    def __init__(self, rddl, batch_mode=False):
+    This is the core component of tf-rddlsim package.
+
+    Its API provides methods to compile RDDL fluents and expressions
+    to TensorFlow tensors wrapped as :obj:`tfrddlsim.fluent.TensorFluent` objects.
+    It supports constants, random variables, functions and operators
+    used in most RDDL expressions. Also, it can handle next state
+    and intermediate fluent CPFs, and rewards and action constraints.
+
+    Args:
+        rddl (:obj:`tfrddlsim.rddl.RDDL`): The RDDL model.
+        batch_mode (bool): The batch mode flag.
+
+    Attributes:
+        rddl (:obj:`tfrddlsim.rddl.RDDL`): The RDDL model.
+        batch_mode (bool): The batch mode flag.
+        graph (:obj:`tensorflow.python.framework.ops.Graph`): The computation graph.
+    '''
+
+    def __init__(self, rddl: RDDL, batch_mode: bool = False) -> None:
         self.rddl = rddl
         self.batch_mode = batch_mode
         self.graph = tf.Graph()
 
     def batch_mode_on(self):
+        '''Sets on the batch mode flag.'''
         self.batch_mode = True
 
     def batch_mode_off(self):
+        '''Sets off the batch mode flag.'''
         self.batch_mode = False
 
-    def compile_initial_state(self, batch_size):
+    def compile_initial_state(self, batch_size: int) -> tf.Tensor:
+        '''Returns a tuple of tensors representing the initial state fluents.
+
+        Args:
+            batch_size (int): The batch size.
+
+        Returns:
+            A tuple of tensors.
+        '''
         return self._compile_batch_fluents(self.initial_state_fluents, batch_size)
 
-    def compile_default_action(self, batch_size):
+    def compile_default_action(self, batch_size: int) -> tf.Tensor:
+        '''Returns a tuple of tensors representing the default action fluents.
+
+        Args:
+            batch_size (int): The batch size.
+
+        Returns:
+            A tuple of tensors.
+        '''
         return self._compile_batch_fluents(self.default_action_fluents, batch_size)
 
-    def compile_cpfs(self, scope, batch_size=None):
+    def compile_cpfs(self,
+            scope: Dict[str, TensorFluent],
+            batch_size: Optional[int] = None) -> Tuple[List[CPFPair], List[CPFPair]]:
+        '''Compiles the intermediate and next state fluent CPFs.
+
+        Args:
+            scope (Dict[str, :obj:`tfrddlsim.fluent.TensorFluent`]): The fluent scope for CPF evaluation.
+            batch_size (Optional[int]): The batch size.
+
+        Returns:
+            Tuple[List[CPFPair], List[CPFPair]]: A pair of lists of TensorFluent
+            representing the intermediate and state CPFs.
+        '''
         interm_fluents = self.compile_intermediate_cpfs(scope, batch_size)
         scope.update(dict(interm_fluents))
         next_state_fluents = self.compile_state_cpfs(scope, batch_size)
         return interm_fluents, next_state_fluents
 
-    def compile_intermediate_cpfs(self, scope, batch_size=None):
+    def compile_intermediate_cpfs(self,
+            scope: Dict[str, TensorFluent],
+            batch_size: Optional[int] = None) -> Tuple[List[CPFPair], List[CPFPair]]:
+        '''Compiles the intermediate fluent CPFs.
+
+        Args:
+            scope (Dict[str, :obj:`tfrddlsim.fluent.TensorFluent`]): The fluent scope for CPF evaluation.
+            batch_size (Optional[int]): The batch size.
+
+        Returns:
+            A list of intermediate fluent CPFs compiled to :obj:`tfrddlsim.fluent.TensorFluent`.
+        '''
         interm_fluents = []
         for cpf in self.rddl.domain.intermediate_cpfs:
             t = self._compile_expression(cpf.expr, scope, batch_size)
@@ -54,7 +130,18 @@ class Compiler(object):
             scope[cpf.name] = t
         return interm_fluents
 
-    def compile_state_cpfs(self, scope, batch_size=None):
+    def compile_state_cpfs(self,
+            scope: Dict[str, TensorFluent],
+            batch_size: Optional[int] = None) -> Tuple[List[CPFPair], List[CPFPair]]:
+        '''Compiles the next state fluent CPFs given the current `state` and `action` scope.
+
+        Args:
+            scope (Dict[str, :obj:`tfrddlsim.fluent.TensorFluent`]): The fluent scope for CPF evaluation.
+            batch_size (Optional[int]): The batch size.
+
+        Returns:
+            A list of state fluent CPFs compiled to :obj:`tfrddlsim.fluent.TensorFluent`.
+        '''
         next_state_fluents = []
         for cpf in self.rddl.domain.state_cpfs:
             t = self._compile_expression(cpf.expr, scope, batch_size)
@@ -63,13 +150,32 @@ class Compiler(object):
         next_state_fluents = sorted(next_state_fluents, key=key)
         return next_state_fluents
 
-    def compile_reward(self, scope):
+    def compile_reward(self, scope: Dict[str, TensorFluent]) -> TensorFluent:
+        '''Compiles the reward function given the fluent `scope`.
+
+        Args:
+            scope (Dict[str, :obj:`tfrddlsim.fluent.TensorFluent`]): The fluent scope for reward evaluation.
+
+        Returns:
+            A :obj:`tfrddlsim.fluent.TensorFluent` representing the reward function.
+        '''
         reward_expr = self.rddl.domain.reward
         t = self._compile_expression(reward_expr, scope)
         tensor = tf.expand_dims(t.tensor, -1)
         return TensorFluent(tensor, t.scope[:], t.batch)
 
-    def compile_action_preconditions(self, state, action):
+    def compile_action_preconditions(self,
+            state: Sequence[tf.Tensor],
+            action: Sequence[tf.Tensor]) -> List[TensorFluent]:
+        '''Compiles the action preconditions given current `state` and `action` fluents.
+
+        Args:
+            state (Sequence[tf.Tensor]): The current state fluents.
+            action (Sequence[tf.Tensor]): The action fluents.
+
+        Returns:
+            A list of :obj:`tfrddlsim.fluent.TensorFluent`.
+        '''
         scope = self.action_precondition_scope(state, action)
         preconds = []
         for p in self.action_preconditions:
@@ -81,13 +187,35 @@ class Compiler(object):
             preconds.append(fluent)
         return preconds
 
-    def compile_action_preconditions_checking(self, state, action):
+    def compile_action_preconditions_checking(self,
+            state: Sequence[tf.Tensor],
+            action: Sequence[tf.Tensor]) -> tf.Tensor:
+        '''Combines the action preconditions into an applicability checking op.
+
+        Args:
+            state (Sequence[tf.Tensor]): The current state fluents.
+            action (Sequence[tf.Tensor]): The action fluents.
+
+        Returns:
+            A boolean tensor for checking if `action` is application in `state`.
+        '''
         preconds = self.compile_action_preconditions(state, action)
         all_preconds = tf.concat([p.tensor for p in preconds], axis=1)
         checking = tf.reduce_all(all_preconds, axis=1)
         return checking
 
-    def compile_action_bound_constraints(self, state):
+    def compile_action_bound_constraints(self,
+            state: Sequence[tf.Tensor]) -> Dict[str, Bounds]:
+        '''Compiles all actions bounds for the given `state`.
+
+        Args:
+            state (Sequence[tf.Tensor]): The current state fluents.
+
+        Returns:
+            A mapping from action names to a pair of
+            :obj:`tfrddlsim.fluent.TensorFluent` representing
+            its lower and upper bounds.
+        '''
         scope = self.action_precondition_scope(state)
 
         lower_bounds = self.action_lower_bound_constraints
@@ -110,26 +238,75 @@ class Compiler(object):
 
         return bounds
 
-    def non_fluents_scope(self):
+    def non_fluents_scope(self) -> Dict[str, TensorFluent]:
+        '''Returns a partial scope with non-fluents.'''
         return dict(self.non_fluents)
 
-    def state_scope(self, state_fluents):
+    def state_scope(self, state_fluents: Sequence[tf.Tensor]) -> Dict[str, TensorFluent]:
+        '''Returns a partial scope with current state-fluents.
+
+        Args:
+            state_fluents (Sequence[tf.Tensor]): The current state fluents.
+
+        Returns:
+            A mapping from state fluent names to :obj:`tfrddlsim.fluent.TensorFluent`.
+        '''
         return dict(zip(self.state_fluent_ordering, state_fluents))
 
-    def action_scope(self, action_fluents):
+    def action_scope(self, action_fluents: Sequence[tf.Tensor]) -> Dict[str, TensorFluent]:
+        '''Returns a partial scope with current action-fluents.
+
+        Args:
+            action_fluents (Sequence[tf.Tensor]): The action fluents.
+
+        Returns:
+            A mapping from action fluent names to :obj:`tfrddlsim.fluent.TensorFluent`.
+        '''
         return dict(zip(self.action_fluent_ordering, action_fluents))
 
-    def next_state_scope(self, next_state_fluents):
+    def next_state_scope(self, next_state_fluents: Sequence[tf.Tensor]) -> Dict[str, TensorFluent]:
+        '''Returns a partial scope with current next state-fluents.
+
+        Args:
+            next_state_fluents (Sequence[tf.Tensor]): The next state fluents.
+
+        Returns:
+            A mapping from next state fluent names to :obj:`tfrddlsim.fluent.TensorFluent`.
+        '''
         return dict(zip(self.next_state_fluent_ordering, next_state_fluents))
 
-    def transition_scope(self, state, action):
+    def transition_scope(self,
+        state: Sequence[tf.Tensor],
+        action: Sequence[tf.Tensor]) -> Dict[str, TensorFluent]:
+        '''Returns the complete transition fluent scope
+        for the current `state` and `action` fluents.
+
+        Args:
+            state (Sequence[tf.Tensor]): The current state fluents.
+            action (Sequence[tf.Tensor]): The action fluents.
+
+        Returns:
+            A mapping from fluent names to :obj:`tfrddlsim.fluent.TensorFluent`.
+        '''
         scope = {}
         scope.update(self.non_fluents_scope())
         scope.update(self.state_scope(state))
         scope.update(self.action_scope(action))
         return scope
 
-    def action_precondition_scope(self, state, action=None):
+    def action_precondition_scope(self,
+            state: Sequence[tf.Tensor],
+            action: Optional[Sequence[tf.Tensor]] = None) -> Dict[str, TensorFluent]:
+        '''Returns the action precondition fluent scope
+        for the current `state` and `action` fluents.
+
+        Args:
+            state (Sequence[tf.Tensor]): The current state fluents.
+            action (Sequence[tf.Tensor]): The action fluents.
+
+        Returns:
+            A mapping from fluent names to :obj:`tfrddlsim.fluent.TensorFluent`.
+        '''
         scope = {}
         scope.update(self.non_fluents_scope())
         scope.update(self.state_scope(state))
@@ -138,90 +315,174 @@ class Compiler(object):
         return scope
 
     @property
-    def object_table(self):
+    def object_table(self) -> ObjectTable:
+        '''The object table for each RDDL type.
+
+        Returns:
+            A mapping from type name to the type size,
+            objects index and objects list.
+        '''
         if self.__dict__.get('_object_table') is None:
             self._build_object_table()
         return self._object_table
 
     @property
-    def non_fluents(self):
+    def non_fluents(self) -> FluentList:
+        '''The list of non-fluents instantiated for a given RDDL non-fluents.
+
+        Returns:
+            List[Tuple[str, TensorFluent]]: the list of non-fluents.
+        '''
         if self.__dict__.get('_non_fluents') is None:
             self._instantiate_non_fluents()
         return self._non_fluents
 
     @property
-    def initial_state_fluents(self):
+    def initial_state_fluents(self) -> FluentList:
+        '''The list of initial state-fluents instantiated for a given RDDL instance.
+
+        Returns:
+            List[Tuple[str, TensorFluent]]: the list of state fluents.
+        '''
         if self.__dict__.get('_initial_state_fluents') is None:
             self._instantiate_initial_state_fluents()
         return self._initial_state_fluents
 
     @property
-    def default_action_fluents(self):
+    def default_action_fluents(self) -> FluentList:
+        '''The list of non-fluents instantiated for a given RDDL domain.
+
+        Returns:
+            List[Tuple[str, TensorFluent]]: the list of action fluents.
+        '''
         if self.__dict__.get('_default_action_fluents') is None:
             self._instantiate_default_action_fluents()
         return self._default_action_fluents
 
     @property
-    def action_preconditions(self):
+    def action_preconditions(self) -> Dict[str, List[Expression]]:
+        '''The action precondition expressions.
+
+        Returns:
+            Dict[str, List[Expression]]: A mapping from fluent name to a list of Expressions.'''
         return self.rddl.domain.preconds
 
     @property
-    def local_action_preconditions(self):
+    def local_action_preconditions(self) -> Dict[str, List[Expression]]:
+        '''The local action precondition expressions.
+
+        Returns:
+            Dict[str, List[Expression]]: A mapping from fluent name to a list of Expressions.'''
         if self.__dict__.get('_local_action_preconditions') is None:
             self._build_preconditions_table()
         return self._local_action_preconditions
 
     @property
-    def global_action_preconditions(self):
+    def global_action_preconditions(self) -> Dict[str, List[Expression]]:
+        '''The global action precondition expressions.
+
+        Returns:
+            Dict[str, List[Expression]]: A mapping from fluent name to a list of Expressions.'''
         if self.__dict__.get('_global_action_preconditions') is None:
             self._build_preconditions_table()
         return self._global_action_preconditions
 
     @property
-    def action_lower_bound_constraints(self):
+    def action_lower_bound_constraints(self) -> Dict[str, Expression]:
+        '''The action lower bound constraint expressions.
+
+        Returns:
+            Dict[str, Expression]: A mapping from fluent name to an Expression.'''
         if self.__dict__.get('_action_lower_bound_constraints') is None:
             self._build_action_bound_constraints_table()
         return self._action_lower_bound_constraints
 
     @property
-    def action_upper_bound_constraints(self):
+    def action_upper_bound_constraints(self) -> Dict[str, Expression]:
+        '''The action upper bound constraint expressions.
+
+        Returns:
+            Dict[str, Expression]: A mapping from fluent name to an Expression.'''
         if self.__dict__.get('_action_upper_bound_constraints') is None:
             self._build_action_bound_constraints_table()
         return self._action_upper_bound_constraints
 
     @property
-    def non_fluent_ordering(self):
+    def non_fluent_ordering(self) -> List[str]:
+        '''The list of non-fluent names in canonical order.
+
+        Returns:
+            List[str]: A list of fluent names.
+        '''
         return [name for name in sorted(self.rddl.domain.non_fluents)]
 
     @property
-    def state_fluent_ordering(self):
+    def state_fluent_ordering(self) -> List[str]:
+        '''The list of stae-fluent names in canonical order.
+
+        Returns:
+            List[str]: A list of fluent names.
+        '''
         return [name for name in sorted(self.rddl.domain.state_fluents)]
 
     @property
-    def action_fluent_ordering(self):
+    def action_fluent_ordering(self) -> List[str]:
+        '''The list of action-fluent names in canonical order.
+
+        Returns:
+            List[str]: A list of fluent names.
+        '''
         return [name for name in sorted(self.rddl.domain.action_fluents)]
 
     @property
-    def next_state_fluent_ordering(self):
+    def next_state_fluent_ordering(self) -> List[str]:
+        '''The list of next state-fluent names in canonical order.
+
+        Returns:
+            List[str]: A list of fluent names.
+        '''
         key = lambda x: x.name
         return [cpf.name for cpf in sorted(self.rddl.domain.state_cpfs, key=key)]
 
     @property
-    def interm_fluent_ordering(self):
+    def interm_fluent_ordering(self) -> List[str]:
+        '''The list of intermediate-fluent names in canonical order.
+
+        Returns:
+            List[str]: A list of fluent names.
+        '''
         interm_fluents = self.rddl.domain.intermediate_fluents.values()
         key = lambda pvar: (pvar.level, pvar.name)
         return [str(pvar) for pvar in sorted(interm_fluents, key=key)]
 
     @property
-    def state_size(self):
+    def state_size(self) -> Sequence[Sequence[int]]:
+        '''The size of each state fluent in canonical order.
+
+        Returns:
+            Sequence[Sequence[int]]: A tuple of tuple of integers
+            representing the shape and size of each fluent.
+        '''
         return self._fluent_size(self.initial_state_fluents, self.state_fluent_ordering)
 
     @property
-    def action_size(self):
+    def action_size(self) -> Sequence[Sequence[int]]:
+        '''The size of each action fluent in canonical order.
+
+        Returns:
+            Sequence[Sequence[int]]: A tuple of tuple of integers
+            representing the shape and size of each fluent.
+        '''
         return self._fluent_size(self.default_action_fluents, self.action_fluent_ordering)
 
     @property
-    def interm_size(self):
+    def interm_size(self)-> Sequence[Sequence[int]]:
+        '''The size of each intermediate fluent in canonical order.
+
+        Returns:
+            Sequence[Sequence[int]]: A tuple of tuple of integers
+            representing the shape and size of each fluent.
+        '''
         interm_fluents = self.rddl.domain.intermediate_fluents
         shapes = []
         for name in self.interm_fluent_ordering:
@@ -231,15 +492,33 @@ class Compiler(object):
         return tuple(shapes)
 
     @property
-    def state_dtype(self):
+    def state_dtype(self) -> Sequence[tf.DType]:
+        '''The data type of each state fluent in canonical order.
+
+        Returns:
+            Sequence[tf.DType]: A tuple of dtypes representing
+            the range of each fluent.
+        '''
         return self._fluent_dtype(self.initial_state_fluents, self.state_fluent_ordering)
 
     @property
-    def action_dtype(self):
+    def action_dtype(self) -> Sequence[tf.DType]:
+        '''The data type of each action fluent in canonical order.
+
+        Returns:
+            Sequence[tf.DType]: A tuple of dtypes representing
+            the range of each fluent.
+        '''
         return self._fluent_dtype(self.default_action_fluents, self.action_fluent_ordering)
 
     @property
-    def interm_dtype(self):
+    def interm_dtype(self) -> Sequence[tf.DType]:
+        '''The data type of each intermediate fluent in canonical order.
+
+        Returns:
+            Sequence[tf.DType]: A tuple of dtypes representing
+            the range of each fluent.
+        '''
         interm_fluents = self.rddl.domain.intermediate_fluents
         dtypes = []
         for name in self.interm_fluent_ordering:
@@ -249,30 +528,63 @@ class Compiler(object):
         return tuple(dtypes)
 
     @property
-    def non_fluent_variables(self):
+    def non_fluent_variables(self) -> FluentParamsList:
+        '''Returns the instantiated non-fluents in canonical order.
+
+        Returns:
+            Sequence[Tuple[str, List[str]]]: A tuple of pairs of fluent name
+            and a list of instantiated fluents represented as strings.
+        '''
         fluents = self.rddl.domain.non_fluents
         ordering = self.non_fluent_ordering
         return self._fluent_params(fluents, ordering)
 
     @property
-    def state_fluent_variables(self):
+    def state_fluent_variables(self) -> FluentParamsList:
+        '''Returns the instantiated state fluents in canonical order.
+
+        Returns:
+            Sequence[Tuple[str, List[str]]]: A tuple of pairs of fluent name
+            and a list of instantiated fluents represented as strings.
+        '''
         fluents = self.rddl.domain.state_fluents
         ordering = self.state_fluent_ordering
         return self._fluent_params(fluents, ordering)
 
     @property
-    def interm_fluent_variables(self):
+    def interm_fluent_variables(self) -> FluentParamsList:
+        '''Returns the instantiated intermediate fluents in canonical order.
+
+        Returns:
+            Sequence[Tuple[str, List[str]]]: A tuple of pairs of fluent name
+            and a list of instantiated fluents represented as strings.
+        '''
         fluents = self.rddl.domain.intermediate_fluents
         ordering = self.interm_fluent_ordering
         return self._fluent_params(fluents, ordering)
 
     @property
-    def action_fluent_variables(self):
+    def action_fluent_variables(self) -> FluentParamsList:
+        '''Returns the instantiated action fluents in canonical order.
+
+        Returns:
+            Sequence[Tuple[str, List[str]]]: A tuple of pairs of fluent name
+            and a list of instantiated fluents represented as strings.
+        '''
         fluents = self.rddl.domain.action_fluents
         ordering = self.action_fluent_ordering
         return self._fluent_params(fluents, ordering)
 
-    def _fluent_params(self, fluents, ordering):
+    def _fluent_params(self, fluents, ordering) -> FluentParamsList:
+        '''Returns the instantiated `fluents` for the given `ordering`.
+
+        For each fluent in `fluents`, it instantiates each parameter
+        type w.r.t. the contents of the object table.
+
+        Returns:
+            Sequence[Tuple[str, List[str]]]: A tuple of pairs of fluent name
+            and a list of instantiated fluents represented as strings.
+        '''
         variables = []
         for fluent_id in ordering:
             fluent = fluents[fluent_id]
@@ -291,7 +603,13 @@ class Compiler(object):
         return tuple(variables)
 
     @classmethod
-    def _fluent_dtype(cls, fluents, ordering):
+    def _fluent_dtype(cls, fluents, ordering) -> Sequence[tf.DType]:
+        '''Returns the data types of `fluents` following the given `ordering`.
+
+        Returns:
+            Sequence[tf.DType]: A tuple of dtypes representing
+            the range of each fluent.
+        '''
         dtype = []
         fluents = dict(fluents)
         for name in ordering:
@@ -300,7 +618,13 @@ class Compiler(object):
         return tuple(dtype)
 
     @classmethod
-    def _fluent_size(cls, fluents, ordering):
+    def _fluent_size(cls, fluents, ordering) -> Sequence[Sequence[int]]:
+        '''Returns the sizes of `fluents` following the given `ordering`.
+
+        Returns:
+            Sequence[Sequence[int]]: A tuple of tuple of integers
+            representing the shape and size of each fluent.
+        '''
         size = []
         fluents = dict(fluents)
         for name in ordering:
@@ -311,6 +635,7 @@ class Compiler(object):
         return tuple(size)
 
     def _build_object_table(self):
+        '''Builds the object table for each RDDL type.'''
         types = self.rddl.domain.types
         objects = dict(self.rddl.non_fluents.objects)
         self._object_table = dict()
@@ -325,6 +650,7 @@ class Compiler(object):
                 }
 
     def _build_preconditions_table(self):
+        '''Builds the local action precondition expressions.'''
         self._local_action_preconditions = dict()
         self._global_action_preconditions = []
         action_fluents = self.rddl.domain.action_fluents
@@ -339,6 +665,7 @@ class Compiler(object):
                 self._global_action_preconditions.append(precond)
 
     def _build_action_bound_constraints_table(self):
+        '''Builds the lower and upper action bound constraint expressions.'''
         self._action_lower_bound_constraints = {}
         self._action_upper_bound_constraints = {}
 
@@ -364,7 +691,8 @@ class Compiler(object):
                         if bound is not None:
                             self._action_upper_bound_constraints[name] = bound
 
-    def _extract_lower_bound(self, name, expr):
+    def _extract_lower_bound(self, name: str, expr: Expression) -> Optional[Expression]:
+        '''Returns the lower bound expression of the action with given `name`.'''
         etype = expr.etype
         args = expr.args
         if etype[1] in ['<=', '<']:
@@ -375,7 +703,8 @@ class Compiler(object):
                 return args[1]
         return None
 
-    def _extract_upper_bound(self, name, expr):
+    def _extract_upper_bound(self, name: str, expr: Expression) -> Optional[Expression]:
+        '''Returns the upper bound expression of the action with given `name`.'''
         etype = expr.etype
         args = expr.args
         if etype[1] in ['<=', '<']:
@@ -386,7 +715,16 @@ class Compiler(object):
                 return args[0]
         return None
 
-    def _instantiate_pvariables(self, pvariables, ordering, initializer=None):
+    def _instantiate_pvariables(self,
+            pvariables: Dict[str, PVariable],
+            ordering: List[str],
+            initializer: Optional[InitializerList] = None) -> List[Tuple[str, TensorFluent]]:
+        '''Instantiates `pvariables` given an initialization list and
+        returns a list of TensorFluents in the given `ordering`.
+
+        Returns:
+            List[Tuple[str, TensorFluent]]: A list of pairs of fluent name and fluent tensor.
+        '''
         if initializer is not None:
             init = dict()
             for ((name, args), value) in initializer:
@@ -424,23 +762,34 @@ class Compiler(object):
         return fluents
 
     def _instantiate_non_fluents(self):
+        '''Returns the non-fluents instantiated.'''
         non_fluents = self.rddl.domain.non_fluents
         initializer = self.rddl.non_fluents.init_non_fluent
         self._non_fluents = self._instantiate_pvariables(non_fluents, self.non_fluent_ordering, initializer)
         return self._non_fluents
 
     def _instantiate_initial_state_fluents(self):
+        '''Returns the initial state-fluents instantiated.'''
         state_fluents = self.rddl.domain.state_fluents
         initializer = self.rddl.instance.init_state
         self._initial_state_fluents = self._instantiate_pvariables(state_fluents, self.state_fluent_ordering, initializer)
         return self._initial_state_fluents
 
     def _instantiate_default_action_fluents(self):
+        '''Returns the default action-fluents instantiated.'''
         action_fluents = self.rddl.domain.action_fluents
         self._default_action_fluents = self._instantiate_pvariables(action_fluents, self.action_fluent_ordering)
         return self._default_action_fluents
 
-    def _compile_batch_fluents(self, fluents, batch_size):
+    def _compile_batch_fluents(self,
+            fluents: List[Tuple[str, TensorFluent]],
+            batch_size: int) -> Sequence[tf.Tensor]:
+        '''Compiles `fluents` into tensors with given `batch_size`.
+
+        Returns:
+            Sequence[tf.Tensor]: A tuple of tensors with first dimensio
+            corresping to the batch size.
+        '''
         batch_fluents = []
         with self.graph.as_default():
             for name, fluent in fluents:
@@ -450,7 +799,21 @@ class Compiler(object):
                 batch_fluents.append(t)
         return tuple(batch_fluents)
 
-    def _compile_expression(self, expr, scope, batch_size=None):
+    def _compile_expression(self,
+            expr: Expression,
+            scope: Dict[str, TensorFluent],
+            batch_size: Optional[int] = None) -> TensorFluent:
+        '''Compile the expression `expr` into a TensorFluent
+        in the given `scope` with optional batch size.
+
+        Args:
+            expr (:obj:`tfrddlsim.expr.Expression`): A RDDL expression.
+            scope (Dict[str, :obj:`tfrddlsim.fluent.TensorFluent`]): A fluent scope.
+            batch_size (Optional[size]): The batch size.
+
+        Returns:
+            :obj:`tfrddlsim.fluent.TensorFluent`: A TensorFluent.
+        '''
         etype = expr.etype
         args = expr.args
 
@@ -612,7 +975,8 @@ class Compiler(object):
                     return x.forall(vars_list=vars_list)
 
     @classmethod
-    def _range_type_to_dtype(cls, range_type):
+    def _range_type_to_dtype(cls, range_type: str) -> Optional[tf.DType]:
+        '''Maps RDDL range types to TensorFlow dtypes.'''
         dtype = None
         if range_type == 'real':
             dtype = tf.float32
@@ -622,7 +986,8 @@ class Compiler(object):
             dtype = tf.bool
         return dtype
 
-    def _param_types_to_shape(self, param_types):
+    def _param_types_to_shape(self, param_types: Optional[str]) -> Sequence[int]:
+        '''Returns the fluent shape given its `param_types`.'''
         param_types = [] if param_types is None else param_types
         shape = tuple(self.object_table[ptype]['size'] for ptype in param_types)
         return shape

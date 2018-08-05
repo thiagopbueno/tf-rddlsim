@@ -4,6 +4,7 @@ from tfrddlsim.expr import Expression
 from tfrddlsim.compiler import Compiler
 from tfrddlsim.fluent import TensorFluent
 from tfrddlsim.fluentshape import TensorFluentShape
+from tfrddlsim import utils
 
 import numpy as np
 import tensorflow as tf
@@ -260,8 +261,8 @@ class TestCompiler(unittest.TestCase):
             self.assertEqual(len(current_state_ordering), len(next_state_ordering))
 
             for current_fluent, next_fluent in zip(current_state_ordering, next_state_ordering):
-                self.assertEqual(RDDL.rename_state_fluent(current_fluent), next_fluent)
-                self.assertEqual(RDDL.rename_next_state_fluent(next_fluent), current_fluent)
+                self.assertEqual(utils.rename_state_fluent(current_fluent), next_fluent)
+                self.assertEqual(utils.rename_next_state_fluent(next_fluent), current_fluent)
 
     def test_interm_fluent_ordering(self):
         compilers = [self.compiler1, self.compiler2]
@@ -541,7 +542,7 @@ class TestCompiler(unittest.TestCase):
 
             next_state_fluents = dict(next_state_fluents)
             for fluent in sf:
-                next_fluent = RDDL.rename_state_fluent(fluent)
+                next_fluent = utils.rename_state_fluent(fluent)
                 self.assertIn(next_fluent, next_state_fluents)
                 self.assertIsInstance(next_state_fluents[next_fluent], TensorFluent)
 
