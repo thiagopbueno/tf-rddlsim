@@ -14,27 +14,75 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
+from tfrddlsim.fluent import TensorFluent
+
+
 import abc
 import tensorflow as tf
 
+from typing import Dict, Optional, Sequence, Tuple
+
+Constraints = Tuple[Optional[TensorFluent], Optional[TensorFluent]]
+
 
 class Policy(metaclass=abc.ABCMeta):
+    '''Abstract base class for representing Policy functions.'''
 
     @abc.abstractmethod
-    def __call__(self, state, timestep=None):
-        return
+    def __call__(self,
+            state: Sequence[tf.Tensor],
+            timestep: Optional[tf.Tensor] = None) -> Sequence[tf.Tensor]:
+        '''Returns action fluents for the current `state` and `timestep`.
+
+        Returns:
+            Sequence[tf.Tensor]: A tuple of action fluents.
+        '''
+        return []
 
 
 class DefaultPolicy(Policy):
+    '''DefaultPolicy class.
+
+    The default policy returns the default action fluents
+    regardless of the current state and timestep.
+
+    Args:
+        compiler (:obj:`tfrddlsim.compiler.Compiler`): A RDDL2TensorFlow compiler.
+        batch_size (int): The batch size.
+    '''
 
     def __init__(self, compiler, batch_size):
         self._default = compiler.compile_default_action(batch_size)
 
-    def __call__(self, state, timestep=None):
+    def __call__(self,
+            state: Sequence[tf.Tensor],
+            timestep: Optional[tf.Tensor] = None) -> Sequence[tf.Tensor]:
+        '''Returns the default action fluents regardless of the current `state` and `timestep`.
+
+        Returns:
+            Sequence[tf.Tensor]: A tuple of action fluents.
+        '''
         return self._default
 
 
 class RandomPolicy(Policy):
+    '''RandomPolicy class.
+
+    The random policy samples action fluents uniformly. It checks for
+    all action preconditions and constraints. The range of each action
+    fluent is defined by action bounds constraints if defined in the
+    RDDL model, or by default maximum values.
+    values.
+
+    Args:
+        compiler (:obj:`tfrddlsim.compiler.Compiler`): A RDDL2TensorFlow compiler.
+        batch_size (int): The batch size.
+
+    Attributes:
+        compiler (:obj:`tfrddlsim.compiler.Compiler`): A RDDL2TensorFlow compiler.
+        batch_size (int): The batch size.
+
+    '''
 
     MAX_REAL_VALUE = 5.0
     MAX_INT_VALUE = 5
@@ -43,18 +91,56 @@ class RandomPolicy(Policy):
         self.compiler = compiler
         self.batch_size = batch_size
 
-    def __call__(self, state, timestep=None):
+    def __call__(self,
+            state: Sequence[tf.Tensor],
+            timestep: Optional[tf.Tensor] = None) -> Sequence[tf.Tensor]:
+        '''Returns sampled action fluents for the current `state` and `timestep`.
+
+        Returns:
+            Sequence[tf.Tensor]: A tuple of action fluents.
+        '''
         action, _, _ = self._sample_actions(state)
         return action
 
-    def _sample_actions(self, state):
+    def _sample_actions(self,
+            state: Sequence[tf.Tensor]) -> Tuple[Sequence[tf.Tensor], tf.Tensor, tf.Tensor]:
+        '''Returns sampled action fluents and tensors related to the sampling.
+
+        Args:
+            state (Sequence[tf.Tensor]): A list of state fluents.
+
+        Returns:
+            Tuple[Sequence[tf.Tensor], tf.Tensor, tf.Tensor]: A tuple with
+            action fluents, an integer tensor for the number of samples, and
+            a boolean tensor for checking all action preconditions.
+        '''
         default = self.compiler.compile_default_action(self.batch_size)
         bound_constraints = self.compiler.compile_action_bound_constraints(state)
         action = self._sample_action(bound_constraints, default)
         n, action, checking = self._check_preconditions(state, action, bound_constraints, default)
         return action, n, checking
 
-    def _check_preconditions(self, state, action, bound_constraints, default):
+    def _check_preconditions(self,
+            state: Sequence[tf.Tensor],
+            action: Sequence[tf.Tensor],
+            bound_constraints: Dict[str, Constraints],
+            default: Sequence[tf.Tensor]) -> Tuple[tf.Tensor, Sequence[tf.Tensor], tf.Tensor]:
+        '''Samples action fluents until all preconditions are satisfied.
+
+        Checks action preconditions for the sampled `action` and current `state`,
+        and iff all preconditions are satisfied it returns the sampled action fluents.
+
+        Args:
+            state (Sequence[tf.Tensor]): A list of state fluents.
+            action (Sequence[tf.Tensor]): A list of action fluents.
+            bound_constraints (Dict[str, Tuple[Optional[TensorFluent], Optional[TensorFluent]]]): The bounds for each action fluent.
+            default (Sequence[tf.Tensor]): The default action fluents.
+
+        Returns:
+            Tuple[tf.Tensor, Sequence[tf.Tensor], tf.Tensor]: A tuple with
+            an integer tensor corresponding to the number of samples,
+            action fluents and a boolean tensor for checking all action preconditions.
+        '''
 
         def condition(i, a, checking):
             not_checking = tf.reduce_any(tf.logical_not(checking))
@@ -75,7 +161,23 @@ class RandomPolicy(Policy):
         preconds_checking = self.compiler.compile_action_preconditions_checking(state, action)
         return tf.while_loop(condition, body, loop_vars=[i0, action, preconds_checking])
 
-    def _sample_action(self, constraints, default, prob=0.3):
+    def _sample_action(self,
+            constraints: Dict[str, Constraints],
+            default: Sequence[tf.Tensor],
+            prob: float = 0.3) -> Sequence[tf.Tensor]:
+        '''Samples action fluents respecting the given bound `constraints`.
+
+        With probability `prob` it chooses the action fluent default value,
+        with probability 1-`prob` it samples the fluent w.r.t. its bounds.
+
+        Args:
+            constraints (Dict[str, Tuple[Optional[TensorFluent], Optional[TensorFluent]]]): The bounds for each action fluent.
+            default (Sequence[tf.Tensor]): The default action fluents.
+            prob (float): A probability measure.
+
+        Returns:
+            Sequence[tf.Tensor]: A tuple of action fluents.
+        '''
         ordering = self.compiler.action_fluent_ordering
         dtype = self.compiler.action_dtype
         size = self.compiler.action_size
@@ -87,7 +189,29 @@ class RandomPolicy(Policy):
 
         return tuple(action)
 
-    def _sample_action_fluent(self, name, dtype, size, constraints, default_value, prob):
+    def _sample_action_fluent(self,
+            name: str,
+            dtype: tf.DType,
+            size: Sequence[int],
+            constraints: Dict[str, Constraints],
+            default_value: tf.Tensor,
+            prob: float) -> tf.Tensor:
+        '''Samples the action fluent with given `name`, `dtype`, and `size`.
+
+        With probability `prob` it chooses the action fluent `default_value`,
+        with probability 1-`prob` it samples the fluent w.r.t. its `constraints`.
+
+        Args:
+            name (str): The name of the action fluent.
+            dtype (tf.DType): The data type of the action fluent.
+            size (Sequence[int]): The size and shape of the action fluent.
+            constraints (Dict[str, Tuple[Optional[TensorFluent], Optional[TensorFluent]]]): The bounds for each action fluent.
+            default_value (tf.Tensor): The default value for the action fluent.
+            prob (float): A probability measure.
+
+        Returns:
+            tf.Tensor: A tensor for sampling the action fluent.
+        '''
         shape = [self.batch_size] + list(size)
 
         if dtype == tf.float32:

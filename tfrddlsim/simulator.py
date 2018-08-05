@@ -14,52 +14,107 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
+from tfrddlsim.compiler import Compiler
+from tfrddlsim.policy import Policy
+
 import numpy as np
 import tensorflow as tf
 
 
-class SimulationCell(tf.nn.rnn_cell.RNNCell):
+from typing import Sequence, Optional, Tuple
 
-    def __init__(self, compiler, policy, batch_size):
+Shape = Sequence[int]
+
+NonFluentsTensor = Sequence[tf.Tensor]
+StatesTensor = Sequence[tf.Tensor]
+ActionsTensor = Sequence[tf.Tensor]
+IntermsTensor = Sequence[tf.Tensor]
+
+CellOutput = Tuple[StatesTensor, ActionsTensor, IntermsTensor, tf.Tensor]
+CellState = Sequence[tf.Tensor]
+
+SimulationOutput = Tuple[NonFluentsTensor, StatesTensor, ActionsTensor, IntermsTensor, tf.Tensor]
+
+
+class SimulationCell(tf.nn.rnn_cell.RNNCell):
+    '''SimulationCell implements a 1-step MDP transition cell.
+
+    It extends`tf.nn.rnn_cell.RNNCell` for simulating an MDP transition.
+    The cell input is the timestep. The hidden state is the factored MDP state.
+    The cell output is the tuple of MDP fluents (state, action, interm, rewards).
+
+    Args:
+        compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler.
+        policy (:obj:`tfrddlsim.policy.Policy`): MDP Policy.
+        batch_size (int): The size of the simulation batch.
+    '''
+
+    def __init__(self, compiler: Compiler, policy: Policy, batch_size: int) -> None:
         self._compiler = compiler
         self._policy = policy
         self._batch_size = batch_size
 
     @property
-    def state_size(self):
+    def graph(self) -> tf.Graph:
+        '''Returns the computation graph.'''
+        return self._compiler.graph
+
+    @property
+    def state_size(self) -> Sequence[Shape]:
+        '''Returns the MDP state size.'''
         return self._compiler.state_size
 
     @property
-    def action_size(self):
+    def action_size(self) -> Sequence[Shape]:
+        '''Returns the MDP action size.'''
         return self._compiler.action_size
 
     @property
-    def interm_size(self):
+    def interm_size(self) -> Sequence[Shape]:
+        '''Returns the MDP intermediate state size.'''
         return self._compiler.interm_size
 
     @property
-    def output_size(self):
+    def output_size(self) -> Tuple[Sequence[Shape], Sequence[Shape], Sequence[Shape], int]:
+        '''Returns the simulation cell output size.'''
         return (self.state_size, self.action_size, self.interm_size, 1)
 
-    @property
-    def graph(self):
-        return self._compiler.graph
-
-    def initial_state(self):
+    def initial_state(self) -> tf.Tensor:
+        '''Returns the initial state tensor.'''
         return self._compiler.compile_initial_state(self._batch_size)
 
-    def __call__(self, input, state, scope=None):
+    def __call__(self,
+            input: tf.Tensor,
+            state: Sequence[tf.Tensor],
+            scope: Optional[str] = None) -> Tuple[CellOutput, CellState]:
+        '''Returns the simulation cell for the given `input` and `state`.
+
+        The cell returns states, actions and interms as a
+        sequence of tensors (i.e., all representations are factored).
+        The reward is an n-dimensional tensor.
+
+        Note:
+            All tensors have shape: (batch_size, fluent_shape).
+
+        Args:
+            input (tf.Tensor): The current MDP timestep.
+            state (Sequence[tf.Tensor]): State fluents in canonical order.
+            scope (Optional[str]): Scope for operations in graph.
+
+        Returns:
+            Tuple[CellOutput, CellState]: (output, next_state).
+        '''
         action = self._policy(state, input)
 
-        scope = self._compiler.transition_scope(state, action)
-        interm_fluents, next_state_fluents = self._compiler.compile_cpfs(scope, self._batch_size)
+        transition_scope = self._compiler.transition_scope(state, action)
+        interm_fluents, next_state_fluents = self._compiler.compile_cpfs(transition_scope, self._batch_size)
 
         intermediate_state = tuple(fluent.tensor for _, fluent in interm_fluents)
         next_state = tuple(fluent.tensor for _, fluent in next_state_fluents)
 
         next_state_scope = dict(next_state_fluents)
-        scope.update(next_state_scope)
-        reward = self._compiler.compile_reward(scope)
+        transition_scope.update(next_state_scope)
+        reward = self._compiler.compile_reward(transition_scope)
         reward = reward.tensor
 
         output_next_state = self._output(next_state)
@@ -70,38 +125,56 @@ class SimulationCell(tf.nn.rnn_cell.RNNCell):
         return (output, next_state)
 
     @classmethod
-    def _output(cls, tensors):
+    def _output(cls, tensors: Sequence[tf.Tensor]) -> Sequence[tf.Tensor]:
+        '''Converts tensors to datatype tf.float32.'''
         tensor2float = lambda t: t if t.dtype == tf.float32 else tf.cast(t, tf.float32)
         return tuple(map(tensor2float, tensors))
 
 
 class Simulator(object):
+    '''Simulator class samples MDP trajectories in the computation graph.
 
-    def __init__(self, compiler, policy, batch_size):
+    It implements the n-step MDP trajectory simulator using dynamic unrolling
+    in a recurrent model. Its inputs are the MDP initial state and the number
+    of timesteps in the horizon.
+
+    Args:
+        compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler.
+        policy (:obj:`tfrddlsim.policy.Policy`): MDP Policy.
+        batch_size (int): The size of the simulation batch.
+    '''
+
+    def __init__(self, compiler: Compiler, policy: Policy, batch_size: int) -> None:
         self._cell = SimulationCell(compiler, policy, batch_size)
         self._non_fluents = [fluent.tensor for _, fluent in compiler.non_fluents]
 
     @property
     def graph(self):
+        '''Returns the computation graph.'''
         return self._cell.graph
 
     @property
-    def batch_size(self):
+    def batch_size(self) -> int:
+        '''Returns the size of the simulation batch.'''
         return self._cell._batch_size
 
     @property
-    def input_size(self):
+    def input_size(self) -> int:
+        '''Returns the simulation input size (e.g., timestep).'''
         return 1
 
     @property
-    def state_size(self):
+    def state_size(self) -> Sequence[Shape]:
+        '''Returns the MDP state size.'''
         return self._cell.state_size
 
     @property
-    def output_size(self):
+    def output_size(self) -> Tuple[Sequence[Shape], Sequence[Shape], Sequence[Shape], int]:
+        '''Returns the simulation output size.'''
         return self._cell.output_size
 
-    def timesteps(self, horizon):
+    def timesteps(self, horizon: int) -> tf.Tensor:
+        '''Returns the input tensor for the given `horizon`.'''
         with self.graph.as_default():
             start, limit, delta = horizon - 1, -1, -1
             timesteps_range = tf.range(start, limit, delta, dtype=tf.float32)
@@ -109,7 +182,22 @@ class Simulator(object):
             batch_timesteps = tf.stack([timesteps_range] * self.batch_size)
             return batch_timesteps
 
-    def trajectory(self, horizon):
+    def trajectory(self, horizon: int) -> CellOutput:
+        '''Returns the ops for the trajectory generation with given `horizon`.
+
+        The simulation returns states, actions and interms as a
+        sequence of tensors (i.e., all representations are factored).
+        The reward is an n-dimensional tensor.
+
+        Note:
+            All tensors have shape: (batch_size, horizon, fluent_shape).
+
+        Args:
+            horizon (int): The number of simulation timesteps.
+
+        Returns:
+            Tuple[NonFluentsTensor, StatesTensor, ActionsTensor, IntermsTensor, tf.Tensor]: Simulation output tuple.
+        '''
         initial_state = self._cell.initial_state()
         inputs = self.timesteps(horizon)
 
@@ -134,7 +222,24 @@ class Simulator(object):
 
         return outputs
 
-    def run(self, horizon=40):
+    def run(self, horizon: int = 40) -> SimulationOutput:
+        '''Builds the MDP graph and simulates in batch the trajectories
+        with given `horizon`. Returns the non-fluents, states, actions, interms
+        and rewards. Fluents and non-fluents are returned in factored form.
+
+        Note:
+            All output arrays have shape: (batch_size, horizon, fluent_shape).
+
+        Args:
+            horizon (int): The number of timesteps in the simulation.
+
+        Returns:
+            Sequence[np.array]: non-fluents.
+            Sequence[np.array]: states.
+            Sequence[np.array]: actions.
+            Sequence[np.array]: interms.
+            np.array: rewards.
+        '''
         trajectory = self.trajectory(horizon)
 
         with tf.Session(graph=self.graph) as sess:
@@ -160,10 +265,15 @@ class Simulator(object):
         # rewards
         rewards = np.squeeze(rewards)
 
-        return non_fluents, states, actions, interms, rewards
+        outputs = (non_fluents, states, actions, interms, rewards)
+
+        return outputs
 
     @classmethod
-    def _output(cls, tensors, dtypes):
+    def _output(cls,
+            tensors: Sequence[tf.Tensor],
+            dtypes: Sequence[tf.DType]) -> Sequence[tf.Tensor]:
+        '''Converts `tensors` to the corresponding `dtypes`.'''
         outputs = []
         for t, dtype in zip(tensors, dtypes):
             t = t[0]
