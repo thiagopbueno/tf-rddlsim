@@ -14,18 +14,34 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
-class Expression(object):
+from typing import Tuple, Sequence, Set, Union
 
-    def __init__(self, expr):
+Value = Union[bool, int, float]
+ExprArg = Union['Expression', Tuple, str]
+
+
+class Expression(object):
+    '''Expression class represents a RDDL expression.
+
+    Note:
+        This class is intended to be solely used by the parser and compiler.
+        Do not attempt to directly use this class to build an Expression object.
+
+    Args:
+        expr: Expression object or nested tuple of Expressions.
+    '''
+
+    def __init__(self, expr: Union['Expression', Tuple]) -> None:
         self._expr = expr
 
     def __getitem__(self, i):
         return self._expr[i]
 
     @property
-    def etype(self):
+    def etype(self) -> Tuple[str, str]:
+        '''Returns the expression's type.'''
         if self._expr[0] == 'number':
-            return ('number', type(self._expr[1]))
+            return ('number', str(type(self._expr[1])))
         elif self._expr[0] == 'pvar_expr':
             return ('pvar', self._expr[1][0])
         elif self._expr[0] == 'randomvar':
@@ -48,9 +64,12 @@ class Expression(object):
             return ('aggregation', 'exists')
         elif self._expr[0] == 'if':
             return ('control', 'if')
+        else:
+            return ('UNKOWN', 'UNKOWN')
 
     @property
-    def args(self):
+    def args(self) -> Union[Value, Sequence[ExprArg]]:
+        '''Returns the expression's arguments.'''
         if self._expr[0] == 'number':
             return self._expr[1]
         elif self._expr[0] == 'pvar_expr':
@@ -71,30 +90,52 @@ class Expression(object):
             return self._expr[1]
         elif self._expr[0] == 'if':
             return self._expr[1]
+        else:
+            return []
 
-    def is_pvariable_expression(self):
+    def is_pvariable_expression(self) -> bool:
+        '''Returns True if pvariable expression. False, otherwise.'''
         return self.etype[0] == 'pvar'
 
     @property
-    def name(self):
+    def name(self) -> str:
+        '''Returns the name of pvariable.
+
+        Returns:
+            Name of pvariable.
+
+        Raises:
+            ValueError: If not a pvariable expression.
+        '''
         if not self.is_pvariable_expression():
             raise ValueError('Expression is not a pvariable.')
         return self._pvar_to_name(self.args)
 
-    def is_number_expression(self):
+    def is_number_expression(self) -> bool:
+        '''Returns True if number expression. False, othersize.'''
         return self.etype[0] == 'number'
 
     @property
     def value(self):
+        '''Returns the value of number expression.
+
+        Returns:
+            Value of number.
+
+        Raises:
+            ValueError: If not a number expression.
+        '''
         if not self.is_number_expression():
             raise ValueError('Expression is not a number.')
         return self.args
 
-    def __str__(self):
+    def __str__(self) -> str:
+        '''Returns string representing the expression.'''
         return self.__expr_str(self, 0)
 
     @classmethod
     def __expr_str(cls, expr, level):
+        '''Returns string representing the expression.'''
         ident = ' ' * level * 4
 
         if isinstance(expr, tuple):
@@ -111,11 +152,25 @@ class Expression(object):
         return '{}Expression(etype={}, args=\n{})'.format(ident, expr.etype, args)
 
     @property
-    def scope(self):
+    def scope(self) -> Set[str]:
+        '''Returns the set of fluents in the expression's scope.
+
+        Returns:
+            The set of fluents in the expression's scope.
+        '''
         return self.__get_scope(self._expr)
 
     @classmethod
-    def __get_scope(cls, expr):
+    def __get_scope(cls,
+            expr: Union['Expression', Tuple]) -> Set[str]:
+        '''Returns the set of fluents in the expression's scope.
+
+        Args:
+            expr: Expression object or nested tuple of Expressions.
+
+        Returns:
+            The set of fluents in the expression's scope.
+        '''
         scope = set()
         for i, atom in enumerate(expr):
             if isinstance(atom, Expression):
@@ -132,6 +187,11 @@ class Expression(object):
 
     @classmethod
     def _pvar_to_name(cls, pvar_expr):
+        '''Returns the name of pvariable.
+
+        Returns:
+            Name of pvariable.
+        '''
         functor = pvar_expr[0]
         arity = len(pvar_expr[1]) if pvar_expr[1] is not None else 0
         return '{}/{}'.format(functor, arity)
