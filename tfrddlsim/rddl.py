@@ -14,77 +14,32 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
+from tfrddlsim.domain import Domain
+from tfrddlsim.instance import Instance
+from tfrddlsim.nonfluents import NonFluents
+
+from typing import Dict, Union
+
+Block = Union[Domain, NonFluents, Instance]
+
+
 class RDDL(object):
+    '''RDDL class for accessing RDDL blocks.
 
-    def __init__(self, blocks):
-        self.__dict__.update(blocks)
+    Note:
+        This class is intended to be solely used by the parser and compiler.
+        Do not attempt to directly use this class to build a RDDL object.
 
-    @classmethod
-    def rename_next_state_fluent(cls, name):
-        i = name.index('/')
-        functor = name[:i-1]
-        arity = name[i+1:]
-        return "{}/{}".format(functor, arity)
+    Args:
+        blocks: Mapping from string to RDDL block.
 
-    @classmethod
-    def rename_state_fluent(cls, name):
-        i = name.index('/')
-        functor = name[:i]
-        arity = name[i+1:]
-        return "{}'/{}".format(functor, arity)
+    Attributes:
+        domain (:obj:`Domain`): RDDL domain block.
+        non_fluents (:obj:`NonFluents`): RDDL non-fluents block.
+        instance (:obj:`Instance`): RDDL instance block.
+    '''
 
-
-class Domain(object):
-
-    def __init__(self, name, requirements, sections):
-        self.name = name
-        self.requirements = requirements
-        self.__dict__.update(sections)
-
-    @property
-    def non_fluents(self):
-        return { str(pvar): pvar for pvar in self.pvariables if pvar.is_non_fluent() }
-
-    @property
-    def state_fluents(self):
-        return { str(pvar): pvar for pvar in self.pvariables if pvar.is_state_fluent() }
-
-    @property
-    def action_fluents(self):
-        return { str(pvar): pvar for pvar in self.pvariables if pvar.is_action_fluent() }
-
-    @property
-    def intermediate_fluents(self):
-        return { str(pvar): pvar for pvar in self.pvariables if pvar.is_intermediate_fluent() }
-
-    @property
-    def intermediate_cpfs(self):
-        _, cpfs = self.cpfs
-        interm_cpfs = (cpf for cpf in cpfs if cpf.name in self.intermediate_fluents)
-        interm_cpfs = sorted(interm_cpfs, key=lambda cpf: (self.intermediate_fluents[cpf.name].level, cpf.name))
-        return interm_cpfs
-
-    @property
-    def state_cpfs(self):
-        _, cpfs = self.cpfs
-        state_cpfs = []
-        for cpf in cpfs:
-            name = RDDL.rename_next_state_fluent(cpf.name)
-            if name in self.state_fluents:
-                state_cpfs.append(cpf)
-        state_cpfs = sorted(state_cpfs, key=lambda cpf: cpf.name)
-        return state_cpfs
-
-
-class Instance(object):
-
-    def __init__(self, name, sections):
-        self.name = name
-        self.__dict__.update(sections)
-
-
-class NonFluents(object):
-
-    def __init__(self, name, sections):
-        self.name = name
-        self.__dict__.update(sections)
+    def __init__(self, blocks: Dict[str, Block]) -> None:
+        self.domain = blocks['domain']
+        self.non_fluents = blocks['non_fluents']
+        self.instance = blocks['instance']
