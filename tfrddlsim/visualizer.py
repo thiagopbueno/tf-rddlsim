@@ -13,32 +13,72 @@
 # You should have received a copy of the GNU General Public License
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
+from tfrddlsim.compiler import Compiler
+
 
 import abc
 import numpy as np
 
 
-class Visualizer(metaclass=abc.ABCMeta):
+from typing import Dict, List, Sequence, Optional, Tuple, Union
 
-    def __init__(self, compiler, verbose):
-        self.compiler = compiler
-        self.verbose = verbose
+Value = Union[bool, int, float, np.array]
+Stats = Dict[str, Value]
+NonFluents = Sequence[Tuple[str, Value]]
+Fluents = Sequence[Tuple[str, np.array]]
+
+
+class Visualizer(metaclass=abc.ABCMeta):
+    '''Abstract class for RDDL's trajectory Visualizer.
+
+    Args:
+        compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler
+        verbose (bool): Verbosity flag
+    '''
+
+    def __init__(self, compiler: Compiler, verbose: bool) -> None:
+        self._compiler = compiler
+        self._verbose = verbose
 
     @abc.abstractmethod
-    def render(self, trajectories, batch=None):
-        return
+    def render(self,
+            stats: Dict[str, Stats],
+            trajectories: Tuple[NonFluents, Fluents, Fluents, Fluents, np.array],
+            batch: Optional[int] = None) -> None:
+        raise NotImplementedError
 
 
 class BasicVisualizer(Visualizer):
+    '''BasicVisualizer is a generic text-based trajectory visualizer.
 
-    def __init__(self, compiler, verbose):
+    Args:
+        compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler
+        verbose (bool): Verbosity flag
+    '''
+
+    def __init__(self, compiler: Compiler, verbose: bool) -> None:
         super().__init__(compiler, verbose)
 
-    def render(self, stats, trajectories, batch=None):
+    def render(self,
+            stats: Dict[str, Stats],
+            trajectories: Tuple[NonFluents, Fluents, Fluents, Fluents, np.array],
+            batch: Optional[int] = None) -> None:
+        '''Prints the performance `stats` and the simulated `trajectories`.
+
+        Args:
+            stats: Performance statistics.
+            trajectories: NonFluents, states, actions, interms and rewards.
+            batch: Number of batches to render.
+        '''
         self._render_trajectories(trajectories)
         self._render_performance(stats)
 
-    def _render_performance(self, stats):
+    def _render_performance(self, stats: Dict[str, Stats]) -> None:
+        '''Prints the performance `stats`.
+
+        Args:
+            stats: Performance statistics.
+        '''
         print('*********************************************************')
         print(' PERFORMANCE STATS')
         print('*********************************************************')
@@ -47,8 +87,14 @@ class BasicVisualizer(Visualizer):
         print('>> Total reward = {}'.format(list(stats['totals'])))
         print()
 
-    def _render_trajectories(self, trajectories):
-        if self.verbose:
+    def _render_trajectories(self,
+            trajectories: Tuple[NonFluents, Fluents, Fluents, Fluents, np.array]) -> None:
+        '''Prints the first batch of simulated `trajectories`.
+
+        Args:
+            trajectories: NonFluents, states, actions, interms and rewards.
+        '''
+        if self._verbose:
             non_fluents, states, actions, interms, rewards = trajectories
             states = [(s[0], s[1][0]) for s in states]
             interms = [(f[0], f[1][0]) for f in interms]
@@ -56,7 +102,21 @@ class BasicVisualizer(Visualizer):
             rewards = rewards[0]
             self._render_batch(non_fluents, states, actions, interms, rewards)
 
-    def _render_batch(self, non_fluents, states, actions, interms, rewards, horizon=None):
+    def _render_batch(self,
+            non_fluents: NonFluents,
+            states: Fluents, actions: Fluents, interms: Fluents,
+            rewards: np.array,
+            horizon: Optional[int] = None) -> None:
+        '''Prints `non_fluents`, `states`, `actions`, `interms` and `rewards`
+        for given `horizon`.
+
+        Args:
+            states (Sequence[Tuple[str, np.array]]): A state trajectory.
+            actions (Sequence[Tuple[str, np.array]]): An action trajectory.
+            interms (Sequence[Tuple[str, np.array]]): An interm state trajectory.
+            rewards (np.array): Sequence of rewards (1-dimensional array).
+            horizon (Optional[int]): Number of timesteps.
+        '''
         if horizon is None:
             horizon = len(states[0][1])
             self._render_round_init(horizon, non_fluents)
@@ -68,40 +128,66 @@ class BasicVisualizer(Visualizer):
                 self._render_timestep(t, s, a, f, r)
             self._render_round_end(rewards)
 
-    def _render_timestep(self, t, s, a, f, r):
+    def _render_timestep(self,
+            t: int,
+            s: Fluents, a: Fluents, f: Fluents,
+            r: np.float32) -> None:
+        '''Prints fluents and rewards for the given timestep `t`.
+
+        Args:
+            t (int): timestep
+            s (Sequence[Tuple[str], np.array]: State fluents.
+            a (Sequence[Tuple[str], np.array]: Action fluents.
+            f (Sequence[Tuple[str], np.array]: Interm state fluents.
+            r (np.float32): Reward.
+        '''
         print("============================")
         print("TIME = {}".format(t))
         print("============================")
-        fluent_variables = self.compiler.action_fluent_variables
+        fluent_variables = self._compiler.action_fluent_variables
         self._render_fluent_timestep('action', a, fluent_variables)
-        fluent_variables = self.compiler.interm_fluent_variables
+        fluent_variables = self._compiler.interm_fluent_variables
         self._render_fluent_timestep('interms', f, fluent_variables)
-        fluent_variables = self.compiler.state_fluent_variables
+        fluent_variables = self._compiler.state_fluent_variables
         self._render_fluent_timestep('states', s, fluent_variables)
         self._render_reward(r)
 
-    def _render_fluent_timestep(self, fluent_type, fluents, fluent_variables):
-        for fluent, fluent_variables in zip(fluents, fluent_variables):
-            name, fluent = fluent
-            _, variables = fluent_variables
+    def _render_fluent_timestep(self,
+            fluent_type: str,
+            fluents: Sequence[Tuple[str, np.array]],
+            fluent_variables: Sequence[Tuple[str, List[str]]]) -> None:
+        '''Prints `fluents` of given `fluent_type` as list of instantiated variables
+        with corresponding values.
+
+        Args:
+            fluent_type (str): Fluent type.
+            fluents (Sequence[Tuple[str, np.array]]): List of pairs (fluent_name, fluent_values).
+            fluent_variables (Sequence[Tuple[str, List[str]]]): List of pairs (fluent_name, args).
+        '''
+        for fluent_pair, variable_list in zip(fluents, fluent_variables):
+            name, fluent = fluent_pair
+            _, variables = variable_list
             print(name)
             fluent = fluent.flatten()
             for variable, value in zip(variables, fluent):
                 print('- {}: {} = {}'.format(fluent_type, variable, value))
         print()
 
-    def _render_reward(self, r):
+    def _render_reward(self, r: np.float32) -> None:
+        '''Prints reward `r`.'''
         print("reward = {:.4f}".format(float(r)))
         print()
 
-    def _render_round_init(self, horizon, non_fluents):
+    def _render_round_init(self, horizon: int, non_fluents: NonFluents) -> None:
+        '''Prints round init information about `horizon` and `non_fluents`.'''
         print('*********************************************************')
         print('>>> ROUND INIT, horizon = {}'.format(horizon))
         print('*********************************************************')
-        fluent_variables = self.compiler.non_fluent_variables
+        fluent_variables = self._compiler.non_fluent_variables
         self._render_fluent_timestep('non-fluents', non_fluents, fluent_variables)
 
-    def _render_round_end(self, rewards):
+    def _render_round_end(self, rewards: np.array) -> None:
+        '''Prints round end information about `rewards`.'''
         print("*********************************************************")
         print(">>> ROUND END")
         print("*********************************************************")
