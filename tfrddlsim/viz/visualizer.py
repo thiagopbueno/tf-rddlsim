@@ -95,7 +95,7 @@ class BasicVisualizer(Visualizer):
             trajectories: NonFluents, states, actions, interms and rewards.
         '''
         if self._verbose:
-            non_fluents, states, actions, interms, rewards = trajectories
+            non_fluents, initial_state, states, actions, interms, rewards = trajectories
             states = [(s[0], s[1][0]) for s in states]
             interms = [(f[0], f[1][0]) for f in interms]
             actions = [(a[0], a[1][0]) for a in actions]

@@ -32,6 +32,12 @@ def parse_args():
         help='type of policy (default=random)'
     )
     parser.add_argument(
+        '--viz',
+        default='generic',
+        choices=('generic', 'navigation'),
+        help='type of visualizer (default=generic)'
+    )
+    parser.add_argument(
         '-hr', '--horizon',
         type=int, default=40,
         help='number of timesteps of each trajectory (default=40)'
@@ -103,9 +109,13 @@ def performance_stats(trajectories):
     return stats
 
 
-def display(compiler, stats, trajectories, verbose):
-    from tfrddlsim.visualizer import BasicVisualizer
-    viz = BasicVisualizer(compiler, verbose)
+def display(compiler, stats, trajectories, visualizer, verbose):
+    from tfrddlsim.viz.visualizer import BasicVisualizer
+    from tfrddlsim.viz.navigation_visualizer import NavigationVisualizer
+    if visualizer == 'generic':
+        viz = BasicVisualizer(compiler, verbose)
+    elif visualizer == 'navigation':
+        viz = NavigationVisualizer(compiler, verbose)
     viz.render(stats, trajectories)
 
 
@@ -142,7 +152,7 @@ if __name__ == '__main__':
     stats = performance_stats(trajectories)
 
     # visualize trajectories
-    display(rddl2tf, stats, trajectories, args.verbose)
+    display(rddl2tf, stats, trajectories, args.viz, args.verbose)
 
     # stats
     time_stats(uptime, args.horizon, args.batch_size)

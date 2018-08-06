@@ -54,15 +54,15 @@ non-fluents Navigation2D-Small-2Zones {
 
     non-fluents {
         GOAL(x) = 8.0;
-        GOAL(y) = 8.0;
+        GOAL(y) = 9.0;
 
         DECELERATION_ZONE_CENTER(z1, x) = 2.0;
         DECELERATION_ZONE_CENTER(z1, y) = 5.0;
-        DECELERATION_ZONE_DECAY(z1) = 2.2;
+        DECELERATION_ZONE_DECAY(z1) = 2.0;
 
         DECELERATION_ZONE_CENTER(z2, x) = 4.0;
         DECELERATION_ZONE_CENTER(z2, y) = 3.0;
-        DECELERATION_ZONE_DECAY(z2) = 1.7;
+        DECELERATION_ZONE_DECAY(z2) = 1.5;
     };
 }
 
@@ -71,8 +71,8 @@ instance inst1 {
     non-fluents = Navigation2D-Small-2Zones;
 
     init-state {
-        location(x) = 0.0;
-        location(y) = 0.0;
+        location(x) = 1.0;
+        location(y) = 1.0;
     };
 
     max-nondef-actions = 2;
