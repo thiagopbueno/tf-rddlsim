@@ -419,7 +419,7 @@ class Compiler(object):
 
     @property
     def state_fluent_ordering(self) -> List[str]:
-        '''The list of stae-fluent names in canonical order.
+        '''The list of state-fluent names in canonical order.
 
         Returns:
             List[str]: A list of fluent names.
