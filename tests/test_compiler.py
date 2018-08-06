@@ -1,10 +1,11 @@
-from tfrddlsim.rddl import RDDL
-from tfrddlsim.parser import RDDLParser
-from tfrddlsim.expr import Expression
+from pyrddl.rddl import RDDL
+from pyrddl.parser import RDDLParser
+from pyrddl.expr import Expression
+from pyrddl import utils
+
 from tfrddlsim.compiler import Compiler
 from tfrddlsim.fluent import TensorFluent
 from tfrddlsim.fluentshape import TensorFluentShape
-from tfrddlsim import utils
 
 import numpy as np
 import tensorflow as tf

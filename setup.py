@@ -23,7 +23,7 @@ setup(
     packages=['tfrddlsim', 'tests'],
     scripts=['scripts/tfrddlsim'],
     install_requires=[
-        'ply',
+        'pyrddl',
         'numpy',
         'tensorflow',
         'tensorflow-tensorboard',

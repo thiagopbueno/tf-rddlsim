@@ -1,5 +1,6 @@
-from tfrddlsim.rddl import RDDL
-from tfrddlsim.parser import RDDLParser
+from pyrddl.rddl import RDDL
+from pyrddl.parser import RDDLParser
+
 from tfrddlsim.compiler import Compiler
 from tfrddlsim.policy import DefaultPolicy, RandomPolicy
 

@@ -14,21 +14,19 @@
 #
 # import os
 # import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
-import tfrddlsim
+# sys.path.insert(0, '/Users/thiagopbueno/Projects/planning/tensorflow/tf-rddlsim/tfrddlsim')
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'tfrddlsim'
-copyright = '2018, Thiago P. Bueno'
-author = 'Thiago P. Bueno'
+copyright = '2018, Author'
+author = 'Author'
 
 # The short X.Y version
-version = tfrddlsim.__version__
+version = ''
 # The full version, including alpha/beta/rc tags
-release = tfrddlsim.__release__
+release = ''
 
 
 # -- General configuration ---------------------------------------------------
@@ -43,7 +41,7 @@ release = tfrddlsim.__release__
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.todo',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -63,7 +61,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -134,7 +132,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'tfrddlsim.tex', 'tfrddlsim Documentation',
-     'Thiago P. Bueno', 'manual'),
+     'Author', 'manual'),
 ]
 
 
@@ -160,6 +158,30 @@ texinfo_documents = [
 ]
 
 
+# -- Options for Epub output -------------------------------------------------
+
+# Bibliographic Dublin Core info.
+epub_title = project
+epub_author = author
+epub_publisher = author
+epub_copyright = copyright
+
+# The unique identifier of the text. This can be a ISBN number
+# or the project homepage.
+#
+# epub_identifier = ''
+
+# A unique identification for the text.
+#
+# epub_uid = ''
+
+# A list of files that should not be packed into the epub file.
+epub_exclude_files = ['search.html']
+
+
 # -- Extension configuration -------------------------------------------------
-napoleon_include_special_with_doc = True
-napoleon_include_private_with_doc = True
+
+# -- Options for todo extension ----------------------------------------------
+
+# If true, `todo` and `todoList` produce output, else they produce nothing.
+todo_include_todos = True

@@ -65,7 +65,7 @@ def print_simulation_parameters(args):
 
 
 def compile(rddl):
-    from tfrddlsim.parser import RDDLParser
+    from pyrddl.parser import RDDLParser
     from tfrddlsim.compiler import Compiler
 
     # parse RDDL

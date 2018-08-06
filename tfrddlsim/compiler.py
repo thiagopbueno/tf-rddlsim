@@ -14,9 +14,10 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
-from tfrddlsim.rddl import RDDL
-from tfrddlsim.pvariable import PVariable
-from tfrddlsim.expr import Expression
+from pyrddl.rddl import RDDL
+from pyrddl.pvariable import PVariable
+from pyrddl.expr import Expression
+
 from tfrddlsim.fluent import TensorFluent
 
 import itertools
