@@ -26,14 +26,22 @@ from typing import Sequence, Optional, Tuple
 Shape = Sequence[int]
 
 NonFluentsTensor = Sequence[tf.Tensor]
+StateTensor = Sequence[tf.Tensor]
 StatesTensor = Sequence[tf.Tensor]
 ActionsTensor = Sequence[tf.Tensor]
 IntermsTensor = Sequence[tf.Tensor]
 
+NonFluentsArray = Sequence[np.array]
+StateArray = Sequence[np.array]
+StatesArray = Sequence[np.array]
+ActionsArray = Sequence[np.array]
+IntermsArray = Sequence[np.array]
+
 CellOutput = Tuple[StatesTensor, ActionsTensor, IntermsTensor, tf.Tensor]
 CellState = Sequence[tf.Tensor]
 
-SimulationOutput = Tuple[NonFluentsTensor, StatesTensor, ActionsTensor, IntermsTensor, tf.Tensor]
+TrajectoryOutput = Tuple[StateTensor, StatesTensor, ActionsTensor, IntermsTensor, tf.Tensor]
+SimulationOutput = Tuple[NonFluentsArray, StateArray, StatesArray, ActionsArray, IntermsArray, np.array]
 
 
 class SimulationCell(tf.nn.rnn_cell.RNNCell):
@@ -182,21 +190,23 @@ class Simulator(object):
             batch_timesteps = tf.stack([timesteps_range] * self.batch_size)
             return batch_timesteps
 
-    def trajectory(self, horizon: int) -> CellOutput:
+    def trajectory(self, horizon: int) -> TrajectoryOutput:
         '''Returns the ops for the trajectory generation with given `horizon`.
 
         The simulation returns states, actions and interms as a
         sequence of tensors (i.e., all representations are factored).
         The reward is an n-dimensional tensor.
+        The trajectoty output is a tuple: (initial_state, states, actions, interms, rewards).
 
         Note:
             All tensors have shape: (batch_size, horizon, fluent_shape).
+            Except initial state that has shape: (batch_size, fluent_shape).
 
         Args:
             horizon (int): The number of simulation timesteps.
 
         Returns:
-            Tuple[NonFluentsTensor, StatesTensor, ActionsTensor, IntermsTensor, tf.Tensor]: Simulation output tuple.
+            Tuple[StateTensor, StatesTensor, ActionsTensor, IntermsTensor, tf.Tensor]: Trajectory output tuple.
         '''
         initial_state = self._cell.initial_state()
         inputs = self.timesteps(horizon)
@@ -218,7 +228,7 @@ class Simulator(object):
             action_dtype = self._cell._compiler.action_dtype
             actions = self._output(actions, action_dtype)
 
-            outputs = (states, actions, interms, rewards)
+            outputs = (initial_state, states, actions, interms, rewards)
 
         return outputs
 
@@ -229,22 +239,19 @@ class Simulator(object):
 
         Note:
             All output arrays have shape: (batch_size, horizon, fluent_shape).
+            Except initial state that has shape: (batch_size, fluent_shape).
 
         Args:
             horizon (int): The number of timesteps in the simulation.
 
         Returns:
-            Sequence[np.array]: non-fluents.
-            Sequence[np.array]: states.
-            Sequence[np.array]: actions.
-            Sequence[np.array]: interms.
-            np.array: rewards.
+            Tuple[NonFluentsArray, StatesArray, ActionsArray, IntermsArray, np.array]: Simulation ouput tuple.
         '''
         trajectory = self.trajectory(horizon)
 
         with tf.Session(graph=self.graph) as sess:
             non_fluents = sess.run(self._non_fluents)
-            states, actions, interms, rewards = sess.run(trajectory)
+            initial_state, states, actions, interms, rewards = sess.run(trajectory)
 
         # non-fluents
         non_fluent_ordering = self._cell._compiler.non_fluent_ordering
@@ -265,7 +272,7 @@ class Simulator(object):
         # rewards
         rewards = np.squeeze(rewards)
 
-        outputs = (non_fluents, states, actions, interms, rewards)
+        outputs = (non_fluents, initial_state, states, actions, interms, rewards)
 
         return outputs
 

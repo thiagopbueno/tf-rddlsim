@@ -93,7 +93,7 @@ def simulate(compiler, policy, horizon, batch_size):
 
 
 def performance_stats(trajectories):
-    _, _, _, _, rewards = trajectories
+    _, _, _, _, _, rewards = trajectories
     totals = np.sum(rewards, axis=1)
     stats = {
         'totals': totals,
