@@ -853,13 +853,21 @@ class Compiler(object):
                     return TensorFluent.Gamma(shape, scale, batch_size)
             elif etype[0] == 'arithmetic':
                 if etype[1] == '+':
-                    op1 = self._compile_expression(args[0], scope)
-                    op2 = self._compile_expression(args[1], scope)
-                    return op1 + op2
+                    if len(args) == 1:
+                        op1 = self._compile_expression(args[0], scope)
+                        return op1
+                    else:
+                        op1 = self._compile_expression(args[0], scope)
+                        op2 = self._compile_expression(args[1], scope)
+                        return op1 + op2
                 elif etype[1] == '-':
-                    op1 = self._compile_expression(args[0], scope)
-                    op2 = self._compile_expression(args[1], scope)
-                    return op1 - op2
+                    if len(args) == 1:
+                        op1 = self._compile_expression(args[0], scope)
+                        return -op1
+                    else:
+                        op1 = self._compile_expression(args[0], scope)
+                        op2 = self._compile_expression(args[1], scope)
+                        return op1 - op2
                 elif etype[1] == '*':
                     op1 = self._compile_expression(args[0], scope)
                     op2 = self._compile_expression(args[1], scope)

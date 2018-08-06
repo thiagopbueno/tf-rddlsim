@@ -584,6 +584,17 @@ class TensorFluent(object):
         '''
         return self._aggregation_op(tf.reduce_any, self, vars_list)
 
+    def __neg__(self):
+        '''Returns a TensorFluent for the unary negative operator.
+
+        Args:
+            self: The operand
+
+        Returns:
+            A TensorFluent wrapping the operator's output.
+        '''
+        return self._unary_op(self, tf.negative, tf.float32)
+
     def __add__(self, other: 'TensorFluent') -> 'TensorFluent':
         '''Returns a TensorFluent for the addition arithmetic operator.
 
