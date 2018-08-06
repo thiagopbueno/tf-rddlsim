@@ -228,6 +228,11 @@ class RandomPolicy(Policy):
                 dist = tf.distributions.Uniform(low=low, high=high)
                 if batch:
                     sampled_fluent = dist.sample()
+                elif isinstance(low, tf.Tensor) or isinstance(high, tf.Tensor):
+                    if (low+high).shape.as_list() == list(size):
+                        sampled_fluent = dist.sample([self.batch_size])
+                    else:
+                        raise ValueError('bounds are not compatible with action fluent.')
                 else:
                     sampled_fluent = dist.sample(shape)
         elif dtype == tf.int32:
