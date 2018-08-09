@@ -72,7 +72,7 @@ class Compiler(object):
         '''Sets off the batch mode flag.'''
         self.batch_mode = False
 
-    def compile_initial_state(self, batch_size: int) -> tf.Tensor:
+    def compile_initial_state(self, batch_size: int) -> Sequence[tf.Tensor]:
         '''Returns a tuple of tensors representing the initial state fluents.
 
         Args:
@@ -83,7 +83,7 @@ class Compiler(object):
         '''
         return self._compile_batch_fluents(self.initial_state_fluents, batch_size)
 
-    def compile_default_action(self, batch_size: int) -> tf.Tensor:
+    def compile_default_action(self, batch_size: int) -> Sequence[tf.Tensor]:
         '''Returns a tuple of tensors representing the default action fluents.
 
         Args:
