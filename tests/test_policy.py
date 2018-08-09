@@ -35,7 +35,7 @@ class TestDefaultPolicy(unittest.TestCase):
                 policy = DefaultPolicy(compiler, batch_size)
 
                 state1 = compiler.initial_state_fluents
-                action1 = policy(state1)
+                action1 = policy(state1, None)
                 self.assertIsInstance(action1, tuple)
                 for af, (_, t) in zip(action1, default):
                     shape = af.shape.as_list()
@@ -47,7 +47,7 @@ class TestDefaultPolicy(unittest.TestCase):
                     self.assertListEqual(actual_shape, expected_shape)
 
                 state2 = None
-                action2 = policy(state2)
+                action2 = policy(state2, None)
                 self.assertIs(action1, action2)
 
 

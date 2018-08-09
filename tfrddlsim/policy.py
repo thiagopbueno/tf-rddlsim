@@ -31,8 +31,12 @@ class Policy(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __call__(self,
             state: Sequence[tf.Tensor],
-            timestep: Optional[tf.Tensor] = None) -> Sequence[tf.Tensor]:
+            timestep: tf.Tensor) -> Sequence[tf.Tensor]:
         '''Returns action fluents for the current `state` and `timestep`.
+
+        Args:
+            state (Sequence[tf.Tensor]): The current state fluents.
+            timestep (tf.Tensor): The current timestep.
 
         Returns:
             Sequence[tf.Tensor]: A tuple of action fluents.
@@ -56,8 +60,12 @@ class DefaultPolicy(Policy):
 
     def __call__(self,
             state: Sequence[tf.Tensor],
-            timestep: Optional[tf.Tensor] = None) -> Sequence[tf.Tensor]:
+            timestep: tf.Tensor) -> Sequence[tf.Tensor]:
         '''Returns the default action fluents regardless of the current `state` and `timestep`.
+
+        Args:
+            state (Sequence[tf.Tensor]): The current state fluents.
+            timestep (tf.Tensor): The current timestep.
 
         Returns:
             Sequence[tf.Tensor]: A tuple of action fluents.
@@ -93,8 +101,12 @@ class RandomPolicy(Policy):
 
     def __call__(self,
             state: Sequence[tf.Tensor],
-            timestep: Optional[tf.Tensor] = None) -> Sequence[tf.Tensor]:
+            timestep: tf.Tensor) -> Sequence[tf.Tensor]:
         '''Returns sampled action fluents for the current `state` and `timestep`.
+
+        Args:
+            state (Sequence[tf.Tensor]): The current state fluents.
+            timestep (tf.Tensor): The current timestep.
 
         Returns:
             Sequence[tf.Tensor]: A tuple of action fluents.
