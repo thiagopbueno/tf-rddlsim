@@ -98,28 +98,21 @@ def simulate(compiler, policy, horizon, batch_size):
     return uptime, trajectories
 
 
-def performance_stats(trajectories):
+def report_performance_stats(trajectories):
     _, _, _, _, _, rewards = trajectories
-    totals = np.sum(rewards, axis=1)
-    stats = {
-        'totals': totals,
-        'avg': np.mean(totals),
-        'stddev': np.std(totals)
-    }
-    return stats
+    total_reward = np.sum(rewards, axis=1)
+    avg_total_reward = np.mean(total_reward)
+    stddev_total_reward = np.std(total_reward)
+    print('*********************************************************')
+    print(' PERFORMANCE STATS')
+    print('*********************************************************')
+    print('>> Average total reward = {:.6f}'.format(avg_total_reward))
+    print('>> Stddev  total reward = {:.6f}'.format(stddev_total_reward))
+    print('>> Total reward = {}'.format(list(total_reward)))
+    print()
 
 
-def display(compiler, stats, trajectories, visualizer, verbose):
-    from tfrddlsim.viz.visualizer import BasicVisualizer
-    from tfrddlsim.viz.navigation_visualizer import NavigationVisualizer
-    if visualizer == 'generic':
-        viz = BasicVisualizer(compiler, verbose)
-    elif visualizer == 'navigation':
-        viz = NavigationVisualizer(compiler, verbose)
-    viz.render(stats, trajectories)
-
-
-def time_stats(uptime, horizon, batch_size):
+def report_time_stats(uptime, horizon, batch_size):
     time_per_batch = uptime / batch_size
     time_per_step = uptime / horizon
     print('*********************************************************')
@@ -128,6 +121,17 @@ def time_stats(uptime, horizon, batch_size):
     print('>> Simulation done in {:.6f} sec.'.format(uptime))
     print('>> Time per batch = {:.6f} sec.'.format(time_per_batch))
     print('>> Time per step  = {:.6f} sec.'.format(time_per_step))
+    print()
+
+
+def display(compiler, trajectories, visualizer, verbose):
+    from tfrddlsim.viz.visualizer import BasicVisualizer
+    from tfrddlsim.viz.navigation_visualizer import NavigationVisualizer
+    if visualizer == 'generic':
+        viz = BasicVisualizer(compiler, verbose)
+    elif visualizer == 'navigation':
+        viz = NavigationVisualizer(compiler, verbose)
+    viz.render(trajectories)
 
 
 if __name__ == '__main__':
@@ -148,11 +152,11 @@ if __name__ == '__main__':
     # run simulations
     uptime, trajectories = simulate(rddl2tf, policy, args.horizon, args.batch_size)
 
-    # overall performance
-    stats = performance_stats(trajectories)
-
     # visualize trajectories
-    display(rddl2tf, stats, trajectories, args.viz, args.verbose)
+    display(rddl2tf, trajectories, args.viz, args.verbose)
+
+    # overall performance
+    report_performance_stats(trajectories)
 
     # stats
-    time_stats(uptime, args.horizon, args.batch_size)
+    report_time_stats(uptime, args.horizon, args.batch_size)

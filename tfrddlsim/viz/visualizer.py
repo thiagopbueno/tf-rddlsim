@@ -42,9 +42,14 @@ class Visualizer(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def render(self,
-            stats: Dict[str, Stats],
             trajectories: Tuple[NonFluents, Fluents, Fluents, Fluents, np.array],
             batch: Optional[int] = None) -> None:
+        '''Renders the simulated `trajectories` for the given `batch`.
+
+        Args:
+            trajectories: NonFluents, states, actions, interms and rewards.
+            batch: Number of batches to render.
+        '''
         raise NotImplementedError
 
 
@@ -60,32 +65,15 @@ class BasicVisualizer(Visualizer):
         super().__init__(compiler, verbose)
 
     def render(self,
-            stats: Dict[str, Stats],
             trajectories: Tuple[NonFluents, Fluents, Fluents, Fluents, np.array],
             batch: Optional[int] = None) -> None:
-        '''Prints the performance `stats` and the simulated `trajectories`.
+        '''Prints the simulated `trajectories`.
 
         Args:
-            stats: Performance statistics.
             trajectories: NonFluents, states, actions, interms and rewards.
             batch: Number of batches to render.
         '''
         self._render_trajectories(trajectories)
-        self._render_performance(stats)
-
-    def _render_performance(self, stats: Dict[str, Stats]) -> None:
-        '''Prints the performance `stats`.
-
-        Args:
-            stats: Performance statistics.
-        '''
-        print('*********************************************************')
-        print(' PERFORMANCE STATS')
-        print('*********************************************************')
-        print('>> Average total reward = {:.6f}'.format(stats['avg']))
-        print('>> Stddev  total reward = {:.6f}'.format(stats['stddev']))
-        print('>> Total reward = {}'.format(list(stats['totals'])))
-        print()
 
     def _render_trajectories(self,
             trajectories: Tuple[NonFluents, Fluents, Fluents, Fluents, np.array]) -> None:

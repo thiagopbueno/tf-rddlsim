@@ -35,10 +35,9 @@ class NavigationVisualizer(Visualizer):
         super().__init__(compiler, verbose)
 
     def render(self,
-            stats: Dict[str, Stats],
             trajectories: Tuple[NonFluents, Fluents, Fluents, Fluents, np.array],
             batch: Optional[int] = None) -> None:
-        '''Render the simualted state-action `trajectories` for Navigation domain.
+        '''Render the simulated state-action `trajectories` for Navigation domain.
 
         Args:
             stats: Performance statistics.
@@ -64,9 +63,6 @@ class NavigationVisualizer(Visualizer):
         decays = non_fluents['DECELERATION_ZONE_DECAY/1']
         zones = [(x, y, d) for (x, y), d in zip(centers, decays)]
 
-        plt.figure(1)
-        plt.title('Navigation', fontweight='bold')
-        plt.legend(loc='lower right')
         self._ax1 = plt.gca()
 
         self._render_state_space()
@@ -74,11 +70,8 @@ class NavigationVisualizer(Visualizer):
         self._render_deceleration_zones(zones)
         self._render_state_action_trajectory(start, path, deltas)
 
-        plt.figure(2)
-        self._ax2 = plt.gca()
-
-        self._plot_reward(rewards)
-
+        plt.title('Navigation', fontweight='bold')
+        plt.legend(loc='lower right')
         plt.show()
 
     def _render_state_space(self):
@@ -116,11 +109,3 @@ class NavigationVisualizer(Visualizer):
         self._ax1.quiver([x0] + xpath[:-1], [y0] + ypath[:-1], xdeltas, ydeltas,
             angles='xy', scale_units='xy', scale=1, color='dodgerblue', width=0.005,
             label='actions')
-
-    def _plot_reward(self, rewards):
-        horizon = len(rewards)
-        self._ax2.plot(range(1, horizon+1), rewards, label='rewards')
-        self._ax2.set_title('Rewards')
-        self._ax2.set_xlabel('timesteps')
-        self._ax2.set_ylabel('$r_t$')
-        self._ax2.grid()
