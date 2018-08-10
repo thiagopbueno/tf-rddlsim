@@ -115,13 +115,11 @@ class TensorFluentShape(object):
             return reshape_1, reshape_2
 
         if size_2 > size_1 and not (size_1 == 0 and not shape1._batch):
-            batch_size = shape1.batch_size
             reshape_1 = [1] * size_diff + list(shape1.fluent_shape)
-            if batch_size > 1:
-                reshape_1 = [batch_size] + reshape_1
+            if shape1._batch:
+                reshape_1 = [shape1.batch_size] + reshape_1
         elif size_1 > size_2 and not (size_2 == 0 and not shape2._batch):
-            batch_size = shape2.batch_size
             reshape_2 = [1] * size_diff + list(shape2.fluent_shape)
-            if batch_size > 1:
-                reshape_2 = [batch_size] + reshape_2
+            if shape2._batch:
+                reshape_2 = [shape2.batch_size] + reshape_2
         return reshape_1, reshape_2

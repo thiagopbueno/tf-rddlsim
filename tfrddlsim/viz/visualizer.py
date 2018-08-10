@@ -84,10 +84,11 @@ class BasicVisualizer(Visualizer):
         '''
         if self._verbose:
             non_fluents, initial_state, states, actions, interms, rewards = trajectories
+            batch_size, horizon, _ = states[0][1].shape
             states = [(s[0], s[1][0]) for s in states]
             interms = [(f[0], f[1][0]) for f in interms]
             actions = [(a[0], a[1][0]) for a in actions]
-            rewards = rewards[0]
+            rewards = np.reshape(rewards, [batch_size, horizon])[0]
             self._render_batch(non_fluents, states, actions, interms, rewards)
 
     def _render_batch(self,

@@ -99,7 +99,9 @@ def simulate(compiler, policy, horizon, batch_size):
 
 
 def report_performance_stats(trajectories):
-    _, _, _, _, _, rewards = trajectories
+    _, _, states, _, _, rewards = trajectories
+    batch_size, horizon, _ = states[0][1].shape
+    rewards = rewards = np.reshape(rewards, [batch_size, horizon])
     total_reward = np.sum(rewards, axis=1)
     avg_total_reward = np.mean(total_reward)
     stddev_total_reward = np.std(total_reward)

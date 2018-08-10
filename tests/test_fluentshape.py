@@ -36,6 +36,8 @@ class TestTensorFluentShape(unittest.TestCase):
             (TensorFluentShape([7, 8], False), TensorFluentShape([100, 7, 8], True), None, None),
             (TensorFluentShape([8, 8], False), TensorFluentShape([100, 8], True), None, [100, 1, 8]),
             (TensorFluentShape([100, 8], True), TensorFluentShape([8, 8], False), [100, 1, 8], None),
+            (TensorFluentShape([2, 2], False), TensorFluentShape([1, 2], True), None, [1, 1, 2]),
+            (TensorFluentShape([1, 2], True), TensorFluentShape([2, 2], False), [1, 1, 2], None),
         ]
 
         for s1, s2, ss1, ss2 in tests:
