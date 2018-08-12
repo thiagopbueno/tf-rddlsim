@@ -13,44 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
+
+from tfrddlsim.viz.abstract_visualizer import Visualizer
 from tfrddlsim.compiler import Compiler
 
-
-import abc
 import numpy as np
 
-
-from typing import Dict, List, Sequence, Optional, Tuple, Union
-
+from typing import List, Sequence, Optional, Tuple, Union
 Value = Union[bool, int, float, np.array]
-Stats = Dict[str, Value]
 NonFluents = Sequence[Tuple[str, Value]]
 Fluents = Sequence[Tuple[str, np.array]]
-
-
-class Visualizer(metaclass=abc.ABCMeta):
-    '''Abstract class for RDDL's trajectory Visualizer.
-
-    Args:
-        compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler
-        verbose (bool): Verbosity flag
-    '''
-
-    def __init__(self, compiler: Compiler, verbose: bool) -> None:
-        self._compiler = compiler
-        self._verbose = verbose
-
-    @abc.abstractmethod
-    def render(self,
-            trajectories: Tuple[NonFluents, Fluents, Fluents, Fluents, np.array],
-            batch: Optional[int] = None) -> None:
-        '''Renders the simulated `trajectories` for the given `batch`.
-
-        Args:
-            trajectories: NonFluents, states, actions, interms and rewards.
-            batch: Number of batches to render.
-        '''
-        raise NotImplementedError
 
 
 class GenericVisualizer(Visualizer):

@@ -14,9 +14,16 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
-from tfrddlsim.viz.visualizer import *
+from tfrddlsim.viz.abstract_visualizer import Visualizer
+from tfrddlsim.compiler import Compiler
 
 import matplotlib.pyplot as plt
+import numpy as np
+
+from typing import Sequence, Optional, Tuple, Union
+Value = Union[bool, int, float, np.array]
+NonFluents = Sequence[Tuple[str, Value]]
+Fluents = Sequence[Tuple[str, np.array]]
 
 
 class NavigationVisualizer(Visualizer):
