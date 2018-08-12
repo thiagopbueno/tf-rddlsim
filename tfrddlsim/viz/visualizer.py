@@ -53,8 +53,8 @@ class Visualizer(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class BasicVisualizer(Visualizer):
-    '''BasicVisualizer is a generic text-based trajectory visualizer.
+class GenericVisualizer(Visualizer):
+    '''GenericVisualizer is a generic text-based trajectory visualizer.
 
     Args:
         compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler

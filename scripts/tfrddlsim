@@ -21,6 +21,9 @@ import numpy as np
 import time
 
 
+import tfrddlsim.viz
+
+
 def parse_args():
     description = 'RDDL2TensorFlow compiler and simulator'
     parser = argparse.ArgumentParser(description=description)
@@ -34,7 +37,7 @@ def parse_args():
     parser.add_argument(
         '--viz',
         default='generic',
-        choices=('generic', 'navigation'),
+        choices=tuple(tfrddlsim.viz.visualizers),
         help='type of visualizer (default=generic)'
     )
     parser.add_argument(
@@ -127,12 +130,8 @@ def report_time_stats(uptime, horizon, batch_size):
 
 
 def display(compiler, trajectories, visualizer, verbose):
-    from tfrddlsim.viz.visualizer import BasicVisualizer
-    from tfrddlsim.viz.navigation_visualizer import NavigationVisualizer
-    if visualizer == 'generic':
-        viz = BasicVisualizer(compiler, verbose)
-    elif visualizer == 'navigation':
-        viz = NavigationVisualizer(compiler, verbose)
+    visualizer = tfrddlsim.viz.visualizers.get(visualizer, 'generic')
+    viz = visualizer(compiler, verbose)
     viz.render(trajectories)
 
 

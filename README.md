@@ -59,7 +59,7 @@ simulator = Simulator(rddl2tf, policy, batch_size)
 trajectories = simulator.run(horizon)
 
 # visualize trajectories
-viz = BasicVisualizer(rddl2tf, verbose=True)
+viz = GenericVisualizer(rddl2tf, verbose=True)
 viz.render(trajectories)
 ```
 
