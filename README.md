@@ -42,6 +42,12 @@ optional arguments:
 ### Programmatic mode
 
 ```python
+from pyrddl.parser import RDDLParser
+
+from tfrddlsim.compiler  import Compiler
+from tfrddlsim.policy    import RandomPolicy
+from tfrddlsim.simulator import Simulator
+from tfrddlsim.viz       import GenericVisualizer
 
 # parse RDDL
 parser = RDDLParser()
