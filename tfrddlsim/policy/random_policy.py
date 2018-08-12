@@ -13,64 +13,14 @@
 # You should have received a copy of the GNU General Public License
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
-
+from tfrddlsim.policy.abstract_policy import Policy
+from tfrddlsim.compiler import Compiler
 from tfrddlsim.fluent import TensorFluent
 
-
-import abc
 import tensorflow as tf
 
 from typing import Dict, Optional, Sequence, Tuple
-
 Constraints = Tuple[Optional[TensorFluent], Optional[TensorFluent]]
-
-
-class Policy(metaclass=abc.ABCMeta):
-    '''Abstract base class for representing Policy functions.'''
-
-    @abc.abstractmethod
-    def __call__(self,
-            state: Sequence[tf.Tensor],
-            timestep: tf.Tensor) -> Sequence[tf.Tensor]:
-        '''Returns action fluents for the current `state` and `timestep`.
-
-        Args:
-            state (Sequence[tf.Tensor]): The current state fluents.
-            timestep (tf.Tensor): The current timestep.
-
-        Returns:
-            Sequence[tf.Tensor]: A tuple of action fluents.
-        '''
-        return []
-
-
-class DefaultPolicy(Policy):
-    '''DefaultPolicy class.
-
-    The default policy returns the default action fluents
-    regardless of the current state and timestep.
-
-    Args:
-        compiler (:obj:`tfrddlsim.compiler.Compiler`): A RDDL2TensorFlow compiler.
-        batch_size (int): The batch size.
-    '''
-
-    def __init__(self, compiler, batch_size):
-        self._default = compiler.compile_default_action(batch_size)
-
-    def __call__(self,
-            state: Sequence[tf.Tensor],
-            timestep: tf.Tensor) -> Sequence[tf.Tensor]:
-        '''Returns the default action fluents regardless of the current `state` and `timestep`.
-
-        Args:
-            state (Sequence[tf.Tensor]): The current state fluents.
-            timestep (tf.Tensor): The current timestep.
-
-        Returns:
-            Sequence[tf.Tensor]: A tuple of action fluents.
-        '''
-        return self._default
 
 
 class RandomPolicy(Policy):
@@ -89,13 +39,12 @@ class RandomPolicy(Policy):
     Attributes:
         compiler (:obj:`tfrddlsim.compiler.Compiler`): A RDDL2TensorFlow compiler.
         batch_size (int): The batch size.
-
     '''
 
     MAX_REAL_VALUE = 5.0
     MAX_INT_VALUE = 5
 
-    def __init__(self, compiler, batch_size):
+    def __init__(self, compiler: Compiler, batch_size: int) -> None:
         self.compiler = compiler
         self.batch_size = batch_size
 

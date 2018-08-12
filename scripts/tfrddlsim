@@ -20,8 +20,8 @@ import argparse
 import numpy as np
 import time
 
-
 import tfrddlsim.viz
+import tfrddlsim.policy
 
 
 def parse_args():
@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument(
         '--policy',
         default='random',
-        choices=('random', 'default'),
+        choices=tuple(tfrddlsim.policy.policies),
         help='type of policy (default=random)'
     )
     parser.add_argument(
@@ -87,8 +87,7 @@ def compile(rddl):
 
 
 def get_policy(compiler, policy_type, batch_size):
-    from tfrddlsim.policy import DefaultPolicy, RandomPolicy
-    policy = RandomPolicy if policy_type == 'random' else DefaultPolicy
+    policy = tfrddlsim.policy.policies.get(policy_type, 'random')
     return policy(compiler, batch_size)
 
 
@@ -129,8 +128,8 @@ def report_time_stats(uptime, horizon, batch_size):
     print()
 
 
-def display(compiler, trajectories, visualizer, verbose):
-    visualizer = tfrddlsim.viz.visualizers.get(visualizer, 'generic')
+def display(compiler, trajectories, visualizer_type, verbose):
+    visualizer = tfrddlsim.viz.visualizers.get(visualizer_type, 'generic')
     viz = visualizer(compiler, verbose)
     viz.render(trajectories)
 
