@@ -1,5 +1,2 @@
-__version__ = '0.4.7'
-__release__ = 'v0.4.7-alpha'
-
-import tfrddlsim.policy
-import tfrddlsim.viz
+__version__ = '0.4.8'
+__release__ = 'v0.4.8-alpha'
