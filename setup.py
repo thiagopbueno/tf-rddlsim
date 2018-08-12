@@ -1,7 +1,7 @@
 import tfrddlsim
 
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def read(filename):
@@ -20,10 +20,11 @@ setup(
     license='GNU General Public License v3.0',
     keywords=['rddl', 'tensorflow', 'probabilistic-planning', 'mdp', 'simulator'],
     url='https://github.com/thiagopbueno/tf-rddlsim',
-    packages=['tfrddlsim', 'tests'],
+    packages=find_packages(),
     scripts=['scripts/tfrddlsim'],
     install_requires=[
         'pyrddl',
+        'matplotlib',
         'numpy',
         'tensorflow',
         'tensorflow-tensorboard',
