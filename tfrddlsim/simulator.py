@@ -250,6 +250,7 @@ class Simulator(object):
         trajectory = self.trajectory(horizon)
 
         with tf.Session(graph=self.graph) as sess:
+            sess.run(tf.global_variables_initializer())
             non_fluents = sess.run(self._non_fluents)
             initial_state, states, actions, interms, rewards = sess.run(trajectory)
 
