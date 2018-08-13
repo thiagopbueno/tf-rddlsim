@@ -47,9 +47,12 @@ SimulationOutput = Tuple[NonFluentsArray, StateArray, StatesArray, ActionsArray,
 class SimulationCell(tf.nn.rnn_cell.RNNCell):
     '''SimulationCell implements a 1-step MDP transition cell.
 
-    It extends`tf.nn.rnn_cell.RNNCell` for simulating an MDP transition.
+    It extends`tf.nn.rnn_cell.RNNCell` for simulating an MDP transition for a given policy.
     The cell input is the timestep. The hidden state is the factored MDP state.
-    The cell output is the tuple of MDP fluents (state, action, interm, rewards).
+    The cell output is the tuple of MDP fluents (next-state, action, interm, rewards).
+
+    Note:
+        All fluents are represented in factored form as Tuple[tf.Tensors].
 
     Args:
         compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler.
@@ -99,7 +102,7 @@ class SimulationCell(tf.nn.rnn_cell.RNNCell):
 
         The cell returns states, actions and interms as a
         sequence of tensors (i.e., all representations are factored).
-        The reward is an n-dimensional tensor.
+        The reward is an 1-dimensional tensor.
 
         Note:
             All tensors have shape: (batch_size, fluent_shape).

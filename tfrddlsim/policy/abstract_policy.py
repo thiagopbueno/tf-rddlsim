@@ -36,4 +36,4 @@ class Policy(metaclass=abc.ABCMeta):
         Returns:
             Sequence[tf.Tensor]: A tuple of action fluents.
         '''
-        return []
+        raise NotImplementedError
