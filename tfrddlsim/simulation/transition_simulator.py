@@ -41,7 +41,7 @@ class ActionSimulationCell(tf.nn.rnn_cell.RNNCell):
 
     @property
     def output_size(self):
-        return self._compiler.state_size
+        return (1,)
 
     def __call__(self, inputs, state, scope=None):
         action = inputs
@@ -49,8 +49,13 @@ class ActionSimulationCell(tf.nn.rnn_cell.RNNCell):
         transition_scope = self._compiler.transition_scope(state, action)
         _, next_state_fluents = self._compiler.compile_cpfs(transition_scope, self._batch_size)
 
+        next_state_scope = dict(next_state_fluents)
+        transition_scope.update(next_state_scope)
+        reward = self._compiler.compile_reward(transition_scope)
+
         next_state = self._output(next_state_fluents)
-        output = next_state
+        output = (reward.tensor,)
+
         return (output, next_state)
 
     @classmethod

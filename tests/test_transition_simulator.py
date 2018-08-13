@@ -37,15 +37,17 @@ class TestActionSimulationCell(unittest.TestCase):
             NAVIGATION = file.read()
             cls.rddl2 = parser.parse(NAVIGATION)
 
+        cls.batch_size = 10
+
     def setUp(self):
         self.compiler1 = Compiler(self.rddl1, batch_mode=True)
         self.cell1 = ActionSimulationCell(self.compiler1)
-        self.initial_state1 = self.compiler1.compile_initial_state(batch_size=10)
+        self.initial_state1 = self.compiler1.compile_initial_state(batch_size=self.batch_size)
         self.default_action1 = self.compiler1.compile_default_action(batch_size=1)
 
         self.compiler2 = Compiler(self.rddl2, batch_mode=True)
         self.cell2 = ActionSimulationCell(self.compiler2)
-        self.initial_state2 = self.compiler2.compile_initial_state(batch_size=10)
+        self.initial_state2 = self.compiler2.compile_initial_state(batch_size=self.batch_size)
         self.default_action2 = self.compiler2.compile_default_action(batch_size=1)
 
     def test_state_size(self):
@@ -62,8 +64,7 @@ class TestActionSimulationCell(unittest.TestCase):
             self.assertListEqual(list(shape), tensor.shape.as_list()[1:])
 
     def test_next_state(self):
-        (output1, next_state1) = self.cell1(self.initial_state1, self.default_action1)
-        print(next_state1)
+        (_, next_state1) = self.cell1(self.default_action1, self.initial_state1)
         self.assertIsInstance(next_state1, tuple)
         self.assertEqual(len(next_state1), len(self.initial_state1))
         for t1, t2 in zip(self.initial_state1, next_state1):
@@ -71,8 +72,7 @@ class TestActionSimulationCell(unittest.TestCase):
             self.assertEqual(t1.shape, t2.shape)
             self.assertEqual(t1.dtype, t2.dtype)
 
-        (output2, next_state2) = self.cell2(self.initial_state2, self.default_action2)
-        print(next_state2)
+        (_, next_state2) = self.cell2(self.default_action2, self.initial_state2)
         self.assertIsInstance(next_state2, tuple)
         self.assertEqual(len(next_state2), len(self.initial_state2))
         for t1, t2 in zip(self.initial_state2, next_state2):
@@ -80,10 +80,23 @@ class TestActionSimulationCell(unittest.TestCase):
             self.assertEqual(t1.shape, t2.shape)
             self.assertEqual(t1.dtype, t2.dtype)
 
-    @unittest.skip('not implemented until RDDL2TF outputs transition probabilities')
     def test_output_size(self):
-        self.fail()
+        output_size1 = self.cell1.output_size
+        output_size2 = self.cell2.output_size
+        self.assertTupleEqual(output_size1, (1,))
+        self.assertTupleEqual(output_size2, (1,))
 
-    @unittest.skip('not implemented until RDDL2TF outputs transition probabilities')
     def test_output(self):
-        self.fail()
+        (reward1, _) = self.cell1(self.default_action1, self.initial_state1)
+        self.assertIsInstance(reward1, tuple)
+        self.assertEqual(len(reward1), 1)
+        self.assertIsInstance(reward1[0], tf.Tensor)
+        self.assertListEqual(reward1[0].shape.as_list(), [self.batch_size, 1])
+        self.assertEqual(reward1[0].dtype, tf.float32)
+
+        (reward2, _) = self.cell2(self.default_action2, self.initial_state2)
+        self.assertIsInstance(reward2, tuple)
+        self.assertEqual(len(reward2), 1)
+        self.assertIsInstance(reward2[0], tf.Tensor)
+        self.assertListEqual(reward2[0].shape.as_list(), [self.batch_size, 1])
+        self.assertEqual(reward2[0].dtype, tf.float32)
