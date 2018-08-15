@@ -14,8 +14,8 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
-from tfrddlsim.fluentscope import TensorFluentScope
-from tfrddlsim.fluentshape import TensorFluentShape
+from tfrddlsim.rddl2tf.fluentscope import TensorFluentScope
+from tfrddlsim.rddl2tf.fluentshape import TensorFluentShape
 
 import tensorflow as tf
 

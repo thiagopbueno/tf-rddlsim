@@ -1,4 +1,4 @@
-from tfrddlsim.fluentscope import TensorFluentScope
+from tfrddlsim.rddl2tf.fluentscope import TensorFluentScope
 
 import unittest
 

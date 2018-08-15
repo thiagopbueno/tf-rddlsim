@@ -1,9 +1,9 @@
 from pyrddl.rddl import RDDL
 from pyrddl.parser import RDDLParser
 
-from tfrddlsim.compiler import Compiler
+from tfrddlsim.rddl2tf.compiler import Compiler
 from tfrddlsim.policy import DefaultPolicy
-from tfrddlsim.simulator import SimulationCell, Simulator
+from tfrddlsim.simulation.policy_simulator import PolicySimulationCell, PolicySimulator
 
 import numpy as np
 import tensorflow as tf
@@ -11,7 +11,7 @@ import tensorflow as tf
 import unittest
 
 
-class TestSimulationCell(unittest.TestCase):
+class TestPolicySimulationCell(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -30,12 +30,12 @@ class TestSimulationCell(unittest.TestCase):
         self.compiler1 = Compiler(self.rddl1, batch_mode=True)
         self.batch_size1 = 100
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
-        self.cell1 = SimulationCell(self.compiler1, self.policy1, self.batch_size1)
+        self.cell1 = PolicySimulationCell(self.compiler1, self.policy1, self.batch_size1)
 
         self.compiler2 = Compiler(self.rddl2, batch_mode=True)
         self.batch_size2 = 100
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
-        self.cell2 = SimulationCell(self.compiler2, self.policy2, self.batch_size2)
+        self.cell2 = PolicySimulationCell(self.compiler2, self.policy2, self.batch_size2)
 
     def test_state_size(self):
         expected = [((8,),), ((3,), (1,), (1,), (1,))]
@@ -119,7 +119,7 @@ class TestSimulationCell(unittest.TestCase):
                 self.assertListEqual(reward.shape.as_list(), [batch_size, reward_size])
 
 
-class TestSimulator(unittest.TestCase):
+class TestPolicySimulator(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -138,12 +138,12 @@ class TestSimulator(unittest.TestCase):
         self.compiler1 = Compiler(self.rddl1, batch_mode=True)
         self.batch_size1 = 100
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
-        self.simulator1 = Simulator(self.compiler1, self.policy1, self.batch_size1)
+        self.simulator1 = PolicySimulator(self.compiler1, self.policy1, self.batch_size1)
 
         self.compiler2 = Compiler(self.rddl2, batch_mode=True)
         self.batch_size2 = 100
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
-        self.simulator2 = Simulator(self.compiler2, self.policy2, self.batch_size1)
+        self.simulator2 = PolicySimulator(self.compiler2, self.policy2, self.batch_size1)
 
     def test_timesteps(self):
         horizon = 40

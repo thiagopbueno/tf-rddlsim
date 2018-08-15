@@ -3,9 +3,9 @@ from pyrddl.parser import RDDLParser
 from pyrddl.expr import Expression
 from pyrddl import utils
 
-from tfrddlsim.compiler import Compiler
-from tfrddlsim.fluent import TensorFluent
-from tfrddlsim.fluentshape import TensorFluentShape
+from tfrddlsim.rddl2tf.compiler import Compiler
+from tfrddlsim.rddl2tf.fluent import TensorFluent
+from tfrddlsim.rddl2tf.fluentshape import TensorFluentShape
 
 import numpy as np
 import tensorflow as tf

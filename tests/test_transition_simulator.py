@@ -15,7 +15,7 @@
 
 from pyrddl.parser import RDDLParser
 
-from tfrddlsim.compiler import Compiler
+from tfrddlsim.rddl2tf.compiler import Compiler
 from tfrddlsim.simulation.transition_simulator import ActionSimulationCell
 
 import tensorflow as tf

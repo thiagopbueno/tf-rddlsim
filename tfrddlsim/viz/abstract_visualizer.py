@@ -17,7 +17,7 @@
 import abc
 import numpy as np
 
-from tfrddlsim.compiler import Compiler
+from tfrddlsim.rddl2tf.compiler import Compiler
 
 from typing import Sequence, Optional, Tuple, Union
 Value = Union[bool, int, float, np.array]

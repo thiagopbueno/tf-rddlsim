@@ -18,7 +18,7 @@ from pyrddl.rddl import RDDL
 from pyrddl.pvariable import PVariable
 from pyrddl.expr import Expression
 
-from tfrddlsim.fluent import TensorFluent
+from tfrddlsim.rddl2tf.fluent import TensorFluent
 
 import itertools
 import numpy as np

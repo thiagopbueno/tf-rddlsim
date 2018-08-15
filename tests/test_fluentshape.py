@@ -1,4 +1,4 @@
-from tfrddlsim.fluentshape import TensorFluentShape
+from tfrddlsim.rddl2tf.fluentshape import TensorFluentShape
 
 import unittest
 

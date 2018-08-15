@@ -14,7 +14,7 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
-from tfrddlsim.compiler import Compiler
+from tfrddlsim.rddl2tf.compiler import Compiler
 from tfrddlsim.policy import Policy
 
 import numpy as np
@@ -44,7 +44,7 @@ TrajectoryOutput = Tuple[StateTensor, StatesTensor, ActionsTensor, IntermsTensor
 SimulationOutput = Tuple[NonFluentsArray, StateArray, StatesArray, ActionsArray, IntermsArray, np.array]
 
 
-class SimulationCell(tf.nn.rnn_cell.RNNCell):
+class PolicySimulationCell(tf.nn.rnn_cell.RNNCell):
     '''SimulationCell implements a 1-step MDP transition cell.
 
     It extends`tf.nn.rnn_cell.RNNCell` for simulating an MDP transition for a given policy.
@@ -142,7 +142,7 @@ class SimulationCell(tf.nn.rnn_cell.RNNCell):
         return tuple(map(tensor2float, tensors))
 
 
-class Simulator(object):
+class PolicySimulator(object):
     '''Simulator class samples MDP trajectories in the computation graph.
 
     It implements the n-step MDP trajectory simulator using dynamic unrolling
@@ -156,7 +156,7 @@ class Simulator(object):
     '''
 
     def __init__(self, compiler: Compiler, policy: Policy, batch_size: int) -> None:
-        self._cell = SimulationCell(compiler, policy, batch_size)
+        self._cell = PolicySimulationCell(compiler, policy, batch_size)
         self._non_fluents = [fluent.tensor for _, fluent in compiler.non_fluents]
 
     @property
@@ -186,14 +186,13 @@ class Simulator(object):
 
     def timesteps(self, horizon: int) -> tf.Tensor:
         '''Returns the input tensor for the given `horizon`.'''
-        with self.graph.as_default():
-            start, limit, delta = horizon - 1, -1, -1
-            timesteps_range = tf.range(start, limit, delta, dtype=tf.float32)
-            timesteps_range = tf.expand_dims(timesteps_range, -1)
-            batch_timesteps = tf.stack([timesteps_range] * self.batch_size)
-            return batch_timesteps
+        start, limit, delta = horizon - 1, -1, -1
+        timesteps_range = tf.range(start, limit, delta, dtype=tf.float32)
+        timesteps_range = tf.expand_dims(timesteps_range, -1)
+        batch_timesteps = tf.stack([timesteps_range] * self.batch_size)
+        return batch_timesteps
 
-    def trajectory(self, horizon: int) -> TrajectoryOutput:
+    def trajectory(self, horizon: int, initial_state=None) -> TrajectoryOutput:
         '''Returns the ops for the trajectory generation with given `horizon`.
 
         The simulation returns states, actions and interms as a
@@ -211,10 +210,11 @@ class Simulator(object):
         Returns:
             Tuple[StateTensor, StatesTensor, ActionsTensor, IntermsTensor, tf.Tensor]: Trajectory output tuple.
         '''
-        initial_state = self._cell.initial_state()
-        inputs = self.timesteps(horizon)
+        if initial_state is None:
+            initial_state = self._cell.initial_state()
 
         with self.graph.as_default():
+            inputs = self.timesteps(horizon)
             outputs, _ = tf.nn.dynamic_rnn(
                                 self._cell,
                                 inputs,

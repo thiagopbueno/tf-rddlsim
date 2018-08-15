@@ -15,7 +15,7 @@
 
 
 from tfrddlsim.viz.abstract_visualizer import Visualizer
-from tfrddlsim.compiler import Compiler
+from tfrddlsim.rddl2tf.compiler import Compiler
 
 import numpy as np
 

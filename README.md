@@ -44,10 +44,10 @@ optional arguments:
 ```python
 from pyrddl.parser import RDDLParser
 
-from tfrddlsim.compiler  import Compiler
-from tfrddlsim.policy    import RandomPolicy
-from tfrddlsim.simulator import Simulator
-from tfrddlsim.viz       import GenericVisualizer
+from tfrddlsim.rddl2tf.compiler import Compiler
+from tfrddlsim.policy import RandomPolicy
+from tfrddlsim.simulation.policy_simulator import PolicySimulator
+from tfrddlsim.viz import GenericVisualizer
 
 # parse RDDL
 parser = RDDLParser()

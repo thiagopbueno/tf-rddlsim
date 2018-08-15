@@ -14,8 +14,8 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 from tfrddlsim.policy.abstract_policy import Policy
-from tfrddlsim.compiler import Compiler
-from tfrddlsim.fluent import TensorFluent
+from tfrddlsim.rddl2tf.compiler import Compiler
+from tfrddlsim.rddl2tf.fluent import TensorFluent
 
 import tensorflow as tf
 
