@@ -92,7 +92,7 @@ class PolicySimulationCell(tf.nn.rnn_cell.RNNCell):
         '''Returns the simulation cell output size.'''
         return (self.state_size, self.action_size, self.interm_size, 1)
 
-    def initial_state(self) -> tf.Tensor:
+    def initial_state(self) -> StateTensor:
         '''Returns the initial state tensor.'''
         return self._compiler.compile_initial_state(self._batch_size)
 
@@ -207,13 +207,17 @@ class PolicySimulator(object):
         batch_timesteps = tf.stack([timesteps_range] * self.batch_size)
         return batch_timesteps
 
-    def trajectory(self, horizon: int, initial_state=None) -> TrajectoryOutput:
-        '''Returns the ops for the trajectory generation with given `horizon`.
+    def trajectory(self,
+            horizon: int,
+            initial_state: Optional[StateTensor] = None) -> TrajectoryOutput:
+        '''Returns the ops for the trajectory generation with given `horizon`
+        and `initial_state`.
 
         The simulation returns states, actions and interms as a
         sequence of tensors (i.e., all representations are factored).
-        The reward is an n-dimensional tensor.
+        The reward is a batch sized tensor.
         The trajectoty output is a tuple: (initial_state, states, actions, interms, rewards).
+        If initial state is None, use default compiler's initial state.
 
         Note:
             All tensors have shape: (batch_size, horizon, fluent_shape).
@@ -221,6 +225,7 @@ class PolicySimulator(object):
 
         Args:
             horizon (int): The number of simulation timesteps.
+            initial_state (Optional[Sequence[tf.Tensor]]): The initial state tensors.
 
         Returns:
             Tuple[StateTensor, StatesTensor, ActionsTensor, IntermsTensor, tf.Tensor]: Trajectory output tuple.
@@ -250,7 +255,9 @@ class PolicySimulator(object):
 
         return outputs
 
-    def run(self, horizon: int = 40) -> SimulationOutput:
+    def run(self,
+            horizon: int = 40,
+            initial_state: Optional[StateTensor] = None) -> SimulationOutput:
         '''Builds the MDP graph and simulates in batch the trajectories
         with given `horizon`. Returns the non-fluents, states, actions, interms
         and rewards. Fluents and non-fluents are returned in factored form.
@@ -261,11 +268,12 @@ class PolicySimulator(object):
 
         Args:
             horizon (int): The number of timesteps in the simulation.
+            initial_state (Optional[Sequence[tf.Tensor]]): The initial state tensors.
 
         Returns:
             Tuple[NonFluentsArray, StatesArray, ActionsArray, IntermsArray, np.array]: Simulation ouput tuple.
         '''
-        trajectory = self.trajectory(horizon)
+        trajectory = self.trajectory(horizon, initial_state)
 
         with tf.Session(graph=self.graph) as sess:
             sess.run(tf.global_variables_initializer())
