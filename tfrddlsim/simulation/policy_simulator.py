@@ -15,15 +15,17 @@
 
 
 from tfrddlsim.rddl2tf.compiler import Compiler
+from tfrddlsim.rddl2tf.fluent import TensorFluent
 from tfrddlsim.policy import Policy
 
 import numpy as np
 import tensorflow as tf
 
 
-from typing import Sequence, Optional, Tuple
+from typing import Iterable, Sequence, Optional, Tuple
 
 Shape = Sequence[int]
+FluentPair = Tuple[str, TensorFluent]
 
 NonFluentsTensor = Sequence[tf.Tensor]
 StateTensor = Sequence[tf.Tensor]
@@ -115,31 +117,44 @@ class PolicySimulationCell(tf.nn.rnn_cell.RNNCell):
         Returns:
             Tuple[CellOutput, CellState]: (output, next_state).
         '''
+        # action
         action = self._policy(state, input)
 
+        # next state
         transition_scope = self._compiler.transition_scope(state, action)
         interm_fluents, next_state_fluents = self._compiler.compile_cpfs(transition_scope, self._batch_size)
+        next_state = tuple(self._tensors(next_state_fluents))
 
-        intermediate_state = tuple(fluent.tensor for _, fluent in interm_fluents)
-        next_state = tuple(fluent.tensor for _, fluent in next_state_fluents)
-
-        next_state_scope = dict(next_state_fluents)
-        transition_scope.update(next_state_scope)
+        # reward
+        transition_scope.update(next_state_fluents)
         reward = self._compiler.compile_reward(transition_scope)
         reward = reward.tensor
 
-        output_next_state = self._output(next_state)
-        output_interm_state = self._output(intermediate_state)
-        output_action = self._output(action)
+        # outputs
+        output_interm_state = self._output(interm_fluents)
+        output_next_state = self._output(next_state_fluents)
+        output_action = tuple(self._dtype(tensor) for tensor in action)
         output = (output_next_state, output_action, output_interm_state, reward)
 
         return (output, next_state)
 
     @classmethod
-    def _output(cls, tensors: Sequence[tf.Tensor]) -> Sequence[tf.Tensor]:
-        '''Converts tensors to datatype tf.float32.'''
-        tensor2float = lambda t: t if t.dtype == tf.float32 else tf.cast(t, tf.float32)
-        return tuple(map(tensor2float, tensors))
+    def _tensors(cls, fluents: Sequence[FluentPair]) -> Iterable[tf.Tensor]:
+        '''Yields the `fluents`' tensors.'''
+        for _, fluent in fluents:
+            yield fluent.tensor
+
+    @classmethod
+    def _dtype(cls, tensor: tf.Tensor) -> tf.Tensor:
+        '''Converts `tensor` to tf.float32 datatype if needed.'''
+        if tensor.dtype != tf.float32:
+            tensor = tf.cast(tensor, tf.float32)
+        return tensor
+
+    @classmethod
+    def _output(cls, fluents: Sequence[FluentPair]) -> Sequence[tf.Tensor]:
+        '''Returns output tensors for `fluents`.'''
+        return tuple(cls._dtype(t) for t in cls._tensors(fluents))
 
 
 class PolicySimulator(object):
@@ -286,9 +301,9 @@ class PolicySimulator(object):
             dtypes: Sequence[tf.DType]) -> Sequence[tf.Tensor]:
         '''Converts `tensors` to the corresponding `dtypes`.'''
         outputs = []
-        for t, dtype in zip(tensors, dtypes):
-            t = t[0]
-            if t.dtype != dtype:
-                t = tf.cast(t, dtype)
-            outputs.append(t)
+        for tensor, dtype in zip(tensors, dtypes):
+            tensor = tensor[0]
+            if tensor.dtype != dtype:
+                tensor = tf.cast(tensor, dtype)
+            outputs.append(tensor)
         return tuple(outputs)
