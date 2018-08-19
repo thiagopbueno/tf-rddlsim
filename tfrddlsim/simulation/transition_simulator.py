@@ -14,7 +14,21 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
+from tfrddlsim.rddl2tf.compiler import Compiler
+from tfrddlsim.rddl2tf.fluent import TensorFluent
+
 import tensorflow as tf
+
+from typing import Optional, Sequence, Tuple
+
+Shape = Sequence[int]
+FluentPair = Tuple[str, TensorFluent]
+
+ActionTensor = Sequence[tf.Tensor]
+StateTensor = Sequence[tf.Tensor]
+
+CellOutput = Tuple[tf.Tensor]
+CellState = Sequence[tf.Tensor]
 
 
 class ActionSimulationCell(tf.nn.rnn_cell.RNNCell):
@@ -25,42 +39,68 @@ class ActionSimulationCell(tf.nn.rnn_cell.RNNCell):
     action fluents and the cell output is the next state fluents.
 
     Note:
-        All fluents are represented in factored form as Tuple[tf.Tensors].
+        All fluents are represented in factored form as Sequence[tf.Tensors].
 
     Args:
         compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler.
+        batch_size (int): The simulation batch size.
     '''
 
-    def __init__(self, compiler, batch_size=1):
+    def __init__(self, compiler: Compiler, batch_size: int = 1) -> None:
         self._compiler = compiler
         self._batch_size = batch_size
 
     @property
-    def state_size(self):
+    def state_size(self) -> Sequence[Shape]:
+        '''Returns the MDP state size.'''
         return self._compiler.state_size
 
     @property
-    def output_size(self):
+    def output_size(self) -> Sequence[int]:
+        '''Returns the simulation cell output size.'''
         return (1,)
 
-    def __call__(self, inputs, state, scope=None):
+    def __call__(self,
+            inputs: ActionTensor,
+            state: StateTensor,
+            scope: Optional[str] = None) -> Tuple[CellOutput, CellState]:
+        '''Returns the transition simulation cell for the given `input` and `state`.
+
+        The cell outputs the reward as an 1-dimensional tensor, and
+        the next state as a tuple of tensors.
+
+        Note:
+            All tensors have shape: (batch_size, fluent_shape).
+
+        Args:
+            input (tf.Tensor): The current action.
+            state (Sequence[tf.Tensor]): The current state.
+            scope (Optional[str]): Operations' scope in computation graph.
+
+        Returns:
+            Tuple[CellOutput, CellState]: (output, next_state).
+        '''
+        # action
         action = inputs
 
+        # next state
         transition_scope = self._compiler.transition_scope(state, action)
         _, next_state_fluents = self._compiler.compile_cpfs(transition_scope, self._batch_size)
 
+        # reward
         next_state_scope = dict(next_state_fluents)
         transition_scope.update(next_state_scope)
         reward = self._compiler.compile_reward(transition_scope)
 
+        # outputs
         next_state = self._output(next_state_fluents)
         output = (reward.tensor,)
 
         return (output, next_state)
 
     @classmethod
-    def _output(cls, fluents):
-        '''Converts fluents to tensors with datatype tf.float32.'''
+    def _output(cls, fluents: Sequence[FluentPair]) -> Sequence[tf.Tensor]:
+        '''Converts `fluents` to tensors with datatype tf.float32.'''
         output = []
         for _, fluent in fluents:
             tensor = fluent.tensor
