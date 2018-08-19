@@ -256,7 +256,7 @@ class PolicySimulator(object):
         return outputs
 
     def run(self,
-            horizon: int = 40,
+            horizon: int,
             initial_state: Optional[StateTensor] = None) -> SimulationOutput:
         '''Builds the MDP graph and simulates in batch the trajectories
         with given `horizon`. Returns the non-fluents, states, actions, interms
