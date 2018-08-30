@@ -26,8 +26,12 @@ FluentPair = Tuple[str, TensorFluent]
 
 ActionTensor = Sequence[tf.Tensor]
 StateTensor = Sequence[tf.Tensor]
+StatesTensor = Sequence[tf.Tensor]
+ActionsTensor = Sequence[tf.Tensor]
+IntermsTensor = Sequence[tf.Tensor]
 
-CellOutput = Tuple[tf.Tensor]
+
+CellOutput = Tuple[StatesTensor, ActionsTensor, IntermsTensor, tf.Tensor]
 CellState = Sequence[tf.Tensor]
 
 
@@ -56,9 +60,19 @@ class ActionSimulationCell(tf.nn.rnn_cell.RNNCell):
         return self._compiler.state_size
 
     @property
-    def output_size(self) -> Sequence[int]:
+    def action_size(self) -> Sequence[Shape]:
+        '''Returns the MDP action size.'''
+        return self._compiler.action_size
+
+    @property
+    def interm_size(self) -> Sequence[Shape]:
+        '''Returns the MDP intermediate state size.'''
+        return self._compiler.interm_size
+
+    @property
+    def output_size(self) -> Tuple[Sequence[Shape], Sequence[Shape], Sequence[Shape], int]:
         '''Returns the simulation cell output size.'''
-        return (1,)
+        return (self.state_size, self.action_size, self.interm_size, 1)
 
     def __call__(self,
             inputs: ActionTensor,
@@ -85,7 +99,7 @@ class ActionSimulationCell(tf.nn.rnn_cell.RNNCell):
 
         # next state
         transition_scope = self._compiler.transition_scope(state, action)
-        _, next_state_fluents = self._compiler.compile_cpfs(transition_scope, self._batch_size)
+        interm_fluents, next_state_fluents = self._compiler.compile_cpfs(transition_scope, self._batch_size)
 
         # reward
         next_state_scope = dict(next_state_fluents)
@@ -93,8 +107,9 @@ class ActionSimulationCell(tf.nn.rnn_cell.RNNCell):
         reward = self._compiler.compile_reward(transition_scope)
 
         # outputs
+        interm_state = self._output(interm_fluents)
         next_state = self._output(next_state_fluents)
-        output = (reward.tensor,)
+        output = (next_state, action, interm_state, reward.tensor)
 
         return (output, next_state)
 

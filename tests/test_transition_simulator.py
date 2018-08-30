@@ -63,40 +63,67 @@ class TestActionSimulationCell(unittest.TestCase):
         for shape, tensor in zip(state_size2, self.initial_state2):
             self.assertListEqual(list(shape), tensor.shape.as_list()[1:])
 
-    def test_next_state(self):
-        (_, next_state1) = self.cell1(self.default_action1, self.initial_state1)
-        self.assertIsInstance(next_state1, tuple)
-        self.assertEqual(len(next_state1), len(self.initial_state1))
-        for t1, t2 in zip(self.initial_state1, next_state1):
-            self.assertIsInstance(t2, tf.Tensor)
-            self.assertEqual(t1.shape, t2.shape)
-            self.assertEqual(t1.dtype, t2.dtype)
-
-        (_, next_state2) = self.cell2(self.default_action2, self.initial_state2)
-        self.assertIsInstance(next_state2, tuple)
-        self.assertEqual(len(next_state2), len(self.initial_state2))
-        for t1, t2 in zip(self.initial_state2, next_state2):
-            self.assertIsInstance(t2, tf.Tensor)
-            self.assertEqual(t1.shape, t2.shape)
-            self.assertEqual(t1.dtype, t2.dtype)
+    def test_interm_size(self):
+        expected = [((8,), (8,), (8,), (8,)), ((2,), (2,))]
+        cells = [self.cell1, self.cell2]
+        for cell, sz in zip(cells, expected):
+            interm_size = cell.interm_size
+            self.assertIsInstance(interm_size, tuple)
+            self.assertTupleEqual(interm_size, sz)
 
     def test_output_size(self):
-        output_size1 = self.cell1.output_size
-        output_size2 = self.cell2.output_size
-        self.assertTupleEqual(output_size1, (1,))
-        self.assertTupleEqual(output_size2, (1,))
+        cells = [self.cell1, self.cell2]
+        for cell in cells:
+            output_size = cell.output_size
+            state_size = cell.state_size
+            interm_size = cell.interm_size
+            action_size = cell.action_size
+            self.assertEqual(output_size, (state_size, action_size, interm_size, 1))
+
+    def test_next_state(self):
+        cells = [self.cell1, self.cell2]
+        actions = [self.default_action1, self.default_action2]
+        states = [self.initial_state1, self.initial_state2]
+        for cell, inputs, state in zip(cells, actions, states):
+
+            output, next_state = cell(inputs, state)
+            self.assertIsInstance(output, tuple)
+            self.assertEqual(len(output), 4)
+
+            next_state, action, interm, reward = output
+            state_size, action_size, interm_size, reward_size = cell.output_size
+
+            # interm_state
+            # TO DO
+
+            # next_state
+            self.assertIsInstance(next_state, tuple)
+            self.assertEqual(len(next_state), len(state_size))
+            for s, sz in zip(next_state, state_size):
+                self.assertIsInstance(s, tf.Tensor)
+                self.assertListEqual(s.shape.as_list(), [self.batch_size] + list(sz))
+
+            # action
+            self.assertIsInstance(action, tuple)
+            self.assertEqual(len(action), len(action_size))
+            for a, sz in zip(action, action_size):
+                self.assertIsInstance(a, tf.Tensor)
+                self.assertListEqual(a.shape.as_list(), [1] + list(sz))
+
+            # reward
+            self.assertIsInstance(reward, tf.Tensor)
+            self.assertListEqual(reward.shape.as_list(), [self.batch_size, reward_size])
+
 
     def test_output(self):
-        (reward1, _) = self.cell1(self.default_action1, self.initial_state1)
-        self.assertIsInstance(reward1, tuple)
-        self.assertEqual(len(reward1), 1)
-        self.assertIsInstance(reward1[0], tf.Tensor)
-        self.assertListEqual(reward1[0].shape.as_list(), [self.batch_size, 1])
-        self.assertEqual(reward1[0].dtype, tf.float32)
+        (output1, next_state1) = self.cell1(self.default_action1, self.initial_state1)
+        next_state1, action1, interm_state1, reward1 = output1
+        self.assertIsInstance(reward1, tf.Tensor)
+        self.assertListEqual(reward1.shape.as_list(), [self.batch_size, 1])
+        self.assertEqual(reward1.dtype, tf.float32)
 
-        (reward2, _) = self.cell2(self.default_action2, self.initial_state2)
-        self.assertIsInstance(reward2, tuple)
-        self.assertEqual(len(reward2), 1)
-        self.assertIsInstance(reward2[0], tf.Tensor)
-        self.assertListEqual(reward2[0].shape.as_list(), [self.batch_size, 1])
-        self.assertEqual(reward2[0].dtype, tf.float32)
+        (output2, next_state2) = self.cell2(self.default_action2, self.initial_state2)
+        next_state2, action2, interm_state2, reward2 = output2
+        self.assertIsInstance(reward2, tf.Tensor)
+        self.assertListEqual(reward2.shape.as_list(), [self.batch_size, 1])
+        self.assertEqual(reward2.dtype, tf.float32)

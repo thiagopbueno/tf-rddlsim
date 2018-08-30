@@ -99,6 +99,7 @@ class TestPolicySimulationCell(unittest.TestCase):
                 state_size, action_size, interm_size, reward_size = cell.output_size
 
                 # interm_state
+                # TO DO
 
                 # next_state
                 self.assertIsInstance(next_state, tuple)
