@@ -130,9 +130,7 @@ class TensorFluent(object):
         '''
         if low.scope != high.scope:
             raise ValueError('Uniform distribution: parameters must have same scope!')
-        low = low.tensor
-        high = high.tensor
-        dist = tf.distributions.Uniform(low, high)
+        dist = tf.distributions.Uniform(low.tensor, high.tensor)
         batch = low.batch or high.batch
         if not batch and batch_size is not None:
             t = dist.sample(batch_size)
