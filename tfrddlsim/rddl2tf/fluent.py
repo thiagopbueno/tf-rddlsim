@@ -330,7 +330,7 @@ class TensorFluent(object):
         return cls._binary_op(x, y, tf.pow, tf.float32)
 
     @classmethod
-    def maximum(cls, x: 'TensorFluent', y: 'TensorFluent') -> 'TensorFluent':
+    def max(cls, x: 'TensorFluent', y: 'TensorFluent') -> 'TensorFluent':
         '''Returns a TensorFluent for the maximum function.TensorFluent
 
         Args:
@@ -343,7 +343,7 @@ class TensorFluent(object):
         return cls._binary_op(x, y, tf.maximum, tf.float32)
 
     @classmethod
-    def minimum(cls, x: 'TensorFluent', y: 'TensorFluent') -> 'TensorFluent':
+    def min(cls, x: 'TensorFluent', y: 'TensorFluent') -> 'TensorFluent':
         '''Returns a TensorFluent for the minimum function.
 
         Args:
@@ -548,6 +548,39 @@ class TensorFluent(object):
             A TensorFluent wrapping the sum aggregation function.
         '''
         return self._aggregation_op(tf.reduce_sum, self, vars_list)
+
+    def avg(self, vars_list: List[str]) -> 'TensorFluent':
+        '''Returns the TensorFluent for the avg aggregation function.
+
+        Args:
+            vars_list: The list of variables to be aggregated over.
+
+        Returns:
+            A TensorFluent wrapping the avg aggregation function.
+        '''
+        return self._aggregation_op(tf.reduce_mean, self, vars_list)
+
+    def maximum(self, vars_list: List[str]) -> 'TensorFluent':
+        '''Returns the TensorFluent for the maximum aggregation function.
+
+        Args:
+            vars_list: The list of variables to be aggregated over.
+
+        Returns:
+            A TensorFluent wrapping the maximum aggregation function.
+        '''
+        return self._aggregation_op(tf.reduce_max, self, vars_list)
+
+    def minimum(self, vars_list: List[str]) -> 'TensorFluent':
+        '''Returns the TensorFluent for the minimum aggregation function.
+
+        Args:
+            vars_list: The list of variables to be aggregated over.
+
+        Returns:
+            A TensorFluent wrapping the minimum aggregation function.
+        '''
+        return self._aggregation_op(tf.reduce_min, self, vars_list)
 
     def prod(self, vars_list: List[str]) -> 'TensorFluent':
         '''Returns the TensorFluent for the prod aggregation function.

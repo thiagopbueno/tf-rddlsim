@@ -956,11 +956,11 @@ class Compiler(object):
                 elif etype[1] == 'max':
                     x = self._compile_expression(args[0], scope)
                     y = self._compile_expression(args[1], scope)
-                    return TensorFluent.maximum(x, y)
+                    return TensorFluent.max(x, y)
                 elif etype[1] == 'min':
                     x = self._compile_expression(args[0], scope)
                     y = self._compile_expression(args[1], scope)
-                    return TensorFluent.minimum(x, y)
+                    return TensorFluent.min(x, y)
             elif etype[0] == 'control':
                 if etype[1] == 'if':
                     condition = self._compile_expression(args[0], scope)
@@ -978,6 +978,10 @@ class Compiler(object):
                     return x.sum(vars_list=vars_list)
                 elif etype[1] == 'prod':
                     return x.prod(vars_list=vars_list)
+                elif etype[1] == 'avg':
+                    return x.avg(vars_list=vars_list)
+                elif etype[1] == 'maximum':
+                    return x.maximum(vars_list=vars_list)
                 elif etype[1] == 'exists':
                     return x.exists(vars_list=vars_list)
                 elif etype[1] == 'forall':
