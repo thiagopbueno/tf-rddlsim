@@ -1,5 +1,6 @@
 import rddlgym
 
+from tfrddlsim.rddl2tf.compiler import Compiler
 from tfrddlsim.policy import DefaultPolicy
 from tfrddlsim.simulation.policy_simulator import PolicySimulationCell, PolicySimulator
 
@@ -12,14 +13,15 @@ import unittest
 class TestPolicySimulationCell(unittest.TestCase):
 
     def setUp(self):
-        self.compiler1 = rddlgym.make('Reservoir-8', mode=rddlgym.SCG)
-        self.compiler1.batch_mode_on()
+        self.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
+        self.rddl2 = rddlgym.make('Mars_Rover', mode=rddlgym.AST)
+        self.compiler1 = Compiler(self.rddl1, batch_mode=True)
+        self.compiler2 = Compiler(self.rddl2, batch_mode=True)
+
         self.batch_size1 = 100
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
         self.cell1 = PolicySimulationCell(self.compiler1, self.policy1, self.batch_size1)
 
-        self.compiler2 = rddlgym.make('Mars_Rover', mode=rddlgym.SCG)
-        self.compiler2.batch_mode_on()
         self.batch_size2 = 100
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
         self.cell2 = PolicySimulationCell(self.compiler2, self.policy2, self.batch_size2)
@@ -110,14 +112,15 @@ class TestPolicySimulationCell(unittest.TestCase):
 class TestPolicySimulator(unittest.TestCase):
 
     def setUp(self):
-        self.compiler1 = rddlgym.make('Reservoir-8', mode=rddlgym.SCG)
-        self.compiler1.batch_mode_on()
+        self.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
+        self.rddl2 = rddlgym.make('Mars_Rover', mode=rddlgym.AST)
+        self.compiler1 = Compiler(self.rddl1, batch_mode=True)
+        self.compiler2 = Compiler(self.rddl2, batch_mode=True)
+
         self.batch_size1 = 100
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
         self.simulator1 = PolicySimulator(self.compiler1, self.policy1, self.batch_size1)
 
-        self.compiler2 = rddlgym.make('Mars_Rover', mode=rddlgym.SCG)
-        self.compiler2.batch_mode_on()
         self.batch_size2 = 100
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
         self.simulator2 = PolicySimulator(self.compiler2, self.policy2, self.batch_size1)

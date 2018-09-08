@@ -3,6 +3,7 @@ import rddlgym
 from pyrddl.expr import Expression
 from pyrddl import utils
 
+from tfrddlsim.rddl2tf.compiler import Compiler
 from tfrddlsim.rddl2tf.fluent import TensorFluent
 from tfrddlsim.rddl2tf.fluentshape import TensorFluentShape
 
@@ -17,8 +18,8 @@ class TestCompiler(unittest.TestCase):
     def setUp(self):
         self.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
         self.rddl2 = rddlgym.make('Mars_Rover', mode=rddlgym.AST)
-        self.compiler1 = rddlgym.make('Reservoir-8', mode=rddlgym.SCG)
-        self.compiler2 = rddlgym.make('Mars_Rover', mode=rddlgym.SCG)
+        self.compiler1 = Compiler(self.rddl1)
+        self.compiler2 = Compiler(self.rddl2)
 
     def test_build_object_table(self):
         self.assertIn('res', self.compiler1.object_table)

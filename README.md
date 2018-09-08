@@ -13,7 +13,7 @@ $ pip3 install tfrddlsim
 tf-rddlsim can be used as a standalone script or programmatically.
 
 
-### Script mode
+## Script mode
 
 ```text
 $ usage: tfrddlsim [-h] (--file FILE | --rddl RDDL) [--policy {default,random}]
@@ -38,7 +38,7 @@ optional arguments:
 ```
 
 
-### Programmatic mode
+## Programmatic mode
 
 ```python
 import rddlgym
@@ -62,6 +62,8 @@ trajectories = simulator.run(horizon)
 viz = GenericVisualizer(rddl2tf, verbose=True)
 viz.render(trajectories)
 ```
+
+# Compiler
 
 ## Parameterized Variables (pvariables)
 

@@ -15,6 +15,7 @@
 
 import rddlgym
 
+from tfrddlsim.rddl2tf.compiler import Compiler
 from tfrddlsim.simulation.transition_simulator import ActionSimulationCell
 
 import tensorflow as tf
@@ -26,14 +27,15 @@ class TestActionSimulationCell(unittest.TestCase):
     def setUp(self):
         self.batch_size = 10
 
-        self.compiler1 = rddlgym.make('Reservoir-8', mode=rddlgym.SCG)
-        self.compiler1.batch_mode_on()
+        self.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
+        self.rddl2 = rddlgym.make('Navigation-2', mode=rddlgym.AST)
+        self.compiler1 = Compiler(self.rddl1, batch_mode=True)
+        self.compiler2 = Compiler(self.rddl2, batch_mode=True)
+
         self.cell1 = ActionSimulationCell(self.compiler1)
         self.initial_state1 = self.compiler1.compile_initial_state(batch_size=self.batch_size)
         self.default_action1 = self.compiler1.compile_default_action(batch_size=1)
 
-        self.compiler2 = rddlgym.make('Navigation-2', mode=rddlgym.SCG)
-        self.compiler2.batch_mode_on()
         self.cell2 = ActionSimulationCell(self.compiler2)
         self.initial_state2 = self.compiler2.compile_initial_state(batch_size=self.batch_size)
         self.default_action2 = self.compiler2.compile_default_action(batch_size=1)

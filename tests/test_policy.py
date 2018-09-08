@@ -1,5 +1,6 @@
 import rddlgym
 
+from tfrddlsim.rddl2tf.compiler import Compiler
 from tfrddlsim.policy import DefaultPolicy, RandomPolicy
 
 import numpy as np
@@ -12,8 +13,10 @@ class TestDefaultPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.compiler1 = rddlgym.make('Reservoir-8', mode=rddlgym.SCG)
-        cls.compiler2 = rddlgym.make('Mars_Rover', mode=rddlgym.SCG)
+        cls.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
+        cls.rddl2 = rddlgym.make('Mars_Rover', mode=rddlgym.AST)
+        cls.compiler1 = Compiler(cls.rddl1)
+        cls.compiler2 = Compiler(cls.rddl2)
 
     def test_default_policy(self):
         for compiler in [self.compiler1, self.compiler2]:
@@ -43,10 +46,10 @@ class TestRandomPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.compiler1 = rddlgym.make('Reservoir-8', mode=rddlgym.SCG)
-        cls.compiler1.batch_mode_on()
-        cls.compiler2 = rddlgym.make('Mars_Rover', mode=rddlgym.SCG)
-        cls.compiler2.batch_mode_on()
+        cls.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
+        cls.rddl2 = rddlgym.make('Mars_Rover', mode=rddlgym.AST)
+        cls.compiler1 = Compiler(cls.rddl1, batch_mode=True)
+        cls.compiler2 = Compiler(cls.rddl2, batch_mode=True)
 
     def test_random_policy(self):
         batch_size = 1000

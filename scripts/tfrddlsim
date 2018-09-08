@@ -21,8 +21,8 @@ import numpy as np
 import time
 
 import rddlgym
-import rddlgym.utils
 
+from tfrddlsim.rddl2tf.compiler import Compiler
 from tfrddlsim.simulation.policy_simulator import PolicySimulator
 import tfrddlsim.viz
 import tfrddlsim.policy
@@ -135,10 +135,10 @@ if __name__ == '__main__':
     print_simulation_parameters(args)
 
     if args.file:
-        rddl2tf = rddlgym.utils.compile_model(args.file)
+        rddl = rddlgym.utils.parse_model(args.file)
     elif args.rddl:
-        rddl2tf = rddlgym.make(args.rddl, mode=rddlgym.SCG)
-    rddl2tf.batch_mode_on()
+        rddl = rddlgym.make(args.rddl, mode=rddlgym.AST)
+    rddl2tf = Compiler(rddl, batch_mode=True)
 
     policy = get_policy(rddl2tf, args.policy, args.batch_size)
 

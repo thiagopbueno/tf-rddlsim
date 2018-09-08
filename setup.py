@@ -23,7 +23,6 @@ setup(
     packages=find_packages(),
     scripts=['scripts/tfrddlsim'],
     install_requires=[
-        'pyrddl',
         'matplotlib',
         'numpy',
         'rddlgym',
