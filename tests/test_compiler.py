@@ -1,9 +1,8 @@
-from pyrddl.rddl import RDDL
-from pyrddl.parser import RDDLParser
+import rddlgym
+
 from pyrddl.expr import Expression
 from pyrddl import utils
 
-from tfrddlsim.rddl2tf.compiler import Compiler
 from tfrddlsim.rddl2tf.fluent import TensorFluent
 from tfrddlsim.rddl2tf.fluentshape import TensorFluentShape
 
@@ -15,25 +14,11 @@ import unittest
 
 class TestCompiler(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        with open('rddl/Reservoir.rddl', mode='r') as file:
-            RESERVOIR = file.read()
-
-        with open('rddl/Mars_Rover.rddl', mode='r') as file:
-            MARS_ROVER = file.read()
-
-        parser = RDDLParser()
-        parser.build()
-
-        cls.rddl1 = parser.parse(RESERVOIR)
-        cls.rddl2 = parser.parse(MARS_ROVER)
-
     def setUp(self):
-        self.compiler1 = Compiler(self.rddl1)
-        self.assertIs(self.compiler1.rddl, self.rddl1)
-        self.compiler2 = Compiler(self.rddl2)
-        self.assertIs(self.compiler2.rddl, self.rddl2)
+        self.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
+        self.rddl2 = rddlgym.make('Mars_Rover', mode=rddlgym.AST)
+        self.compiler1 = rddlgym.make('Reservoir-8', mode=rddlgym.SCG)
+        self.compiler2 = rddlgym.make('Mars_Rover', mode=rddlgym.SCG)
 
     def test_build_object_table(self):
         self.assertIn('res', self.compiler1.object_table)

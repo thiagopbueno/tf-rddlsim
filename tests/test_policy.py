@@ -1,7 +1,5 @@
-from pyrddl.rddl import RDDL
-from pyrddl.parser import RDDLParser
+import rddlgym
 
-from tfrddlsim.rddl2tf.compiler import Compiler
 from tfrddlsim.policy import DefaultPolicy, RandomPolicy
 
 import numpy as np
@@ -14,18 +12,8 @@ class TestDefaultPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        parser = RDDLParser()
-        parser.build()
-
-        with open('rddl/Reservoir.rddl', mode='r') as file:
-            RESERVOIR = file.read()
-            cls.rddl1 = parser.parse(RESERVOIR)
-            cls.compiler1 = Compiler(cls.rddl1)
-
-        with open('rddl/Mars_Rover.rddl', mode='r') as file:
-            MARS_ROVER = file.read()
-            cls.rddl2 = parser.parse(MARS_ROVER)
-            cls.compiler2 = Compiler(cls.rddl2)
+        cls.compiler1 = rddlgym.make('Reservoir-8', mode=rddlgym.SCG)
+        cls.compiler2 = rddlgym.make('Mars_Rover', mode=rddlgym.SCG)
 
     def test_default_policy(self):
         for compiler in [self.compiler1, self.compiler2]:
@@ -55,18 +43,10 @@ class TestRandomPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        parser = RDDLParser()
-        parser.build()
-
-        with open('rddl/Reservoir.rddl', mode='r') as file:
-            RESERVOIR = file.read()
-            cls.rddl1 = parser.parse(RESERVOIR)
-            cls.compiler1 = Compiler(cls.rddl1, batch_mode=True)
-
-        with open('rddl/Mars_Rover.rddl', mode='r') as file:
-            MARS_ROVER = file.read()
-            cls.rddl2 = parser.parse(MARS_ROVER)
-            cls.compiler2 = Compiler(cls.rddl2, batch_mode=True)
+        cls.compiler1 = rddlgym.make('Reservoir-8', mode=rddlgym.SCG)
+        cls.compiler1.batch_mode_on()
+        cls.compiler2 = rddlgym.make('Mars_Rover', mode=rddlgym.SCG)
+        cls.compiler2.batch_mode_on()
 
     def test_random_policy(self):
         batch_size = 1000
