@@ -16,21 +16,20 @@ tf-rddlsim can be used as a standalone script or programmatically.
 ### Script mode
 
 ```text
-$ tfrddlsim main.py --help
-
-usage: main.py [-h] [--policy {random,default}] [-hr HORIZON] [-b BATCH_SIZE]
-               [-v]
-               rddl
+$ usage: tfrddlsim [-h] (--file FILE | --rddl RDDL) [--policy {default,random}]
+                 [--viz {generic,navigation}] [-hr HORIZON] [-b BATCH_SIZE]
+                 [-v]
 
 RDDL2TensorFlow compiler and simulator
 
-positional arguments:
-  rddl                  RDDL filepath
-
 optional arguments:
   -h, --help            show this help message and exit
-  --policy {random,default}
+  --file FILE           RDDL filepath
+  --rddl RDDL           RDDL domain id
+  --policy {default,random}
                         type of policy (default=random)
+  --viz {generic,navigation}
+                        type of visualizer (default=generic)
   -hr HORIZON, --horizon HORIZON
                         number of timesteps of each trajectory (default=40)
   -b BATCH_SIZE, --batch_size BATCH_SIZE
@@ -42,20 +41,15 @@ optional arguments:
 ### Programmatic mode
 
 ```python
-from pyrddl.parser import RDDLParser
+import rddlgym
 
-from tfrddlsim.rddl2tf.compiler import Compiler
 from tfrddlsim.policy import RandomPolicy
 from tfrddlsim.simulation.policy_simulator import PolicySimulator
 from tfrddlsim.viz import GenericVisualizer
 
-# parse RDDL
-parser = RDDLParser()
-parser.build()
-rddl = parser.parse(rddl_file)
-
-# compile RDDL to TensorFlow computation graph
-rddl2tf = Compiler(rddl, batch_mode=True)
+# parse and compile RDDL
+rddl2tf = rddlgym.make('Reservoir-8')
+rddl2tf.batch_mode_on()
 
 # run simulations
 horizon = 40
@@ -68,16 +62,6 @@ trajectories = simulator.run(horizon)
 viz = GenericVisualizer(rddl2tf, verbose=True)
 viz.render(trajectories)
 ```
-
-# Parser
-
-The RDDLParser is automatically built from the RDDL BNF grammar by the PLY (Python Lex-Yacc) package. The parser outputs an Abstract Syntax Tree (AST) given a valid RDDL file as input. Note that not all RDDL2 features are currently being parsed (e.g., matrix and vector operations).
-
-
-# Compiler
-
-The RDDL2TensorFlow compiler translates an AST representing a RDDL file into a computation graph in TensorFlow.
-
 
 ## Parameterized Variables (pvariables)
 

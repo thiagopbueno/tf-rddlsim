@@ -26,6 +26,7 @@ setup(
         'pyrddl',
         'matplotlib',
         'numpy',
+        'rddlgym',
         'tensorflow',
         'tensorflow-tensorboard',
         'typing'
