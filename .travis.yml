@@ -2,6 +2,6 @@ language: python
 python:
   - "3.6"
 install:
-  - pip3 install tfrddlsim
+  - pip install -r requirements.txt
 script:
   - python3 -m unittest -v tests/*.py
