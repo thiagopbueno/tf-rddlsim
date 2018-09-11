@@ -41,6 +41,7 @@ setup(
         'matplotlib',
         'numpy',
         'rddlgym',
+        'rddl2tf',
         'tensorflow',
         'tensorflow-tensorboard',
         'typing'
