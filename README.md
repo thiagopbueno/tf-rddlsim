@@ -63,27 +63,6 @@ viz = GenericVisualizer(rddl2tf, verbose=True)
 viz.render(trajectories)
 ```
 
-# Compiler
-
-## Parameterized Variables (pvariables)
-
-Each RDDL fluent is compiled to a ``tfrddlsim.TensorFluent`` after instantiation.
-
-A ``tfrddlsim.TensorFluent`` object wraps a ``tf.Tensor`` object. The arity and the number of objects corresponding to the type of each parameter of a fluent are reflected in a ``tfrddlsim.TensorFluentShape`` object (the rank of a ``tfrddlsim.TensorFluent`` corresponds to the fluent arity and the size of its dimensions corresponds to the number of objects of each type). Also, a ``tfrddlsim.TensorFluentShape`` manages batch sizes when evaluating operations in batch mode.
-
-Additionally, a ``tfrddlsim.TensorFluent``keeps information about the ordering of the fluent parameters in a ``tfrddlsim.TensorScope`` object.
-
-The ``tfrddlsim.TensorFluent`` abstraction is necessary in the evaluation of RDDL expressions due the broadcasting rules of operations in TensorFlow.
-
-
-## Conditional Probability Functions (CPFs)
-
-Each CPF expression is compiled into an operation in a ``tf.Graph``, possibly composed of many other operations. Typical RDDL operations, functions, and probability distributions are mapped to equivalent TensorFlow ops. These operations are added to a ``tf.Graph`` by recursively compiling the expressions in a CPF into wrapped operations and functions implemented at the ``tfrddlsim.TensorFluent`` level.
-
-Note that the RDDL2TensorFlow compiler currently only supports element-wise operations (e.g. ``a(?x, ?y) = b(?x) * c(?y)`` is not allowed). However, all compiled operations are vectorized, i.e., computations are done simultaneously for all object instantiations of a pvariable.
-
-Optionally, during simulation operations can be evaluated in batch mode. In this case, state-action trajectories are generated in parallel by the ``tfrddlsim.Simulator``.
-
 
 # Simulator
 
