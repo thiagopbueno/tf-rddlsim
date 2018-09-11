@@ -14,8 +14,8 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
-from tfrddlsim.rddl2tf.compiler import Compiler
-from tfrddlsim.rddl2tf.fluent import TensorFluent
+from rddl2tf.compiler import Compiler
+from rddl2tf.fluent import TensorFluent
 from tfrddlsim.policy import Policy
 
 import numpy as np
@@ -57,7 +57,7 @@ class PolicySimulationCell(tf.nn.rnn_cell.RNNCell):
         All fluents are represented in factored form as Tuple[tf.Tensors].
 
     Args:
-        compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler.
+        compiler (:obj:`rddl2tf.compiler.Compiler`): RDDL2TensorFlow compiler.
         policy (:obj:`tfrddlsim.policy.Policy`): MDP Policy.
         batch_size (int): The size of the simulation batch.
     '''
@@ -165,7 +165,7 @@ class PolicySimulator(object):
     of timesteps in the horizon.
 
     Args:
-        compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler.
+        compiler (:obj:`rddl2tf.compiler.Compiler`): RDDL2TensorFlow compiler.
         policy (:obj:`tfrddlsim.policy.Policy`): MDP Policy.
         batch_size (int): The size of the simulation batch.
     '''

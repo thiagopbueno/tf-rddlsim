@@ -15,7 +15,7 @@
 
 
 from tfrddlsim.viz.abstract_visualizer import Visualizer
-from tfrddlsim.rddl2tf.compiler import Compiler
+from rddl2tf.compiler import Compiler
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -34,7 +34,7 @@ class NavigationVisualizer(Visualizer):
     the deceleration zones.
 
     Args:
-        compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler
+        compiler (:obj:`rddl2tf.compiler.Compiler`): RDDL2TensorFlow compiler
         verbose (bool): Verbosity flag
     '''
 

@@ -15,7 +15,8 @@
 
 import rddlgym
 
-from tfrddlsim.rddl2tf.compiler import Compiler
+from rddl2tf.compiler import Compiler
+
 from tfrddlsim.simulation.transition_simulator import ActionSimulationCell
 
 import tensorflow as tf

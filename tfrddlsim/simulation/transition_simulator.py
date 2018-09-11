@@ -14,8 +14,8 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
-from tfrddlsim.rddl2tf.compiler import Compiler
-from tfrddlsim.rddl2tf.fluent import TensorFluent
+from rddl2tf.compiler import Compiler
+from rddl2tf.fluent import TensorFluent
 
 import tensorflow as tf
 
@@ -46,7 +46,7 @@ class ActionSimulationCell(tf.nn.rnn_cell.RNNCell):
         All fluents are represented in factored form as Sequence[tf.Tensors].
 
     Args:
-        compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler.
+        compiler (:obj:`rddl2tf.compiler.Compiler`): RDDL2TensorFlow compiler.
         batch_size (int): The simulation batch size.
     '''
 

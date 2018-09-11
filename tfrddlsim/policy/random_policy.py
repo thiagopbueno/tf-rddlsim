@@ -14,8 +14,8 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 from tfrddlsim.policy.abstract_policy import Policy
-from tfrddlsim.rddl2tf.compiler import Compiler
-from tfrddlsim.rddl2tf.fluent import TensorFluent
+from rddl2tf.compiler import Compiler
+from rddl2tf.fluent import TensorFluent
 
 import tensorflow as tf
 
@@ -33,11 +33,11 @@ class RandomPolicy(Policy):
     values.
 
     Args:
-        compiler (:obj:`tfrddlsim.compiler.Compiler`): A RDDL2TensorFlow compiler.
+        compiler (:obj:`rddl2tf.compiler.Compiler`): A RDDL2TensorFlow compiler.
         batch_size (int): The batch size.
 
     Attributes:
-        compiler (:obj:`tfrddlsim.compiler.Compiler`): A RDDL2TensorFlow compiler.
+        compiler (:obj:`rddl2tf.compiler.Compiler`): A RDDL2TensorFlow compiler.
         batch_size (int): The batch size.
     '''
 

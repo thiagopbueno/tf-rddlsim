@@ -14,8 +14,8 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
+from rddl2tf.compiler import Compiler
 from tfrddlsim.viz.abstract_visualizer import Visualizer
-from tfrddlsim.rddl2tf.compiler import Compiler
 
 import numpy as np
 
@@ -29,7 +29,7 @@ class GenericVisualizer(Visualizer):
     '''GenericVisualizer is a generic text-based trajectory visualizer.
 
     Args:
-        compiler (:obj:`tfrddlsim.compiler.Compiler`): RDDL2TensorFlow compiler
+        compiler (:obj:`rddl2tf.compiler.Compiler`): RDDL2TensorFlow compiler
         verbose (bool): Verbosity flag
     '''
 

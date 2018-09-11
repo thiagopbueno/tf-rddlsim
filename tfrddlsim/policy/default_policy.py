@@ -14,8 +14,9 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
+from rddl2tf.compiler import Compiler
+
 from tfrddlsim.policy.abstract_policy import Policy
-from tfrddlsim.rddl2tf.compiler import Compiler
 
 import tensorflow as tf
 
@@ -29,7 +30,7 @@ class DefaultPolicy(Policy):
     regardless of the current state and timestep.
 
     Args:
-        compiler (:obj:`tfrddlsim.compiler.Compiler`): A RDDL2TensorFlow compiler.
+        compiler (:obj:`rddl2tf.compiler.Compiler`): A RDDL2TensorFlow compiler.
         batch_size (int): The batch size.
     '''
 
