@@ -184,8 +184,8 @@ class RandomPolicy(Policy):
             else:
                 low, high = bounds
                 batch = (low is not None and low.batch) or (high is not None and high.batch)
-                low = low.tensor if low is not None else -self.MAX_REAL_VALUE
-                high = high.tensor if high is not None else self.MAX_REAL_VALUE
+                low = tf.cast(low.tensor, tf.float32) if low is not None else -self.MAX_REAL_VALUE
+                high = tf.cast(high.tensor, tf.float32) if high is not None else self.MAX_REAL_VALUE
                 dist = tf.distributions.Uniform(low=low, high=high)
                 if batch:
                     sampled_fluent = dist.sample()
