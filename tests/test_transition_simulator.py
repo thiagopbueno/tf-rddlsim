@@ -29,7 +29,7 @@ class TestActionSimulationCell(unittest.TestCase):
         self.batch_size = 10
 
         self.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
-        self.rddl2 = rddlgym.make('Navigation-2', mode=rddlgym.AST)
+        self.rddl2 = rddlgym.make('Navigation-v2', mode=rddlgym.AST)
         self.compiler1 = Compiler(self.rddl1, batch_mode=True)
         self.compiler2 = Compiler(self.rddl2, batch_mode=True)
 
