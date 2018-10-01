@@ -12,21 +12,24 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, '/Users/thiagopbueno/Projects/planning/tensorflow/tf-rddlsim/tfrddlsim')
+import os
+import sys
+sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('..'))
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'tfrddlsim'
-copyright = '2018, Author'
-author = 'Author'
+copyright = '2018, Thiago P. Bueno'
+author = 'Thiago P. Bueno'
 
+
+import tfrddlsim
 # The short X.Y version
-version = ''
+version = tfrddlsim.__version__
 # The full version, including alpha/beta/rc tags
-release = ''
+release = tfrddlsim.__release__
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,7 +44,7 @@ release = ''
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinx.ext.todo',
+    'sphinx.ext.napoleon',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -180,8 +183,5 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
-
-# -- Options for todo extension ----------------------------------------------
-
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
+napoleon_include_private_with_doc = True
+napoleon_include_special_with_doc = True

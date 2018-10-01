@@ -1,4 +1,4 @@
-# tf-rddlsim [![Build Status](https://travis-ci.org/thiagopbueno/tf-rddlsim.svg?branch=master)](https://travis-ci.org/thiagopbueno/tf-rddlsim) [![License](https://img.shields.io/aur/license/yaourt.svg)](https://github.com/thiagopbueno/tf-rddlsim/blob/master/LICENSE)
+# tf-rddlsim [![Build Status](https://travis-ci.org/thiagopbueno/tf-rddlsim.svg?branch=master)](https://travis-ci.org/thiagopbueno/tf-rddlsim) [![Documentation Status](https://readthedocs.org/projects/tf-rddlsim/badge/?version=latest)](https://tf-rddlsim.readthedocs.io/en/latest/?badge=latest) [![License](https://img.shields.io/aur/license/yaourt.svg)](https://github.com/thiagopbueno/tf-rddlsim/blob/master/LICENSE)
 
 RDDL2TensorFlow compiler and trajectory simulator in Python3.
 
@@ -69,6 +69,16 @@ viz.render(trajectories)
 The ``tfrddlsim.Simulator`` implements a stochastic Recurrent Neural Net (RNN) in order to sample state-action trajectories. Each RNN cell encapsulates a ``tfrddlsim.Policy`` module generating actions for current states and comprehends the transition (specified by the CPFs) and reward functions. Sampling is done through dynamic unrolling of the RNN model with the embedded ``tfrddlsim.Policy``.
 
 Note that the ``tfrddlsim`` package only provides a ``tfrddlsim.RandomPolicy`` and a ``tfrddlsim.DefaultPolicy`` (constant policy with all action fluents with default values).
+
+
+# Documentation
+
+Please refer to [https://tf-rddlsim.readthedocs.io/](https://tf-rddlsim.readthedocs.io/en/latest/) for the code documentation.
+
+
+# Support
+
+If you are having issues with ``tf-rddlsim``, please let me know at: [thiago.pbueno@gmail.com](mailto://thiago.pbueno@gmail.com).
 
 
 # License
