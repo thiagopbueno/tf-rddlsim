@@ -234,10 +234,10 @@ class PolicySimulator(object):
             initial_state = self._cell.initial_state()
 
         with self.graph.as_default():
-            inputs = self.timesteps(horizon)
+            self.inputs = self.timesteps(horizon)
             outputs, _ = tf.nn.dynamic_rnn(
                                 self._cell,
-                                inputs,
+                                self.inputs,
                                 initial_state=initial_state,
                                 dtype=tf.float32,
                                 scope="trajectory")
