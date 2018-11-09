@@ -105,13 +105,20 @@ class ActionSimulationCell(tf.nn.rnn_cell.RNNCell):
         next_state_scope = dict(next_state_fluents)
         transition_scope.update(next_state_scope)
         reward = self._compiler.compile_reward(transition_scope)
+        reward = self._output_size(reward.tensor)
 
         # outputs
         interm_state = self._output(interm_fluents)
         next_state = self._output(next_state_fluents)
-        output = (next_state, action, interm_state, reward.tensor)
+        output = (next_state, action, interm_state, reward)
 
         return (output, next_state)
+
+    @classmethod
+    def _output_size(cls, tensor):
+        if tensor.shape.ndims == 1:
+            tensor = tf.expand_dims(tensor, -1)
+        return tensor
 
     @classmethod
     def _output(cls, fluents: Sequence[FluentPair]) -> Sequence[tf.Tensor]:

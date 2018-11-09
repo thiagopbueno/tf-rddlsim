@@ -50,8 +50,6 @@ class TestDefaultPolicy(unittest.TestCase):
                     self.assertEqual(shape[0], batch_size)
                     actual_shape = shape[1:]
                     expected_shape = t.shape.as_list()
-                    if expected_shape == []:
-                        expected_shape = [1]
                     self.assertListEqual(actual_shape, expected_shape)
 
                 state2 = None

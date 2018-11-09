@@ -22,7 +22,7 @@ import numpy as np
 import tensorflow as tf
 
 
-from typing import Iterable, Sequence, Optional, Tuple
+from typing import Iterable, Sequence, Optional, Tuple, Union
 
 Shape = Sequence[int]
 FluentPair = Tuple[str, TensorFluent]
@@ -75,17 +75,17 @@ class PolicySimulationCell(tf.nn.rnn_cell.RNNCell):
     @property
     def state_size(self) -> Sequence[Shape]:
         '''Returns the MDP state size.'''
-        return self._compiler.state_size
+        return self._sizes(self._compiler.state_size)
 
     @property
     def action_size(self) -> Sequence[Shape]:
         '''Returns the MDP action size.'''
-        return self._compiler.action_size
+        return self._sizes(self._compiler.action_size)
 
     @property
     def interm_size(self) -> Sequence[Shape]:
         '''Returns the MDP intermediate state size.'''
-        return self._compiler.interm_size
+        return self._sizes(self._compiler.interm_size)
 
     @property
     def output_size(self) -> Tuple[Sequence[Shape], Sequence[Shape], Sequence[Shape], int]:
@@ -94,7 +94,11 @@ class PolicySimulationCell(tf.nn.rnn_cell.RNNCell):
 
     def initial_state(self) -> StateTensor:
         '''Returns the initial state tensor.'''
-        return self._compiler.compile_initial_state(self._batch_size)
+        s0 = []
+        for fluent in self._compiler.compile_initial_state(self._batch_size):
+            s0.append(self._output_size(fluent))
+        s0 = tuple(s0)
+        return s0
 
     def __call__(self,
             input: tf.Tensor,
@@ -128,21 +132,32 @@ class PolicySimulationCell(tf.nn.rnn_cell.RNNCell):
         # reward
         transition_scope.update(next_state_fluents)
         reward = self._compiler.compile_reward(transition_scope)
-        reward = reward.tensor
+        reward = self._output_size(reward.tensor)
 
         # outputs
         output_interm_state = self._output(interm_fluents)
         output_next_state = self._output(next_state_fluents)
-        output_action = tuple(self._dtype(tensor) for tensor in action)
+        output_action = tuple(self._dtype(self._output_size(tensor)) for tensor in action)
         output = (output_next_state, output_action, output_interm_state, reward)
 
         return (output, next_state)
 
     @classmethod
+    def _sizes(cls, sizes: Sequence[Shape]) -> Sequence[Union[Shape, int]]:
+        return tuple(sz if sz != () else (1,) for sz in sizes)
+
+    @classmethod
+    def _output_size(cls, tensor):
+        if tensor.shape.ndims == 1:
+            tensor = tf.expand_dims(tensor, -1)
+        return tensor
+
+    @classmethod
     def _tensors(cls, fluents: Sequence[FluentPair]) -> Iterable[tf.Tensor]:
         '''Yields the `fluents`' tensors.'''
         for _, fluent in fluents:
-            yield fluent.tensor
+            tensor = cls._output_size(fluent.tensor)
+            yield tensor
 
     @classmethod
     def _dtype(cls, tensor: tf.Tensor) -> tf.Tensor:

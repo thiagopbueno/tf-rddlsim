@@ -32,18 +32,50 @@ class TestPolicySimulationCell(unittest.TestCase):
     def setUp(self):
         self.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
         self.rddl2 = rddlgym.make('Mars_Rover', mode=rddlgym.AST)
+        self.rddl3 = rddlgym.make('HVAC-v1', mode=rddlgym.AST)
+        self.rddl4 = rddlgym.make('CrossingTraffic-10', mode=rddlgym.AST)
+        self.rddl5 = rddlgym.make('GameOfLife-10', mode=rddlgym.AST)
+        self.rddl6 = rddlgym.make('CarParking-v1', mode=rddlgym.AST)
+        self.rddl7 = rddlgym.make('Navigation-v3', mode=rddlgym.AST)
+
         self.compiler1 = Compiler(self.rddl1, batch_mode=True)
         self.compiler2 = Compiler(self.rddl2, batch_mode=True)
+        self.compiler3 = Compiler(self.rddl3, batch_mode=True)
+        self.compiler4 = Compiler(self.rddl4, batch_mode=True)
+        self.compiler5 = Compiler(self.rddl5, batch_mode=True)
+        self.compiler6 = Compiler(self.rddl6, batch_mode=True)
+        self.compiler7 = Compiler(self.rddl7, batch_mode=True)
 
-        self.batch_size1 = 100
+        self.batch_size1 = 32
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
         self.cell1 = PolicySimulationCell(self.compiler1, self.policy1, self.batch_size1)
 
-        self.batch_size2 = 100
+        self.batch_size2 = 32
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
         self.cell2 = PolicySimulationCell(self.compiler2, self.policy2, self.batch_size2)
 
+        self.batch_size3 = 32
+        self.policy3 = DefaultPolicy(self.compiler3, self.batch_size3)
+        self.cell3 = PolicySimulationCell(self.compiler3, self.policy3, self.batch_size3)
+
+        self.batch_size4 = 32
+        self.policy4 = DefaultPolicy(self.compiler4, self.batch_size4)
+        self.cell4 = PolicySimulationCell(self.compiler4, self.policy4, self.batch_size4)
+
+        self.batch_size5 = 32
+        self.policy5 = DefaultPolicy(self.compiler5, self.batch_size5)
+        self.cell5 = PolicySimulationCell(self.compiler5, self.policy5, self.batch_size5)
+
+        self.batch_size6 = 32
+        self.policy6 = DefaultPolicy(self.compiler6, self.batch_size6)
+        self.cell6 = PolicySimulationCell(self.compiler6, self.policy6, self.batch_size6)
+
+        self.batch_size7 = 32
+        self.policy7 = DefaultPolicy(self.compiler7, self.batch_size7)
+        self.cell7 = PolicySimulationCell(self.compiler7, self.policy7, self.batch_size7)
+
     def test_state_size(self):
+        # TODO self.cell3, self.cell4, self.cell5, self.cell6, self.cell7
         expected = [((8,),), ((3,), (1,), (1,), (1,))]
         cells = [self.cell1, self.cell2]
         for cell, sz in zip(cells, expected):
@@ -52,6 +84,7 @@ class TestPolicySimulationCell(unittest.TestCase):
             self.assertTupleEqual(state_size, sz)
 
     def test_interm_size(self):
+        # TODO self.cell3, self.cell4, self.cell5, self.cell6, self.cell7
         expected = [((8,), (8,), (8,), (8,)), ()]
         cells = [self.cell1, self.cell2]
         for cell, sz in zip(cells, expected):
@@ -60,7 +93,7 @@ class TestPolicySimulationCell(unittest.TestCase):
             self.assertTupleEqual(interm_size, sz)
 
     def test_output_size(self):
-        cells = [self.cell1, self.cell2]
+        cells = [self.cell1, self.cell2, self.cell3, self.cell4, self.cell5, self.cell6, self.cell7]
         for cell in cells:
             output_size = cell.output_size
             state_size = cell.state_size
@@ -69,8 +102,8 @@ class TestPolicySimulationCell(unittest.TestCase):
             self.assertEqual(output_size, (state_size, action_size, interm_size, 1))
 
     def test_initial_state(self):
-        cells = [self.cell1, self.cell2]
-        batch_sizes = [self.batch_size1, self.batch_size2]
+        cells = [self.cell1, self.cell2, self.cell3, self.cell4, self.cell5, self.cell6, self.cell7]
+        batch_sizes = [self.batch_size1, self.batch_size2, self.batch_size3, self.batch_size4, self.batch_size5, self.batch_size6, self.batch_size7]
         for cell, batch_size in zip(cells, batch_sizes):
             initial_state = cell.initial_state()
             self.assertIsInstance(initial_state, tuple)
@@ -83,9 +116,10 @@ class TestPolicySimulationCell(unittest.TestCase):
                 self.assertListEqual(t.shape.as_list(), expected_shape)
 
     def test_simulation_step(self):
+        # TODO self.cell4, self.cell5
         horizon = 40
-        cells = [self.cell1, self.cell2]
-        batch_sizes = [self.batch_size1, self.batch_size2]
+        cells = [self.cell1, self.cell2, self.cell3, self.cell6, self.cell7]
+        batch_sizes = [self.batch_size1, self.batch_size2, self.batch_size3, self.batch_size6, self.batch_size7]
         for cell, batch_size in zip(cells, batch_sizes):
             with cell.graph.as_default():
                 # initial_state
@@ -131,21 +165,52 @@ class TestPolicySimulator(unittest.TestCase):
     def setUp(self):
         self.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
         self.rddl2 = rddlgym.make('Mars_Rover', mode=rddlgym.AST)
+        self.rddl3 = rddlgym.make('HVAC-v1', mode=rddlgym.AST)
+        self.rddl4 = rddlgym.make('CrossingTraffic-10', mode=rddlgym.AST)
+        self.rddl5 = rddlgym.make('GameOfLife-10', mode=rddlgym.AST)
+        self.rddl6 = rddlgym.make('CarParking-v1', mode=rddlgym.AST)
+        self.rddl7 = rddlgym.make('Navigation-v3', mode=rddlgym.AST)
+
         self.compiler1 = Compiler(self.rddl1, batch_mode=True)
         self.compiler2 = Compiler(self.rddl2, batch_mode=True)
+        self.compiler3 = Compiler(self.rddl3, batch_mode=True)
+        self.compiler4 = Compiler(self.rddl4, batch_mode=True)
+        self.compiler5 = Compiler(self.rddl5, batch_mode=True)
+        self.compiler6 = Compiler(self.rddl6, batch_mode=True)
+        self.compiler7 = Compiler(self.rddl7, batch_mode=True)
 
-        self.batch_size1 = 100
+        self.batch_size1 = 32
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
         self.simulator1 = PolicySimulator(self.compiler1, self.policy1, self.batch_size1)
 
-        self.batch_size2 = 100
+        self.batch_size2 = 64
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
-        self.simulator2 = PolicySimulator(self.compiler2, self.policy2, self.batch_size1)
+        self.simulator2 = PolicySimulator(self.compiler2, self.policy2, self.batch_size2)
+
+        self.batch_size3 = 64
+        self.policy3 = DefaultPolicy(self.compiler3, self.batch_size3)
+        self.simulator3 = PolicySimulator(self.compiler3, self.policy3, self.batch_size3)
+
+        self.batch_size4 = 64
+        self.policy4 = DefaultPolicy(self.compiler4, self.batch_size4)
+        self.simulator4 = PolicySimulator(self.compiler4, self.policy4, self.batch_size4)
+
+        self.batch_size5 = 64
+        self.policy5 = DefaultPolicy(self.compiler5, self.batch_size5)
+        self.simulator5 = PolicySimulator(self.compiler5, self.policy5, self.batch_size5)
+
+        self.batch_size6 = 64
+        self.policy6 = DefaultPolicy(self.compiler6, self.batch_size6)
+        self.simulator6 = PolicySimulator(self.compiler6, self.policy6, self.batch_size6)
+
+        self.batch_size7 = 64
+        self.policy7 = DefaultPolicy(self.compiler7, self.batch_size7)
+        self.simulator7 = PolicySimulator(self.compiler7, self.policy7, self.batch_size7)
 
     def test_timesteps(self):
         horizon = 40
-        simulators = [self.simulator1, self.simulator2]
-        batch_sizes = [self.batch_size1, self.batch_size2]
+        simulators = [self.simulator1, self.simulator2, self.simulator3, self.simulator4, self.simulator5, self.simulator6, self.simulator7]
+        batch_sizes = [self.batch_size1, self.batch_size2, self.batch_size3, self.batch_size4, self.batch_size5, self.batch_size6, self.batch_size7]
         for simulator, batch_size in zip(simulators, batch_sizes):
             with simulator.graph.as_default():
                 timesteps = simulator.timesteps(horizon)
@@ -157,10 +222,11 @@ class TestPolicySimulator(unittest.TestCase):
                     self.assertListEqual(list(t), list(np.arange(horizon-1, -1, -1)))
 
     def test_trajectory(self):
+        # TODO self.compiler4, self.compiler5
         horizon = 40
-        compilers = [self.compiler1, self.compiler2]
-        simulators = [self.simulator1, self.simulator2]
-        batch_sizes = [self.batch_size1, self.batch_size2]
+        compilers = [self.compiler1, self.compiler2, self.compiler3, self.compiler6, self.compiler7]
+        simulators = [self.simulator1, self.simulator2, self.simulator3, self.simulator6, self.simulator7]
+        batch_sizes = [self.batch_size1, self.batch_size2, self.batch_size3, self.batch_size6, self.batch_size7]
         for compiler, simulator, batch_size in zip(compilers, simulators, batch_sizes):
             # trajectory
             trajectory = simulator.trajectory(horizon)
@@ -206,10 +272,11 @@ class TestPolicySimulator(unittest.TestCase):
             self.assertListEqual(rewards.shape.as_list(), [batch_size, horizon, reward_size])
 
     def test_simulation(self):
+        # TODO self.compiler4, self.compiler5
         horizon = 40
-        compilers = [self.compiler1, self.compiler2]
-        simulators = [self.simulator1, self.simulator2]
-        batch_sizes = [self.batch_size1, self.batch_size2]
+        compilers = [self.compiler1, self.compiler2, self.compiler3, self.compiler6, self.compiler7]
+        simulators = [self.simulator1, self.simulator2, self.simulator3, self.simulator6, self.simulator7]
+        batch_sizes = [self.batch_size1, self.batch_size2, self.batch_size3, self.batch_size6, self.batch_size7]
         for compiler, simulator, batch_size in zip(compilers, simulators, batch_sizes):
             # trajectory
             non_fluents, initial_state, states, actions, interms, rewards = simulator.run(horizon)
