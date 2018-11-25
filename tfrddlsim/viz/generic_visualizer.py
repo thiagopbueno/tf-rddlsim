@@ -56,7 +56,8 @@ class GenericVisualizer(Visualizer):
         '''
         if self._verbose:
             non_fluents, initial_state, states, actions, interms, rewards = trajectories
-            batch_size, horizon, _ = states[0][1].shape
+            shape = states[0][1].shape
+            batch_size, horizon, = shape[0], shape[1]
             states = [(s[0], s[1][0]) for s in states]
             interms = [(f[0], f[1][0]) for f in interms]
             actions = [(a[0], a[1][0]) for a in actions]
