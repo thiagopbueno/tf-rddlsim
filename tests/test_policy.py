@@ -16,6 +16,7 @@
 
 import rddlgym
 
+import rddl2tf
 from rddl2tf.compiler import Compiler
 
 from tfrddlsim.policy import DefaultPolicy, RandomPolicy
@@ -38,11 +39,11 @@ class TestDefaultPolicy(unittest.TestCase):
     def test_default_policy(self):
         for compiler in [self.compiler1, self.compiler2]:
             with compiler.graph.as_default():
-                default = compiler.default_action_fluents
+                default = compiler.compile_default_action()
                 batch_size = 1000
                 policy = DefaultPolicy(compiler, batch_size)
 
-                state1 = compiler.initial_state_fluents
+                state1 = compiler.compile_initial_state()
                 action1 = policy(state1, None)
                 self.assertIsInstance(action1, tuple)
                 for af, (_, t) in zip(action1, default):
@@ -79,17 +80,17 @@ class TestRandomPolicy(unittest.TestCase):
                 state = compiler.compile_initial_state(batch_size)
                 action, n, checking = policy._sample_actions(state)
 
-                action_size = compiler.action_size
-                action_dtype = compiler.action_dtype
+                action_size = compiler.rddl.action_size
+                action_range_type = compiler.rddl.action_range_type
                 action_default_fluents = compiler.compile_default_action(batch_size)
 
                 self.assertIsInstance(action, tuple)
                 self.assertEqual(len(action), len(action_size))
-                self.assertEqual(len(action), len(action_dtype))
-                for fluent, size, dtype, default in zip(action, action_size, action_dtype, action_default_fluents):
+                self.assertEqual(len(action), len(action_range_type))
+                for fluent, size, range_type, default in zip(action, action_size, action_range_type, action_default_fluents):
                     self.assertIsInstance(fluent, tf.Tensor)
                     self.assertListEqual(fluent.shape.as_list(), [batch_size] + list(size))
-                    self.assertEqual(fluent.dtype, dtype)
+                    self.assertEqual(fluent.dtype, rddl2tf.utils.range_type_to_dtype(range_type))
                     self.assertEqual(fluent.shape, default.shape)
                     self.assertEqual(fluent.dtype, default.dtype)
 

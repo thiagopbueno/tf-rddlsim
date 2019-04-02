@@ -106,11 +106,11 @@ class GenericVisualizer(Visualizer):
         print("============================")
         print("TIME = {}".format(t))
         print("============================")
-        fluent_variables = self._compiler.action_fluent_variables
+        fluent_variables = self._compiler.rddl.action_fluent_variables
         self._render_fluent_timestep('action', a, fluent_variables)
-        fluent_variables = self._compiler.interm_fluent_variables
+        fluent_variables = self._compiler.rddl.interm_fluent_variables
         self._render_fluent_timestep('interms', f, fluent_variables)
-        fluent_variables = self._compiler.state_fluent_variables
+        fluent_variables = self._compiler.rddl.state_fluent_variables
         self._render_fluent_timestep('states', s, fluent_variables)
         self._render_reward(r)
 
@@ -145,7 +145,7 @@ class GenericVisualizer(Visualizer):
         print('*********************************************************')
         print('>>> ROUND INIT, horizon = {}'.format(horizon))
         print('*********************************************************')
-        fluent_variables = self._compiler.non_fluent_variables
+        fluent_variables = self._compiler.rddl.non_fluent_variables
         self._render_fluent_timestep('non-fluents', non_fluents, fluent_variables)
 
     def _render_round_end(self, rewards: np.array) -> None:

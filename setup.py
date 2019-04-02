@@ -40,8 +40,9 @@ setup(
     install_requires=[
         'matplotlib',
         'numpy',
-        'rddlgym',
-        'rddl2tf',
+        'pyrddl>=0.1.8',
+        'rddlgym>=0.5.8',
+        'rddl2tf>=0.5.1',
         'tensorflow',
         'tensorflow-tensorboard',
         'typing'

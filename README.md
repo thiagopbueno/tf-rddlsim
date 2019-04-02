@@ -16,16 +16,19 @@ tf-rddlsim can be used as a standalone script or programmatically.
 ## Script mode
 
 ```text
-$ usage: tfrddlsim [-h] (--file FILE | --rddl RDDL) [--policy {default,random}]
-                 [--viz {generic,navigation}] [-hr HORIZON] [-b BATCH_SIZE]
-                 [-v]
+$ tfrddlsim --help
+
+usage: tfrddlsim [-h] [--policy {default,random}] [--viz {generic,navigation}]
+                 [-hr HORIZON] [-b BATCH_SIZE] [-v]
+                 rddl
 
 RDDL2TensorFlow compiler and simulator
 
+positional arguments:
+  rddl                  path to RDDL file or rddlgym problem id
+
 optional arguments:
   -h, --help            show this help message and exit
-  --file FILE           RDDL filepath
-  --rddl RDDL           RDDL domain id
   --policy {default,random}
                         type of policy (default=random)
   --viz {generic,navigation}
@@ -35,6 +38,14 @@ optional arguments:
   -b BATCH_SIZE, --batch_size BATCH_SIZE
                         number of trajectories in a batch (default=75)
   -v, --verbose         verbosity mode
+```
+
+```text
+$ tfrddlsim Navigation-v1 --policy random --viz navigation -hr 50 -b 32 -v
+```
+
+```text
+$ tfrddlsim Reservoir-8 --policy default --viz generic -hr 20 -b 128 -v
 ```
 
 
@@ -83,7 +94,7 @@ If you are having issues with ``tf-rddlsim``, please let me know at: [thiago.pbu
 
 # License
 
-Copyright (c) 2018 Thiago Pereira Bueno All Rights Reserved.
+Copyright (c) 2018-2019 Thiago Pereira Bueno All Rights Reserved.
 
 tf-rddlsim is free software: you can redistribute it and/or modify it
 under the terms of the GNU Lesser General Public License as published by

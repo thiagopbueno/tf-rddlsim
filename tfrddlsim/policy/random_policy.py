@@ -13,9 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
-from tfrddlsim.policy.abstract_policy import Policy
+
+import rddl2tf
 from rddl2tf.compiler import Compiler
 from rddl2tf.fluent import TensorFluent
+
+from tfrddlsim.policy.abstract_policy import Policy
+
 
 import tensorflow as tf
 
@@ -139,12 +143,12 @@ class RandomPolicy(Policy):
         Returns:
             Sequence[tf.Tensor]: A tuple of action fluents.
         '''
-        ordering = self.compiler.action_fluent_ordering
-        dtype = self.compiler.action_dtype
-        size = self.compiler.action_size
+        ordering = self.compiler.rddl.domain.action_fluent_ordering
+        dtypes = map(rddl2tf.utils.range_type_to_dtype, self.compiler.rddl.action_range_type)
+        size = self.compiler.rddl.action_size
 
         action = []
-        for name, dtype, size, default_value in zip(ordering, dtype, size, default):
+        for name, dtype, size, default_value in zip(ordering, dtypes, size, default):
             action_fluent = self._sample_action_fluent(name, dtype, size, constraints, default_value, prob)
             action.append(action_fluent)
 

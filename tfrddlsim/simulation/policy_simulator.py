@@ -14,6 +14,7 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
+import rddl2tf
 from rddl2tf.compiler import Compiler
 from rddl2tf.fluent import TensorFluent
 from tfrddlsim.policy import Policy
@@ -75,17 +76,17 @@ class PolicySimulationCell(tf.nn.rnn_cell.RNNCell):
     @property
     def state_size(self) -> Sequence[Shape]:
         '''Returns the MDP state size.'''
-        return self._sizes(self._compiler.state_size)
+        return self._sizes(self._compiler.rddl.state_size)
 
     @property
     def action_size(self) -> Sequence[Shape]:
         '''Returns the MDP action size.'''
-        return self._sizes(self._compiler.action_size)
+        return self._sizes(self._compiler.rddl.action_size)
 
     @property
     def interm_size(self) -> Sequence[Shape]:
         '''Returns the MDP intermediate state size.'''
-        return self._sizes(self._compiler.interm_size)
+        return self._sizes(self._compiler.rddl.interm_size)
 
     @property
     def output_size(self) -> Tuple[Sequence[Shape], Sequence[Shape], Sequence[Shape], int]:
@@ -187,7 +188,7 @@ class PolicySimulator(object):
 
     def __init__(self, compiler: Compiler, policy: Policy, batch_size: int) -> None:
         self._cell = PolicySimulationCell(compiler, policy, batch_size)
-        self._non_fluents = [fluent.tensor for _, fluent in compiler.non_fluents]
+        self._non_fluents = [fluent.tensor for _, fluent in compiler.compile_non_fluents()]
 
     @property
     def graph(self):
@@ -259,11 +260,11 @@ class PolicySimulator(object):
             states, actions, interms, rewards = outputs
 
             # fluent types
-            state_dtype = self._cell._compiler.state_dtype
+            state_dtype = map(rddl2tf.utils.range_type_to_dtype, self._cell._compiler.rddl.state_range_type)
             states = self._output(states, state_dtype)
-            interm_dtype = self._cell._compiler.interm_dtype
+            interm_dtype = map(rddl2tf.utils.range_type_to_dtype, self._cell._compiler.rddl.interm_range_type)
             interms = self._output(interms, interm_dtype)
-            action_dtype = self._cell._compiler.action_dtype
+            action_dtype = map(rddl2tf.utils.range_type_to_dtype, self._cell._compiler.rddl.action_range_type)
             actions = self._output(actions, action_dtype)
 
             outputs = (initial_state, states, actions, interms, rewards)
@@ -296,19 +297,19 @@ class PolicySimulator(object):
             initial_state, states, actions, interms, rewards = sess.run(trajectory)
 
         # non-fluents
-        non_fluent_ordering = self._cell._compiler.non_fluent_ordering
+        non_fluent_ordering = self._cell._compiler.rddl.domain.non_fluent_ordering
         non_fluents = tuple(zip(non_fluent_ordering, non_fluents))
 
         # states
-        state_fluent_ordering = self._cell._compiler.state_fluent_ordering
+        state_fluent_ordering = self._cell._compiler.rddl.domain.state_fluent_ordering
         states = tuple(zip(state_fluent_ordering, states))
 
         # interms
-        interm_fluent_ordering = self._cell._compiler.interm_fluent_ordering
+        interm_fluent_ordering = self._cell._compiler.rddl.domain.interm_fluent_ordering
         interms = tuple(zip(interm_fluent_ordering, interms))
 
         # actions
-        action_fluent_ordering = self._cell._compiler.action_fluent_ordering
+        action_fluent_ordering = self._cell._compiler.rddl.domain.action_fluent_ordering
         actions = tuple(zip(action_fluent_ordering, actions))
 
         # rewards

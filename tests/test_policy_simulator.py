@@ -16,6 +16,7 @@
 
 import rddlgym
 
+import rddl2tf
 from rddl2tf.compiler import Compiler
 
 from tfrddlsim.policy import DefaultPolicy
@@ -238,34 +239,36 @@ class TestPolicySimulator(unittest.TestCase):
             state_size, action_size, interm_size, reward_size = simulator.output_size
 
             # tensor dtypes
-            state_dtype = compiler.state_dtype
-            interm_dtype = compiler.interm_dtype
-            action_dtype = compiler.action_dtype
+            state_range_type = compiler.rddl.state_range_type
+            interm_range_type = compiler.rddl.interm_range_type
+            action_range_type = compiler.rddl.action_range_type
 
             # states
             self.assertIsInstance(states, tuple)
             self.assertEqual(len(states), len(state_size))
-            for s, sz, dtype in zip(states, state_size, state_dtype):
+            for s, sz, range_type in zip(states, state_size, state_range_type):
                 self.assertIsInstance(s, tf.Tensor)
                 self.assertListEqual(s.shape.as_list(), [batch_size, horizon] + list(sz), '{}'.format(s))
+                dtype = rddl2tf.utils.range_type_to_dtype(range_type)
                 self.assertEqual(s.dtype, dtype, '{}.dtype != {}'.format(s, dtype))
 
             # interms
             self.assertIsInstance(interms, tuple)
             self.assertEqual(len(interms), len(interm_size))
-            for s, sz, dtype in zip(interms, interm_size, interm_dtype):
+            for s, sz, range_type in zip(interms, interm_size, interm_range_type):
                 self.assertIsInstance(s, tf.Tensor)
                 self.assertListEqual(s.shape.as_list(), [batch_size, horizon] + list(sz), '{}'.format(s))
+                dtype = rddl2tf.utils.range_type_to_dtype(range_type)
                 self.assertEqual(s.dtype, dtype, '{}.dtype != {}'.format(s, dtype))
-
 
             # actions
             self.assertIsInstance(actions, tuple)
             self.assertEqual(len(actions), len(action_size))
-            for a, sz, dtype in zip(actions, action_size, action_dtype):
+            for a, sz, range_type in zip(actions, action_size, action_range_type):
                 self.assertIsInstance(a, tf.Tensor)
                 self.assertListEqual(a.shape.as_list(), [batch_size, horizon] + list(sz))
-                self.assertEqual(a.dtype, dtype)
+                dtype = rddl2tf.utils.range_type_to_dtype(range_type)
+                self.assertEqual(a.dtype, dtype, '{}.dtype != {}'.format(a, dtype))
 
             # rewards
             self.assertIsInstance(rewards, tf.Tensor)
@@ -285,8 +288,8 @@ class TestPolicySimulator(unittest.TestCase):
             state_size, action_size, interm_size, reward_size = simulator.output_size
 
             # fluent ordering
-            state_fluent_ordering = compiler.state_fluent_ordering
-            action_fluent_ordering = compiler.action_fluent_ordering
+            state_fluent_ordering = compiler.rddl.domain.state_fluent_ordering
+            action_fluent_ordering = compiler.rddl.domain.action_fluent_ordering
 
             # states
             self.assertIsInstance(states, tuple)

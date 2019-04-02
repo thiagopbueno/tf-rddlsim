@@ -59,7 +59,7 @@ class NavigationVisualizer(Visualizer):
         actions = dict((name, fluent[0]) for name, fluent in actions)
         rewards = rewards[0]
 
-        idx = self._compiler.state_fluent_ordering.index('location/1')
+        idx = self._compiler.rddl.domain.state_fluent_ordering.index('location/1')
 
         start = initial_state[idx][0]
         g = non_fluents['GOAL/1']
