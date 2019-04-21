@@ -1,7 +1,27 @@
+#!/usr/bin/env python3
+
+# This file is part of tf-rddlsim.
+
+# tf-rddlsim is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# tf-rddlsim is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
+
+
+import argparse
 import json
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 import tensorflow as tf
 from tensorflow.python.tools import inspect_checkpoint as chkp
 import sys
@@ -10,6 +30,19 @@ import rddlgym
 
 from tfmdp.policy.feedforward import FeedforwardPolicy
 
+
+def parse_args():
+    description = 'Plot policies in a grid for the Navigation problem.'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('rddl', type=str, help='RDDL file or rddlgym id')
+    parser.add_argument('logdir', type=str, help='path to logdir with policy config and variables')
+    parser.add_argument('-o', '--output', type=str, help='output file')
+    # parser.add_argument('config', type=str, help='json file with policy configuration')
+    # parser.add_argument('checkpoint', type=str, help='checkpoint path to restore policy variables')
+    grid_options = parser.add_argument_group('Grid')
+    grid_options.add_argument('-s', '--size', nargs=4, type=float, help='grid size (min_x, max_x, min_y, max_y)')
+    grid_options.add_argument('-n', '--npoints', type=int, default=20, help='number of grid points per dimension (default=20)')
+    return parser.parse_args()
 
 
 def get_fluents(compiler, fluents):
@@ -55,7 +88,7 @@ def get_actions(compiler, policy, states):
             return actions
 
 
-def evaluate(compiler, policy, states, actions):
+def evaluate(compiler, policy, checkpoint, states, actions):
     with tf.Session(graph=compiler.graph) as sess:
         policy.restore(sess, checkpoint)
         return sess.run([states[0], actions[0]])
@@ -136,32 +169,38 @@ def plot_deceleration_zones(ax, size, zones, npoints=1000):
 
 
 if __name__ == '__main__':
-    rddl = sys.argv[1]
-    config = sys.argv[2]
-    checkpoint = sys.argv[3]
-    size = list(map(float, sys.argv[4].split(',')))
-    npoints = float(sys.argv[5])
+    args = parse_args()
 
-    compiler = rddlgym.make(rddl, mode=rddlgym.SCG)
+    compiler = rddlgym.make(args.rddl, mode=rddlgym.SCG)
     compiler.batch_mode_on()
 
     non_fluents = get_fluents(compiler, compiler.compile_non_fluents())
     initial_state = get_fluents(compiler, compiler.compile_initial_state())
 
     grid = get_grid(non_fluents, initial_state)
-    grid['size'] = size
+    grid['size'] = args.size
     
+    config = os.path.join(args.logdir, 'drp.config.json')
     policy = get_policy(compiler, config)
 
-    states = get_states(compiler, grid['size'], npoints=npoints)
+    states = get_states(compiler, grid['size'], npoints=args.npoints)
     actions = get_actions(compiler, policy, states)
 
-    states_, actions_ = evaluate(compiler, policy, states, actions)
+    checkpoint = os.path.join(args.logdir, 'drp.ckpt')
+    states_, actions_ = evaluate(compiler, policy, checkpoint, states, actions)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
     plot_policy_field(ax1, grid, states_, actions_)
     plot_policy_stream(ax2, grid, states_, actions_)
-    plt.show()
+
+    if args.output:
+        title = args.output
+        if '/' in title:
+            title = title.split('/')[-1]
+        fig.suptitle(title, fontsize=16)
+        plt.savefig('{}.png'.format(args.output), bbox_inches='tight')
+    else:
+        plt.show()
 
 
 # python3 plot_navigation_policy.py Navigation-v2 drp.config.json drp.ckpt -5.0,11.0,-2.0,11.0 10

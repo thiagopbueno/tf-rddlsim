@@ -36,7 +36,7 @@ setup(
     keywords=['rddl', 'tensorflow', 'probabilistic-planning', 'mdp', 'simulator'],
     url='https://github.com/thiagopbueno/tf-rddlsim',
     packages=find_packages(),
-    scripts=['scripts/tfrddlsim'],
+    scripts=['scripts/tfrddlsim', 'tfrddlsim/viz/plots/plot_navigation_policy'],
     install_requires=[
         'matplotlib',
         'numpy',
