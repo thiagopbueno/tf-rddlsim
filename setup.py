@@ -32,6 +32,7 @@ setup(
     author_email='thiago.pbueno@gmail.com',
     description='RDDL2TensorFlow parser, compiler, and simulator.',
     long_description=read('README.md'),
+    long_description_content_type="text/markdown",
     license='GNU General Public License v3.0',
     keywords=['rddl', 'tensorflow', 'probabilistic-planning', 'mdp', 'simulator'],
     url='https://github.com/thiagopbueno/tf-rddlsim',
@@ -43,7 +44,7 @@ setup(
         'pyrddl>=0.1.8',
         'rddlgym>=0.5.8',
         'rddl2tf>=0.5.1',
-        'tensorflow',
+        'tensorflow<=1.15',
         'tensorflow-tensorboard',
         'typing'
     ],
