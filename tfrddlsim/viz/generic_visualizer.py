@@ -13,13 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
-
-from rddl2tf.compiler import Compiler
-from tfrddlsim.viz.abstract_visualizer import Visualizer
+from typing import List, Sequence, Optional, Tuple, Union
 
 import numpy as np
 
-from typing import List, Sequence, Optional, Tuple, Union
+from rddl2tf.compilers import Compiler
+from tfrddlsim.viz.abstract_visualizer import Visualizer
+
 Value = Union[bool, int, float, np.array]
 NonFluents = Sequence[Tuple[str, Value]]
 Fluents = Sequence[Tuple[str, np.array]]
