@@ -4,6 +4,6 @@ pyrddl>=0.1.8
 rddlgym>=0.5.8
 rddl2tf>=0.5.1
 Sphinx==1.7.6
-tensorflow==1.12.2
+tensorflow==1.15.2
 tensorflow-tensorboard==1.5.1
 typing==3.6.4
