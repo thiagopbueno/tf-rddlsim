@@ -14,13 +14,13 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
-from rddl2tf.compiler import Compiler
-
-from tfrddlsim.policy.abstract_policy import Policy
+from typing import Sequence
 
 import tensorflow as tf
 
-from typing import Sequence
+from rddl2tf.compilers import Compiler
+from tfrddlsim.policy.abstract_policy import Policy
+
 
 
 class DefaultPolicy(Policy):
@@ -35,7 +35,7 @@ class DefaultPolicy(Policy):
     '''
 
     def __init__(self, compiler: Compiler, batch_size: int) -> None:
-        self._default = compiler.compile_default_action(batch_size)
+        self._default = compiler.default_action()
 
     def __call__(self,
             state: Sequence[tf.Tensor],

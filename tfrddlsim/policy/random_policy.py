@@ -14,16 +14,16 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
-import rddl2tf
-from rddl2tf.compiler import Compiler
-from rddl2tf.fluent import TensorFluent
-
-from tfrddlsim.policy.abstract_policy import Policy
-
+from typing import Dict, Optional, Sequence, Tuple
 
 import tensorflow as tf
 
-from typing import Dict, Optional, Sequence, Tuple
+import rddl2tf
+from rddl2tf.compilers import Compiler
+from rddl2tf.core.fluent import TensorFluent
+from tfrddlsim.policy.abstract_policy import Policy
+
+
 Constraints = Tuple[Optional[TensorFluent], Optional[TensorFluent]]
 
 
@@ -79,8 +79,8 @@ class RandomPolicy(Policy):
             action fluents, an integer tensor for the number of samples, and
             a boolean tensor for checking all action preconditions.
         '''
-        default = self.compiler.compile_default_action(self.batch_size)
-        bound_constraints = self.compiler.compile_action_bound_constraints(state)
+        default = self.compiler.default_action()
+        bound_constraints = self.compiler.action_bound_constraints(state)
         action = self._sample_action(bound_constraints, default)
         n, action, checking = self._check_preconditions(state, action, bound_constraints, default)
         return action, n, checking
@@ -114,7 +114,8 @@ class RandomPolicy(Policy):
         def body(i, a, checking):
             new_action = []
             new_sampled_action = self._sample_action(bound_constraints, default)
-            new_preconds_checking = self.compiler.compile_action_preconditions_checking(state, new_sampled_action)
+            preconds = self.compiler.action_preconditions(state, new_sampled_action)
+            new_preconds_checking = tf.reduce_all(tf.stack([precond.tensor for precond in preconds], axis=1), axis=-1)
             for action_fluent, new_sampled_action_fluent in zip(a, new_sampled_action):
                 new_action_fluent = tf.where(checking, action_fluent, new_sampled_action_fluent)
                 new_action.append(new_action_fluent)
@@ -123,8 +124,9 @@ class RandomPolicy(Policy):
             return (i + 1, new_action, new_checking)
 
         i0 = tf.constant(0)
-        preconds_checking = self.compiler.compile_action_preconditions_checking(state, action)
-        return tf.while_loop(condition, body, loop_vars=[i0, action, preconds_checking])
+        preconds = self.compiler.action_preconditions(state, action)
+        checking = tf.reduce_all(tf.stack([precond.tensor for precond in preconds], axis=1), axis=-1)
+        return tf.while_loop(condition, body, loop_vars=[i0, action, checking])
 
     def _sample_action(self,
             constraints: Dict[str, Constraints],

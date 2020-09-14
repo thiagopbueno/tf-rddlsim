@@ -13,17 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
-
-import rddl2tf
-from rddl2tf.compiler import Compiler
-from rddl2tf.fluent import TensorFluent
-from tfrddlsim.policy import Policy
+from typing import Iterable, Sequence, Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
 
+import rddl2tf
+from rddl2tf.compilers import Compiler
+from rddl2tf.core.fluent import TensorFluent
+from tfrddlsim.policy import Policy
 
-from typing import Iterable, Sequence, Optional, Tuple, Union
 
 Shape = Sequence[int]
 FluentPair = Tuple[str, TensorFluent]
@@ -96,7 +95,7 @@ class PolicySimulationCell(tf.nn.rnn_cell.RNNCell):
     def initial_state(self) -> StateTensor:
         '''Returns the initial state tensor.'''
         s0 = []
-        for fluent in self._compiler.compile_initial_state(self._batch_size):
+        for fluent in self._compiler.initial_state():
             s0.append(self._output_size(fluent))
         s0 = tuple(s0)
         return s0
@@ -126,13 +125,13 @@ class PolicySimulationCell(tf.nn.rnn_cell.RNNCell):
         action = self._policy(state, input)
 
         # next state
-        transition_scope = self._compiler.transition_scope(state, action)
-        interm_fluents, next_state_fluents = self._compiler.compile_cpfs(transition_scope, self._batch_size)
+        transition_scope = self._compiler._scope.transition(self._compiler.non_fluents, state, action)
+        interm_fluents, next_state_fluents = self._compiler._compile_cpfs(transition_scope)
         next_state = tuple(self._tensors(next_state_fluents))
 
         # reward
         transition_scope.update(next_state_fluents)
-        reward = self._compiler.compile_reward(transition_scope)
+        reward = self._compiler._compile_reward(transition_scope)
         reward = self._output_size(reward.tensor)
 
         # outputs
@@ -188,7 +187,7 @@ class PolicySimulator(object):
 
     def __init__(self, compiler: Compiler, policy: Policy, batch_size: int) -> None:
         self._cell = PolicySimulationCell(compiler, policy, batch_size)
-        self._non_fluents = [fluent.tensor for _, fluent in compiler.compile_non_fluents()]
+        self._non_fluents = [fluent.tensor for fluent in compiler.non_fluents]
 
     @property
     def graph(self):
@@ -291,7 +290,7 @@ class PolicySimulator(object):
         '''
         trajectory = self.trajectory(horizon, initial_state)
 
-        with tf.Session(graph=self.graph) as sess:
+        with tf.compat.v1.Session(graph=self.graph) as sess:
             sess.run(tf.global_variables_initializer())
             non_fluents = sess.run(self._non_fluents)
             initial_state, states, actions, interms, rewards = sess.run(trajectory)

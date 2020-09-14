@@ -13,14 +13,13 @@
 # You should have received a copy of the GNU General Public License
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
-import rddlgym
-
-from rddl2tf.compiler import Compiler
-
-from tfrddlsim.simulation.transition_simulator import ActionSimulationCell
+import unittest
 
 import tensorflow as tf
-import unittest
+
+import rddlgym
+from rddl2tf.compilers import DefaultCompiler as Compiler
+from tfrddlsim.simulation.transition_simulator import ActionSimulationCell
 
 
 class TestActionSimulationCell(unittest.TestCase):
@@ -29,17 +28,20 @@ class TestActionSimulationCell(unittest.TestCase):
         self.batch_size = 10
 
         self.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
+        self.compiler1 = Compiler(self.rddl1, self.batch_size)
+        self.compiler1.init()
+
         self.rddl2 = rddlgym.make('Navigation-v2', mode=rddlgym.AST)
-        self.compiler1 = Compiler(self.rddl1, batch_mode=True)
-        self.compiler2 = Compiler(self.rddl2, batch_mode=True)
+        self.compiler2 = Compiler(self.rddl2, self.batch_size)
+        self.compiler2.init()
 
         self.cell1 = ActionSimulationCell(self.compiler1)
-        self.initial_state1 = self.compiler1.compile_initial_state(batch_size=self.batch_size)
-        self.default_action1 = self.compiler1.compile_default_action(batch_size=1)
+        self.initial_state1 = self.compiler1.initial_state()
+        self.default_action1 = self.compiler1.default_action()
 
         self.cell2 = ActionSimulationCell(self.compiler2)
-        self.initial_state2 = self.compiler2.compile_initial_state(batch_size=self.batch_size)
-        self.default_action2 = self.compiler2.compile_default_action(batch_size=1)
+        self.initial_state2 = self.compiler2.initial_state()
+        self.default_action2 = self.compiler2.default_action()
 
     def test_state_size(self):
         state_size1 = self.cell1.state_size
@@ -99,7 +101,7 @@ class TestActionSimulationCell(unittest.TestCase):
             self.assertEqual(len(action), len(action_size))
             for a, sz in zip(action, action_size):
                 self.assertIsInstance(a, tf.Tensor)
-                self.assertListEqual(a.shape.as_list(), [1] + list(sz))
+                self.assertListEqual(a.shape.as_list(), [self.batch_size] + list(sz))
 
             # reward
             self.assertIsInstance(reward, tf.Tensor)

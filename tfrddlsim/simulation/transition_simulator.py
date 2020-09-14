@@ -13,13 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
-
-from rddl2tf.compiler import Compiler
-from rddl2tf.fluent import TensorFluent
-
+from typing import Optional, Sequence, Tuple
 import tensorflow as tf
 
-from typing import Optional, Sequence, Tuple
+from rddl2tf.compilers import Compiler
+from rddl2tf.core.fluent import TensorFluent
+
 
 Shape = Sequence[int]
 FluentPair = Tuple[str, TensorFluent]
@@ -98,13 +97,13 @@ class ActionSimulationCell(tf.nn.rnn_cell.RNNCell):
         action = inputs
 
         # next state
-        transition_scope = self._compiler.transition_scope(state, action)
-        interm_fluents, next_state_fluents = self._compiler.compile_cpfs(transition_scope, self._batch_size)
+        transition_scope = self._compiler._scope.transition(self._compiler.non_fluents, state, action)
+        interm_fluents, next_state_fluents = self._compiler._compile_cpfs(transition_scope)
 
         # reward
         next_state_scope = dict(next_state_fluents)
         transition_scope.update(next_state_scope)
-        reward = self._compiler.compile_reward(transition_scope)
+        reward = self._compiler._compile_reward(transition_scope)
         reward = self._output_size(reward.tensor)
 
         # outputs

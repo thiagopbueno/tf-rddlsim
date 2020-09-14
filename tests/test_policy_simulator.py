@@ -14,23 +14,23 @@
 # along with tf-rddlsim. If not, see <http://www.gnu.org/licenses/>.
 
 
-import rddlgym
-
-import rddl2tf
-from rddl2tf.compiler import Compiler
-
-from tfrddlsim.policy import DefaultPolicy
-from tfrddlsim.simulation.policy_simulator import PolicySimulationCell, PolicySimulator
+import unittest
 
 import numpy as np
 import tensorflow as tf
 
-import unittest
+import rddlgym
+import rddl2tf
+from rddl2tf.compilers import DefaultCompiler as Compiler
+from tfrddlsim.policy import DefaultPolicy
+from tfrddlsim.simulation.policy_simulator import PolicySimulationCell, PolicySimulator
 
 
 class TestPolicySimulationCell(unittest.TestCase):
 
     def setUp(self):
+        self.batch_size = 32
+
         self.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
         self.rddl2 = rddlgym.make('Mars_Rover', mode=rddlgym.AST)
         self.rddl3 = rddlgym.make('HVAC-v1', mode=rddlgym.AST)
@@ -39,41 +39,47 @@ class TestPolicySimulationCell(unittest.TestCase):
         self.rddl6 = rddlgym.make('CarParking-v1', mode=rddlgym.AST)
         self.rddl7 = rddlgym.make('Navigation-v3', mode=rddlgym.AST)
 
-        self.compiler1 = Compiler(self.rddl1, batch_mode=True)
-        self.compiler2 = Compiler(self.rddl2, batch_mode=True)
-        self.compiler3 = Compiler(self.rddl3, batch_mode=True)
-        self.compiler4 = Compiler(self.rddl4, batch_mode=True)
-        self.compiler5 = Compiler(self.rddl5, batch_mode=True)
-        self.compiler6 = Compiler(self.rddl6, batch_mode=True)
-        self.compiler7 = Compiler(self.rddl7, batch_mode=True)
+        self.compiler1 = Compiler(self.rddl1, self.batch_size)
+        self.compiler1.init()
+        self.compiler2 = Compiler(self.rddl2, self.batch_size)
+        self.compiler2.init()
+        self.compiler3 = Compiler(self.rddl3, self.batch_size)
+        self.compiler3.init()
+        self.compiler4 = Compiler(self.rddl4, self.batch_size)
+        self.compiler4.init()
+        self.compiler5 = Compiler(self.rddl5, self.batch_size)
+        self.compiler5.init()
+        self.compiler6 = Compiler(self.rddl6, self.batch_size)
+        self.compiler6.init()
+        self.compiler7 = Compiler(self.rddl7, self.batch_size)
+        self.compiler7.init()
 
-        self.batch_size1 = 32
-        self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
-        self.cell1 = PolicySimulationCell(self.compiler1, self.policy1, self.batch_size1)
+        self.policy1 = DefaultPolicy(self.compiler1, self.batch_size)
+        self.cell1 = PolicySimulationCell(self.compiler1, self.policy1, self.batch_size)
 
         self.batch_size2 = 32
-        self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
-        self.cell2 = PolicySimulationCell(self.compiler2, self.policy2, self.batch_size2)
+        self.policy2 = DefaultPolicy(self.compiler2, self.batch_size)
+        self.cell2 = PolicySimulationCell(self.compiler2, self.policy2, self.batch_size)
 
         self.batch_size3 = 32
-        self.policy3 = DefaultPolicy(self.compiler3, self.batch_size3)
-        self.cell3 = PolicySimulationCell(self.compiler3, self.policy3, self.batch_size3)
+        self.policy3 = DefaultPolicy(self.compiler3, self.batch_size)
+        self.cell3 = PolicySimulationCell(self.compiler3, self.policy3, self.batch_size)
 
         self.batch_size4 = 32
-        self.policy4 = DefaultPolicy(self.compiler4, self.batch_size4)
-        self.cell4 = PolicySimulationCell(self.compiler4, self.policy4, self.batch_size4)
+        self.policy4 = DefaultPolicy(self.compiler4, self.batch_size)
+        self.cell4 = PolicySimulationCell(self.compiler4, self.policy4, self.batch_size)
 
         self.batch_size5 = 32
-        self.policy5 = DefaultPolicy(self.compiler5, self.batch_size5)
-        self.cell5 = PolicySimulationCell(self.compiler5, self.policy5, self.batch_size5)
+        self.policy5 = DefaultPolicy(self.compiler5, self.batch_size)
+        self.cell5 = PolicySimulationCell(self.compiler5, self.policy5, self.batch_size)
 
         self.batch_size6 = 32
-        self.policy6 = DefaultPolicy(self.compiler6, self.batch_size6)
-        self.cell6 = PolicySimulationCell(self.compiler6, self.policy6, self.batch_size6)
+        self.policy6 = DefaultPolicy(self.compiler6, self.batch_size)
+        self.cell6 = PolicySimulationCell(self.compiler6, self.policy6, self.batch_size)
 
         self.batch_size7 = 32
-        self.policy7 = DefaultPolicy(self.compiler7, self.batch_size7)
-        self.cell7 = PolicySimulationCell(self.compiler7, self.policy7, self.batch_size7)
+        self.policy7 = DefaultPolicy(self.compiler7, self.batch_size)
+        self.cell7 = PolicySimulationCell(self.compiler7, self.policy7, self.batch_size)
 
     def test_state_size(self):
         # TODO self.cell3, self.cell4, self.cell5, self.cell6, self.cell7
@@ -104,14 +110,13 @@ class TestPolicySimulationCell(unittest.TestCase):
 
     def test_initial_state(self):
         cells = [self.cell1, self.cell2, self.cell3, self.cell4, self.cell5, self.cell6, self.cell7]
-        batch_sizes = [self.batch_size1, self.batch_size2, self.batch_size3, self.batch_size4, self.batch_size5, self.batch_size6, self.batch_size7]
-        for cell, batch_size in zip(cells, batch_sizes):
+        for cell in cells:
             initial_state = cell.initial_state()
             self.assertIsInstance(initial_state, tuple)
             self.assertEqual(len(initial_state), len(cell.state_size))
             for t, shape in zip(initial_state, cell.state_size):
                 self.assertIsInstance(t, tf.Tensor)
-                expected_shape = [batch_size] + list(shape)
+                expected_shape = [self.batch_size] + list(shape)
                 if len(expected_shape) == 1:
                     expected_shape += [1]
                 self.assertListEqual(t.shape.as_list(), expected_shape)
@@ -120,8 +125,7 @@ class TestPolicySimulationCell(unittest.TestCase):
         # TODO self.cell4, self.cell5
         horizon = 40
         cells = [self.cell1, self.cell2, self.cell3, self.cell6, self.cell7]
-        batch_sizes = [self.batch_size1, self.batch_size2, self.batch_size3, self.batch_size6, self.batch_size7]
-        for cell, batch_size in zip(cells, batch_sizes):
+        for cell in cells:
             with cell.graph.as_default():
                 # initial_state
                 initial_state = cell.initial_state()
@@ -129,7 +133,7 @@ class TestPolicySimulationCell(unittest.TestCase):
                 # timestep
                 timestep = tf.constant(horizon, dtype=tf.float32)
                 timestep = tf.expand_dims(timestep, -1)
-                timestep = tf.stack([timestep] * batch_size)
+                timestep = tf.stack([timestep] * self.batch_size)
 
                 # simulation step
                 output, next_state = cell(timestep, initial_state)
@@ -147,23 +151,25 @@ class TestPolicySimulationCell(unittest.TestCase):
                 self.assertEqual(len(next_state), len(state_size))
                 for s, sz in zip(next_state, state_size):
                     self.assertIsInstance(s, tf.Tensor)
-                    self.assertListEqual(s.shape.as_list(), [batch_size] + list(sz))
+                    self.assertListEqual(s.shape.as_list(), [self.batch_size] + list(sz))
 
                 # action
                 self.assertIsInstance(action, tuple)
                 self.assertEqual(len(action), len(action_size))
                 for a, sz in zip(action, action_size):
                     self.assertIsInstance(a, tf.Tensor)
-                    self.assertListEqual(a.shape.as_list(), [batch_size] + list(sz))
+                    self.assertListEqual(a.shape.as_list(), [self.batch_size] + list(sz))
 
                 # reward
                 self.assertIsInstance(reward, tf.Tensor)
-                self.assertListEqual(reward.shape.as_list(), [batch_size, reward_size])
+                self.assertListEqual(reward.shape.as_list(), [self.batch_size, reward_size])
 
 
 class TestPolicySimulator(unittest.TestCase):
 
     def setUp(self):
+        self.batch_size = 32
+
         self.rddl1 = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
         self.rddl2 = rddlgym.make('Mars_Rover', mode=rddlgym.AST)
         self.rddl3 = rddlgym.make('HVAC-v1', mode=rddlgym.AST)
@@ -172,52 +178,51 @@ class TestPolicySimulator(unittest.TestCase):
         self.rddl6 = rddlgym.make('CarParking-v1', mode=rddlgym.AST)
         self.rddl7 = rddlgym.make('Navigation-v3', mode=rddlgym.AST)
 
-        self.compiler1 = Compiler(self.rddl1, batch_mode=True)
-        self.compiler2 = Compiler(self.rddl2, batch_mode=True)
-        self.compiler3 = Compiler(self.rddl3, batch_mode=True)
-        self.compiler4 = Compiler(self.rddl4, batch_mode=True)
-        self.compiler5 = Compiler(self.rddl5, batch_mode=True)
-        self.compiler6 = Compiler(self.rddl6, batch_mode=True)
-        self.compiler7 = Compiler(self.rddl7, batch_mode=True)
+        self.compiler1 = Compiler(self.rddl1, self.batch_size)
+        self.compiler1.init()
+        self.compiler2 = Compiler(self.rddl2, self.batch_size)
+        self.compiler2.init()
+        self.compiler3 = Compiler(self.rddl3, self.batch_size)
+        self.compiler3.init()
+        self.compiler4 = Compiler(self.rddl4, self.batch_size)
+        self.compiler4.init()
+        self.compiler5 = Compiler(self.rddl5, self.batch_size)
+        self.compiler5.init()
+        self.compiler6 = Compiler(self.rddl6, self.batch_size)
+        self.compiler6.init()
+        self.compiler7 = Compiler(self.rddl7, self.batch_size)
+        self.compiler7.init()
 
-        self.batch_size1 = 32
-        self.policy1 = DefaultPolicy(self.compiler1, self.batch_size1)
-        self.simulator1 = PolicySimulator(self.compiler1, self.policy1, self.batch_size1)
+        self.policy1 = DefaultPolicy(self.compiler1, self.batch_size)
+        self.simulator1 = PolicySimulator(self.compiler1, self.policy1, self.batch_size)
 
-        self.batch_size2 = 64
-        self.policy2 = DefaultPolicy(self.compiler2, self.batch_size2)
-        self.simulator2 = PolicySimulator(self.compiler2, self.policy2, self.batch_size2)
+        self.policy2 = DefaultPolicy(self.compiler2, self.batch_size)
+        self.simulator2 = PolicySimulator(self.compiler2, self.policy2, self.batch_size)
 
-        self.batch_size3 = 64
-        self.policy3 = DefaultPolicy(self.compiler3, self.batch_size3)
-        self.simulator3 = PolicySimulator(self.compiler3, self.policy3, self.batch_size3)
+        self.policy3 = DefaultPolicy(self.compiler3, self.batch_size)
+        self.simulator3 = PolicySimulator(self.compiler3, self.policy3, self.batch_size)
 
-        self.batch_size4 = 64
-        self.policy4 = DefaultPolicy(self.compiler4, self.batch_size4)
-        self.simulator4 = PolicySimulator(self.compiler4, self.policy4, self.batch_size4)
+        self.policy4 = DefaultPolicy(self.compiler4, self.batch_size)
+        self.simulator4 = PolicySimulator(self.compiler4, self.policy4, self.batch_size)
 
-        self.batch_size5 = 64
-        self.policy5 = DefaultPolicy(self.compiler5, self.batch_size5)
-        self.simulator5 = PolicySimulator(self.compiler5, self.policy5, self.batch_size5)
+        self.policy5 = DefaultPolicy(self.compiler5, self.batch_size)
+        self.simulator5 = PolicySimulator(self.compiler5, self.policy5, self.batch_size)
 
-        self.batch_size6 = 64
-        self.policy6 = DefaultPolicy(self.compiler6, self.batch_size6)
-        self.simulator6 = PolicySimulator(self.compiler6, self.policy6, self.batch_size6)
+        self.policy6 = DefaultPolicy(self.compiler6, self.batch_size)
+        self.simulator6 = PolicySimulator(self.compiler6, self.policy6, self.batch_size)
 
-        self.batch_size7 = 64
-        self.policy7 = DefaultPolicy(self.compiler7, self.batch_size7)
-        self.simulator7 = PolicySimulator(self.compiler7, self.policy7, self.batch_size7)
+        self.policy7 = DefaultPolicy(self.compiler7, self.batch_size)
+        self.simulator7 = PolicySimulator(self.compiler7, self.policy7, self.batch_size)
 
     def test_timesteps(self):
         horizon = 40
         simulators = [self.simulator1, self.simulator2, self.simulator3, self.simulator4, self.simulator5, self.simulator6, self.simulator7]
-        batch_sizes = [self.batch_size1, self.batch_size2, self.batch_size3, self.batch_size4, self.batch_size5, self.batch_size6, self.batch_size7]
-        for simulator, batch_size in zip(simulators, batch_sizes):
+        for simulator in simulators:
             with simulator.graph.as_default():
                 timesteps = simulator.timesteps(horizon)
             self.assertIsInstance(timesteps, tf.Tensor)
-            self.assertListEqual(timesteps.shape.as_list(), [batch_size, horizon, 1])
-            with tf.Session(graph=simulator.graph) as sess:
+            self.assertListEqual(timesteps.shape.as_list(), [self.batch_size, horizon, 1])
+            with tf.compat.v1.Session(graph=simulator.graph) as sess:
                 timesteps = sess.run(timesteps)
                 for t in timesteps:
                     self.assertListEqual(list(t), list(np.arange(horizon-1, -1, -1)))
@@ -227,8 +232,7 @@ class TestPolicySimulator(unittest.TestCase):
         horizon = 40
         compilers = [self.compiler1, self.compiler2, self.compiler3, self.compiler6, self.compiler7]
         simulators = [self.simulator1, self.simulator2, self.simulator3, self.simulator6, self.simulator7]
-        batch_sizes = [self.batch_size1, self.batch_size2, self.batch_size3, self.batch_size6, self.batch_size7]
-        for compiler, simulator, batch_size in zip(compilers, simulators, batch_sizes):
+        for compiler, simulator in zip(compilers, simulators):
             # trajectory
             trajectory = simulator.trajectory(horizon)
             self.assertIsInstance(trajectory, tuple)
@@ -248,7 +252,7 @@ class TestPolicySimulator(unittest.TestCase):
             self.assertEqual(len(states), len(state_size))
             for s, sz, range_type in zip(states, state_size, state_range_type):
                 self.assertIsInstance(s, tf.Tensor)
-                self.assertListEqual(s.shape.as_list(), [batch_size, horizon] + list(sz), '{}'.format(s))
+                self.assertListEqual(s.shape.as_list(), [self.batch_size, horizon] + list(sz), '{}'.format(s))
                 dtype = rddl2tf.utils.range_type_to_dtype(range_type)
                 self.assertEqual(s.dtype, dtype, '{}.dtype != {}'.format(s, dtype))
 
@@ -257,7 +261,7 @@ class TestPolicySimulator(unittest.TestCase):
             self.assertEqual(len(interms), len(interm_size))
             for s, sz, range_type in zip(interms, interm_size, interm_range_type):
                 self.assertIsInstance(s, tf.Tensor)
-                self.assertListEqual(s.shape.as_list(), [batch_size, horizon] + list(sz), '{}'.format(s))
+                self.assertListEqual(s.shape.as_list(), [self.batch_size, horizon] + list(sz), '{}'.format(s))
                 dtype = rddl2tf.utils.range_type_to_dtype(range_type)
                 self.assertEqual(s.dtype, dtype, '{}.dtype != {}'.format(s, dtype))
 
@@ -266,21 +270,20 @@ class TestPolicySimulator(unittest.TestCase):
             self.assertEqual(len(actions), len(action_size))
             for a, sz, range_type in zip(actions, action_size, action_range_type):
                 self.assertIsInstance(a, tf.Tensor)
-                self.assertListEqual(a.shape.as_list(), [batch_size, horizon] + list(sz))
+                self.assertListEqual(a.shape.as_list(), [self.batch_size, horizon] + list(sz))
                 dtype = rddl2tf.utils.range_type_to_dtype(range_type)
                 self.assertEqual(a.dtype, dtype, '{}.dtype != {}'.format(a, dtype))
 
             # rewards
             self.assertIsInstance(rewards, tf.Tensor)
-            self.assertListEqual(rewards.shape.as_list(), [batch_size, horizon, reward_size])
+            self.assertListEqual(rewards.shape.as_list(), [self.batch_size, horizon, reward_size])
 
     def test_simulation(self):
         # TODO self.compiler4, self.compiler5
         horizon = 40
         compilers = [self.compiler1, self.compiler2, self.compiler3, self.compiler6, self.compiler7]
         simulators = [self.simulator1, self.simulator2, self.simulator3, self.simulator6, self.simulator7]
-        batch_sizes = [self.batch_size1, self.batch_size2, self.batch_size3, self.batch_size6, self.batch_size7]
-        for compiler, simulator, batch_size in zip(compilers, simulators, batch_sizes):
+        for compiler, simulator in zip(compilers, simulators):
             # trajectory
             non_fluents, initial_state, states, actions, interms, rewards = simulator.run(horizon)
 
@@ -301,7 +304,7 @@ class TestPolicySimulator(unittest.TestCase):
                 self.assertIsInstance(var_name, str)
                 self.assertEqual(var_name, name, s)
                 self.assertIsInstance(fluent, np.ndarray)
-                self.assertListEqual(list(fluent.shape), [batch_size, horizon] + list(sz))
+                self.assertListEqual(list(fluent.shape), [self.batch_size, horizon] + list(sz))
 
             # actions
             self.assertIsInstance(actions, tuple)
@@ -313,8 +316,8 @@ class TestPolicySimulator(unittest.TestCase):
                 self.assertIsInstance(var_name, str)
                 self.assertEqual(var_name, name, a)
                 self.assertIsInstance(fluent, np.ndarray)
-                self.assertListEqual(list(fluent.shape), [batch_size, horizon] + list(sz))
+                self.assertListEqual(list(fluent.shape), [self.batch_size, horizon] + list(sz))
 
             # rewards
             self.assertIsInstance(rewards, np.ndarray)
-            self.assertListEqual(list(rewards.shape), [batch_size, horizon])
+            self.assertListEqual(list(rewards.shape), [self.batch_size, horizon])
