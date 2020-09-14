@@ -1,20 +1,20 @@
-# Minimal makefile for Sphinx documentation
-#
+.PHONY: init docs test publish
 
-# You can set these variables from the command line.
-SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = tfrddlsim
-SOURCEDIR     = .
-BUILDDIR      = _build
+init:
+	virtualenv -p python3 .
+	source bin/activate
+	pip3 install -U pip setuptools
+	pip3 install pytest Sphinx pre-commit black
 
-# Put it first so that "make" without argument is like "make help".
-help:
-	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+docs:
+	sphinx-apidoc -f -o docs tfrddlsim --ext-autodoc
+	[ -e "docs/_build/html" ] && rm -R docs/_build/html
+	sphinx-build docs docs/_build/html
 
-.PHONY: help Makefile
+test:
+	python3 -m unittest -v tests/*.py
 
-# Catch-all target: route all unknown targets to Sphinx using the new
-# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+publish:
+	[ -e "dist/" ] && rm -Rf dist/
+	python3 setup.py sdist bdist_wheel
+	twine upload dist/*
