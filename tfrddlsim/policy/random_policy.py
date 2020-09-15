@@ -48,9 +48,9 @@ class RandomPolicy(Policy):
     MAX_REAL_VALUE = 5.0
     MAX_INT_VALUE = 5
 
-    def __init__(self, compiler: Compiler, batch_size: int) -> None:
+    def __init__(self, compiler: Compiler) -> None:
         self.compiler = compiler
-        self.batch_size = batch_size
+        self.batch_size = compiler.batch_size
 
     def __call__(self,
             state: Sequence[tf.Tensor],
