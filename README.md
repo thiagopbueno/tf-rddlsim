@@ -53,24 +53,27 @@ $ tfrddlsim Reservoir-8 --policy default --viz generic -hr 20 -b 128 -v
 
 ```python
 import rddlgym
-
+from rddl2tf.compilers import DefaultCompiler as Compiler
 from tfrddlsim.policy import RandomPolicy
 from tfrddlsim.simulation.policy_simulator import PolicySimulator
 from tfrddlsim.viz import GenericVisualizer
 
+# parameters
+horizon = 40
+batch_size = 32
+
 # parse and compile RDDL
-rddl2tf = rddlgym.make('Reservoir-8')
-rddl2tf.batch_mode_on()
+rddl = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
+compiler = Compiler(rddl, batch_size)
+compiler.init()
 
 # run simulations
-horizon = 40
-batch_size = 75
-policy = RandomPolicy(rddl2tf, batch_size)
-simulator = Simulator(rddl2tf, policy, batch_size)
+policy = RandomPolicy(compiler)
+simulator = PolicySimulator(compiler, policy)
 trajectories = simulator.run(horizon)
 
 # visualize trajectories
-viz = GenericVisualizer(rddl2tf, verbose=True)
+viz = GenericVisualizer(compiler, verbose=True)
 viz.render(trajectories)
 ```
 

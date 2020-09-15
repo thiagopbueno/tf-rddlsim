@@ -1,18 +1,22 @@
 import rddlgym
+from rddl2tf.compilers import DefaultCompiler as Compiler
 
 from tfrddlsim.policy import RandomPolicy
 from tfrddlsim.simulation.policy_simulator import PolicySimulator
 from tfrddlsim.viz import GenericVisualizer
 
+# parameters
+horizon = 40
+batch_size = 32
+
 # parse and compile RDDL
-compiler = rddlgym.make('Reservoir-8', mode=rddlgym.SCG)
+rddl = rddlgym.make('Reservoir-8', mode=rddlgym.AST)
+compiler = Compiler(rddl, batch_size)
 compiler.init()
 
 # run simulations
-horizon = 40
-batch_size = 128
-policy = RandomPolicy(compiler, batch_size)
-simulator = PolicySimulator(compiler, policy, batch_size)
+policy = RandomPolicy(compiler)
+simulator = PolicySimulator(compiler, policy)
 trajectories = simulator.run(horizon)
 
 # visualize trajectories

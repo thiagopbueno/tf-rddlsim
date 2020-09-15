@@ -55,31 +55,31 @@ class TestPolicySimulationCell(unittest.TestCase):
         self.compiler7.init()
 
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size)
-        self.cell1 = PolicySimulationCell(self.compiler1, self.policy1, self.batch_size)
+        self.cell1 = PolicySimulationCell(self.compiler1, self.policy1)
 
         self.batch_size2 = 32
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size)
-        self.cell2 = PolicySimulationCell(self.compiler2, self.policy2, self.batch_size)
+        self.cell2 = PolicySimulationCell(self.compiler2, self.policy2)
 
         self.batch_size3 = 32
         self.policy3 = DefaultPolicy(self.compiler3, self.batch_size)
-        self.cell3 = PolicySimulationCell(self.compiler3, self.policy3, self.batch_size)
+        self.cell3 = PolicySimulationCell(self.compiler3, self.policy3)
 
         self.batch_size4 = 32
         self.policy4 = DefaultPolicy(self.compiler4, self.batch_size)
-        self.cell4 = PolicySimulationCell(self.compiler4, self.policy4, self.batch_size)
+        self.cell4 = PolicySimulationCell(self.compiler4, self.policy4)
 
         self.batch_size5 = 32
         self.policy5 = DefaultPolicy(self.compiler5, self.batch_size)
-        self.cell5 = PolicySimulationCell(self.compiler5, self.policy5, self.batch_size)
+        self.cell5 = PolicySimulationCell(self.compiler5, self.policy5)
 
         self.batch_size6 = 32
         self.policy6 = DefaultPolicy(self.compiler6, self.batch_size)
-        self.cell6 = PolicySimulationCell(self.compiler6, self.policy6, self.batch_size)
+        self.cell6 = PolicySimulationCell(self.compiler6, self.policy6)
 
         self.batch_size7 = 32
         self.policy7 = DefaultPolicy(self.compiler7, self.batch_size)
-        self.cell7 = PolicySimulationCell(self.compiler7, self.policy7, self.batch_size)
+        self.cell7 = PolicySimulationCell(self.compiler7, self.policy7)
 
     def test_state_size(self):
         # TODO self.cell3, self.cell4, self.cell5, self.cell6, self.cell7
@@ -194,25 +194,25 @@ class TestPolicySimulator(unittest.TestCase):
         self.compiler7.init()
 
         self.policy1 = DefaultPolicy(self.compiler1, self.batch_size)
-        self.simulator1 = PolicySimulator(self.compiler1, self.policy1, self.batch_size)
+        self.simulator1 = PolicySimulator(self.compiler1, self.policy1)
 
         self.policy2 = DefaultPolicy(self.compiler2, self.batch_size)
-        self.simulator2 = PolicySimulator(self.compiler2, self.policy2, self.batch_size)
+        self.simulator2 = PolicySimulator(self.compiler2, self.policy2)
 
         self.policy3 = DefaultPolicy(self.compiler3, self.batch_size)
-        self.simulator3 = PolicySimulator(self.compiler3, self.policy3, self.batch_size)
+        self.simulator3 = PolicySimulator(self.compiler3, self.policy3)
 
         self.policy4 = DefaultPolicy(self.compiler4, self.batch_size)
-        self.simulator4 = PolicySimulator(self.compiler4, self.policy4, self.batch_size)
+        self.simulator4 = PolicySimulator(self.compiler4, self.policy4)
 
         self.policy5 = DefaultPolicy(self.compiler5, self.batch_size)
-        self.simulator5 = PolicySimulator(self.compiler5, self.policy5, self.batch_size)
+        self.simulator5 = PolicySimulator(self.compiler5, self.policy5)
 
         self.policy6 = DefaultPolicy(self.compiler6, self.batch_size)
-        self.simulator6 = PolicySimulator(self.compiler6, self.policy6, self.batch_size)
+        self.simulator6 = PolicySimulator(self.compiler6, self.policy6)
 
         self.policy7 = DefaultPolicy(self.compiler7, self.batch_size)
-        self.simulator7 = PolicySimulator(self.compiler7, self.policy7, self.batch_size)
+        self.simulator7 = PolicySimulator(self.compiler7, self.policy7)
 
     def test_timesteps(self):
         horizon = 40

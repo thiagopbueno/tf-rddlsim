@@ -80,7 +80,7 @@ class TestRandomPolicy(unittest.TestCase):
 
             with compiler.graph.as_default():
 
-                policy = RandomPolicy(compiler, compiler.batch_size)
+                policy = RandomPolicy(compiler)
 
                 state = compiler.initial_state()
                 action, n, checking = policy._sample_actions(state)
@@ -105,7 +105,7 @@ class TestRandomPolicy(unittest.TestCase):
 
             with compiler.graph.as_default():
 
-                policy = RandomPolicy(compiler, compiler.batch_size)
+                policy = RandomPolicy(compiler)
 
                 state = compiler.initial_state()
                 action, n, checking = policy._sample_actions(state)

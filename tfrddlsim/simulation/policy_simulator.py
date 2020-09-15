@@ -62,10 +62,10 @@ class PolicySimulationCell(tf.nn.rnn_cell.RNNCell):
         batch_size (int): The size of the simulation batch.
     '''
 
-    def __init__(self, compiler: Compiler, policy: Policy, batch_size: int) -> None:
+    def __init__(self, compiler: Compiler, policy: Policy) -> None:
         self._compiler = compiler
         self._policy = policy
-        self._batch_size = batch_size
+        self._batch_size = compiler.batch_size
 
     @property
     def graph(self) -> tf.Graph:
@@ -185,8 +185,8 @@ class PolicySimulator(object):
         batch_size (int): The size of the simulation batch.
     '''
 
-    def __init__(self, compiler: Compiler, policy: Policy, batch_size: int) -> None:
-        self._cell = PolicySimulationCell(compiler, policy, batch_size)
+    def __init__(self, compiler: Compiler, policy: Policy) -> None:
+        self._cell = PolicySimulationCell(compiler, policy)
         self._non_fluents = [fluent.tensor for fluent in compiler.non_fluents]
 
     @property
