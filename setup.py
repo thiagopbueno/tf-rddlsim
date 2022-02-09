@@ -40,7 +40,7 @@ setup(
     scripts=['scripts/tfrddlsim', 'tfrddlsim/viz/plots/plot_navigation_policy'],
     python_requires=">=3.6",
     install_requires=[
-        'tensorflow<2.0.0',
+        'tensorflow<3.0.0',
         'matplotlib',
         'typing',
         'pyrddl',
